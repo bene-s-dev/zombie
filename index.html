@@ -94,17 +94,65 @@
         <!-- THREE.JS CANVAS CONTAINER -->
         <div id="three-container" class="w-full h-full absolute inset-0"></div>
 
-        <!-- FLOATING DYNAMIC TOUCH JOYSTICK FOR MOBILE (RIGHT HALF MOVEMENT) -->
+        <!-- FLOATING DYNAMIC TOUCH JOYSTICK FOR MOBILE -->
         <div id="joystick-container" class="hidden absolute z-30 pointer-events-none transform -translate-x-1/2 -translate-y-1/2">
             <div id="joystick-base" class="w-28 h-28 rounded-full border-2 border-red-500/50 bg-slate-900/60 backdrop-blur-md relative flex items-center justify-center shadow-2xl">
                 <div id="joystick-knob" class="w-12 h-12 rounded-full bg-gradient-to-r from-red-600 to-orange-500 border border-white/60 shadow-lg shadow-red-500/50 absolute transition-transform duration-75"></div>
             </div>
         </div>
 
-        <!-- FLOATING UNANCHORED TOUCH FIRE FEEDBACK FOR MOBILE (LEFT HALF FIRE) -->
+        <!-- FLOATING UNANCHORED TOUCH FIRE FEEDBACK FOR MOBILE -->
         <div id="fire-touch-feedback" class="hidden absolute z-30 pointer-events-none transform -translate-x-1/2 -translate-y-1/2">
             <div class="w-20 h-20 rounded-full border-2 border-amber-400/70 bg-amber-500/20 backdrop-blur-sm flex items-center justify-center animate-ping">
                 <i class="fa-solid fa-crosshairs text-amber-400 text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- ================= PLACEMENT / BUILD MODE OVERLAY ================= -->
+        <div id="placement-hud" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-slate-950/90 border border-amber-500/60 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl flex items-center space-x-4 pointer-events-auto animate-pulse">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-hammer text-amber-400 text-lg"></i>
+                <span class="font-teko text-xl font-bold text-amber-400 tracking-wider">BAUMODUS: <span id="placement-item-name" class="text-white">TURM</span></span>
+            </div>
+            <span class="text-xs text-slate-300 hidden sm:inline">Klicke / Tippe auf die Karte zum Platzieren</span>
+            <button onclick="cancelPlacement()" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition">
+                <i class="fa-solid fa-xmark mr-1"></i>Abbrechen
+            </button>
+        </div>
+
+        <!-- ================= STRUCTURE INSPECT / UPGRADE / SELL MODAL ================= -->
+        <div id="inspect-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-center">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <div class="flex items-center space-x-2 text-left">
+                        <i id="inspect-icon" class="fa-solid fa-tower-observation text-amber-400 text-2xl"></i>
+                        <div>
+                            <h3 id="inspect-title" class="font-teko text-2xl font-bold text-white leading-none">Geschützturm</h3>
+                            <span id="inspect-subtitle" class="text-[10px] text-amber-400 font-mono">Level 1</span>
+                        </div>
+                    </div>
+                    <button onclick="closeInspectModal()" class="text-slate-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div id="inspect-stats" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1 text-left font-mono">
+                    <!-- Dynamic stats injected here -->
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button id="inspect-upgrade-btn" onclick="upgradeSelectedStructure()" class="py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                        <i class="fa-solid fa-arrow-up"></i>
+                        <span id="inspect-upgrade-text">Upgrade ($150)</span>
+                    </button>
+                    <button id="inspect-repair-btn" onclick="repairSelectedStructure()" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                        <i class="fa-solid fa-wrench"></i>
+                        <span id="inspect-repair-text">Reparieren</span>
+                    </button>
+                </div>
+
+                <button onclick="sellSelectedStructure()" class="w-full py-2.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/60 font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-trash-can mr-1"></i>
+                    <span id="inspect-sell-text">Verkaufen (+$70)</span>
+                </button>
             </div>
         </div>
 
@@ -176,7 +224,7 @@
             <div class="desktop-only text-center text-xs text-slate-500 flex justify-center space-x-6 mt-2">
                 <span><i class="fa-solid fa-keyboard text-slate-400 mr-1"></i> [WASD / Pfeile] Bewegung & Blickrichtung</span>
                 <span><i class="fa-solid fa-crosshairs text-slate-400 mr-1"></i> [Leertaste] Schießen</span>
-                <span><i class="fa-solid fa-store text-slate-400 mr-1"></i> [B] Shop</span>
+                <span><i class="fa-solid fa-store text-slate-400 mr-1"></i> Shop im Spiel</span>
             </div>
         </div>
 
@@ -239,7 +287,7 @@
                 <div class="text-slate-400 uppercase font-semibold hidden sm:block">Waffe:</div>
                 <div id="hud-weapon-name" class="font-bold text-amber-400 text-[10px] sm:text-xs">Pistole (Lvl 1)</div>
                 <div class="h-2.5 w-px bg-slate-700"></div>
-                <div id="hud-weapon-stats" class="text-[9px] sm:text-[11px] font-mono text-slate-300"><i class="fa-solid fa-bolt text-amber-400 mr-0.5"></i> Dmg: 30</div>
+                <div id="hud-weapon-stats" class="text-[9px] sm:text-[11px] font-mono text-slate-300"><i class="fa-solid fa-bolt text-amber-400 mr-0.5"></i> Dmg: 32</div>
             </div>
         </div>
 
@@ -309,15 +357,18 @@
                 </div>
 
                 <!-- Shop Navigation Tabs -->
-                <div class="flex space-x-2 border-b border-slate-800 pb-3 mb-4">
-                    <button onclick="switchShopTab('weapons')" id="tab-btn-weapons" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-red-600 text-white flex items-center space-x-2">
+                <div class="flex space-x-2 border-b border-slate-800 pb-3 mb-4 overflow-x-auto">
+                    <button onclick="switchShopTab('weapons')" id="tab-btn-weapons" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-red-600 text-white flex items-center space-x-2 whitespace-nowrap">
                         <i class="fa-solid fa-gun"></i><span>Waffen & Tuning</span>
                     </button>
-                    <button onclick="switchShopTab('turrets')" id="tab-btn-turrets" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2">
-                        <i class="fa-solid fa-tower-observation"></i><span>Abwehrtürme</span>
+                    <button onclick="switchShopTab('turrets')" id="tab-btn-turrets" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-tower-observation"></i><span>Geschütztürme</span>
                     </button>
-                    <button onclick="switchShopTab('upgrades')" id="tab-btn-upgrades" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2">
-                        <i class="fa-solid fa-shield-halved"></i><span>Spieler & Basis Upgrades</span>
+                    <button onclick="switchShopTab('walls')" id="tab-btn-walls" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-cubes-stacked"></i><span>Barrieren & Mauern</span>
+                    </button>
+                    <button onclick="switchShopTab('upgrades')" id="tab-btn-upgrades" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-shield-halved"></i><span>Spieler & Basis</span>
                     </button>
                 </div>
 
@@ -331,11 +382,17 @@
 
                     <!-- Tab 2: Turrets -->
                     <div id="shop-tab-turrets" class="shop-tab-content hidden">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Automatische Geschütztürme bauen</h3>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Automatische Geschütztürme platzieren</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-turrets-container"></div>
                     </div>
 
-                    <!-- Tab 3: Upgrades -->
+                    <!-- Tab 3: Walls & Barriers -->
+                    <div id="shop-tab-walls" class="shop-tab-content hidden">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Schutzmauern & Barrikaden bauen (Blockiert Zombies & Schüsse)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-walls-container"></div>
+                    </div>
+
+                    <!-- Tab 4: Upgrades -->
                     <div id="shop-tab-upgrades" class="shop-tab-content hidden">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Permanent Upgrades & Reparatur</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-upgrades-container"></div>
@@ -561,10 +618,16 @@
         };
 
         const TURRET_TYPES = {
-            mg: { id: 'mg', name: 'Maschinengewehr-Turm', cost: 300, range: 30, damage: 28, firerate: 300, desc: 'Schnellfeuer-Turm für einzelne Ziele' },
-            cannon: { id: 'cannon', name: 'Artillerie-Kanonenturm', cost: 550, range: 35, damage: 120, firerate: 1100, isExplosive: true, splashRadius: 5.0, desc: 'Schwere explosive Projektile' },
-            tesla: { id: 'tesla', name: 'Tesla-Schockspule', cost: 750, range: 22, damage: 65, firerate: 750, isTesla: true, desc: 'Schockt & verlangsamt mehrere Untote gleichzeitig' },
-            rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 1000, range: 40, damage: 180, firerate: 1400, isExplosive: true, splashRadius: 6.0, desc: 'Verheerender Fernkampf-Flächenschaden' }
+            mg: { id: 'mg', name: 'Maschinengewehr-Turm', cost: 280, range: 28, damage: 28, firerate: 300, desc: 'Schnellfeuer-Turm für einzelne Ziele' },
+            cannon: { id: 'cannon', name: 'Artillerie-Kanonenturm', cost: 500, range: 32, damage: 130, firerate: 1100, isExplosive: true, splashRadius: 5.0, desc: 'Schwere explosive Projektile' },
+            tesla: { id: 'tesla', name: 'Tesla-Schockspule', cost: 700, range: 22, damage: 70, firerate: 750, isTesla: true, desc: 'Schockt & verlangsamt mehrere Untote gleichzeitig' },
+            rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 950, range: 38, damage: 190, firerate: 1400, isExplosive: true, splashRadius: 6.0, desc: 'Verheerender Fernkampf-Flächenschaden' }
+        };
+
+        const WALL_TYPES = {
+            sandbag: { id: 'sandbag', name: 'Sandsack-Barrikade', cost: 45, hp: 250, radius: 1.2, desc: 'Günstige Barrikade. Stoppt normale Zombies & Schüsse.' },
+            concrete: { id: 'concrete', name: 'Beton-Schutzwall', cost: 95, hp: 650, radius: 1.4, desc: 'Schwerer Schutzwall mit sehr hoher Widerstandskraft.' },
+            laser_wall: { id: 'laser_wall', name: 'Plasma-Barriere', cost: 180, hp: 1200, radius: 1.5, desc: 'High-Tech Kraftfeld. Nur Endbosse können sie beschädigen!' }
         };
 
         const UPGRADES = {
@@ -631,19 +694,15 @@
                 this.isPaused = false;
                 this.isGameOver = false;
                 this.isWaveTransitioning = false;
-                this.autoFire = false;
 
-                // Floating Mobile Touch Joystick State (Right Half)
-                this.touchJoystick = {
-                    active: false,
-                    touchId: null,
-                    startX: 0,
-                    startY: 0,
-                    vectorX: 0,
-                    vectorY: 0
-                };
+                // Build & Placement mode state
+                this.isPlacementMode = false;
+                this.pendingPlacement = null; 
+                this.ghostMesh = null;
+                this.selectedStructure = null; 
 
-                // Unanchored Touch Fire State (Left Half)
+                // Touch Joystick & Fire State
+                this.touchJoystick = { active: false, touchId: null, startX: 0, startY: 0, vectorX: 0, vectorY: 0 };
                 this.isTouchFiring = false;
                 this.fireTouchId = null;
 
@@ -675,12 +734,12 @@
                 this.zombies = [];
                 this.bullets = [];
                 this.turrets = [];
+                this.walls = [];
                 this.particles = [];
 
                 this.keys = {};
                 this.mousePos = new THREE.Vector2();
-                this.targetAimPoint = new THREE.Vector3();
-                this.isPointerDown = false;
+                this.pointerWorldPos = new THREE.Vector3();
 
                 this.initScene();
                 this.buildEnvironment();
@@ -701,22 +760,65 @@
             setupControls() {
                 window.addEventListener('keydown', (e) => {
                     this.keys[e.code] = true;
-                    if (e.code === 'Space') {
-                        e.preventDefault();
-                    }
+                    if (e.code === 'Space') e.preventDefault();
                     if (e.code === 'KeyB') {
-                        toggleShop();
+                        if (this.isPlacementMode) cancelPlacement();
+                        else toggleShop();
                     }
                     if (e.code === 'Escape') {
-                        togglePauseModal();
+                        if (this.isPlacementMode) cancelPlacement();
+                        else togglePauseModal();
                     }
                 });
 
-                window.addEventListener('keyup', (e) => {
-                    this.keys[e.code] = false;
-                });
+                window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
 
-                // MOBILE TOUCH HANDLERS (SUPPORT CONTROL SWAPPING)
+                const onPointerMove = (e) => {
+                    this.mousePos.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    this.mousePos.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                    this.raycaster.setFromCamera(this.mousePos, this.camera);
+                    const intersects = new THREE.Vector3();
+                    if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                        this.pointerWorldPos.copy(intersects);
+                        if (this.isPlacementMode && this.ghostMesh) {
+                            this.updateGhostPosition(intersects.x, intersects.z);
+                        }
+                    }
+                };
+
+                const onPointerClick = (e) => {
+                    if (this.isPaused && !this.isPlacementMode) return;
+
+                    const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+                    if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal, #inspect-modal')) return;
+
+                    if (this.isPlacementMode) {
+                        this.confirmPlacement();
+                        return;
+                    }
+
+                    this.raycaster.setFromCamera(this.mousePos, this.camera);
+                    const clickableObjects = [];
+                    this.turrets.forEach(t => clickableObjects.push(t));
+                    this.walls.forEach(w => clickableObjects.push(w));
+
+                    const intersects = this.raycaster.intersectObjects(clickableObjects, true);
+                    if (intersects.length > 0) {
+                        let topObj = intersects[0].object;
+                        while (topObj.parent && topObj.parent !== this.scene) {
+                            topObj = topObj.parent;
+                        }
+                        if (topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) {
+                            this.inspectStructure(topObj);
+                        }
+                    }
+                };
+
+                window.addEventListener('pointermove', onPointerMove);
+                window.addEventListener('click', onPointerClick);
+
+                // Touch Handlers
                 const onTouchStart = (e) => {
                     if (this.isPaused || this.isGameOver) return;
                     for (let i = 0; i < e.changedTouches.length; i++) {
@@ -727,7 +829,6 @@
                         const halfWidth = window.innerWidth / 2;
                         const isJoystickSide = Storage.data.swapTouchControls ? (touch.clientX <= halfWidth) : (touch.clientX > halfWidth);
 
-                        // MOVEMENT TOUCH JOYSTICK
                         if (isJoystickSide) {
                             if (!this.touchJoystick.active) {
                                 this.touchJoystick.active = true;
@@ -744,7 +845,6 @@
                                 this.updateJoystickKnob(0, 0);
                             }
                         } else {
-                            // UNANCHORED TOUCH FIRE TRIGGER
                             if (this.fireTouchId === null) {
                                 this.fireTouchId = touch.identifier;
                                 this.isTouchFiring = true;
@@ -830,14 +930,7 @@
 
             updateJoystickKnob(x, y) {
                 const knob = document.getElementById('joystick-knob');
-                if (knob) {
-                    knob.style.transform = `translate(${x}px, ${y}px)`;
-                }
-            }
-
-            updateMousePosFromTouch(touch) {
-                this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                if (knob) knob.style.transform = `translate(${x}px, ${y}px)`;
             }
 
             spawnZombie() {
@@ -853,7 +946,7 @@
                 const waveHpScale = (1 + (this.currentWave - 1) * 0.35) * this.diffMult;
                 const waveDmgScale = (1 + (this.currentWave - 1) * 0.22) * this.diffMult;
 
-                const isBossWave = (this.currentWave % 5 === 0) && (this.zombiesLeftToSpawn === 0);
+                const isBossWave = (this.currentWave % 7 === 0) && (this.zombiesLeftToSpawn === 0);
 
                 let type = 'normal';
                 let hp = 65 * waveHpScale;
@@ -865,81 +958,77 @@
 
                 if (isBossWave) {
                     type = 'boss';
-                    hp = 850 * waveHpScale;
+                    hp = 1200 * waveHpScale;
                     speed = 0.045 * this.diffMult;
                     scale = 2.4;
-                    color = 0x881337;
-                    reward = 500;
+                    color = 0xdc2626;
+                    reward = 350;
                     dmgMult = 3.5 * waveDmgScale;
                 } else {
-                    const rand = Math.random();
-                    if (rand < 0.25) {
+                    const rnd = Math.random();
+                    if (rnd < 0.2) {
                         type = 'runner';
                         hp = 40 * waveHpScale;
-                        speed = 0.14 * this.diffMult;
+                        speed = 0.12 * this.diffMult;
                         scale = 0.85;
-                        color = 0x84cc16;
+                        color = 0xeab308;
                         reward = 28;
-                    } else if (rand > 0.75) {
+                        dmgMult = 0.8 * waveDmgScale;
+                    } else if (rnd < 0.38) {
                         type = 'tank';
                         hp = 220 * waveHpScale;
-                        speed = 0.04 * this.diffMult;
-                        scale = 1.45;
-                        color = 0x15803d;
-                        reward = 60;
+                        speed = 0.05 * this.diffMult;
+                        scale = 1.5;
+                        color = 0x0284c7;
+                        reward = 55;
                         dmgMult = 1.8 * waveDmgScale;
-                    } else if (rand > 0.60) {
-                        type = 'berserker';
-                        hp = 110 * waveHpScale;
-                        speed = 0.10 * this.diffMult;
-                        scale = 1.15;
-                        color = 0xd97706;
-                        reward = 45;
-                        dmgMult = 1.4 * waveDmgScale;
                     }
                 }
 
                 const zombieGroup = new THREE.Group();
                 zombieGroup.position.set(x, 0, z);
 
-                const skinMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8 });
-                const clothesMat = new THREE.MeshStandardMaterial({ color: isBossWave ? 0x0f172a : 0x334155, roughness: 0.9 });
-                const eyeMat = new THREE.MeshBasicMaterial({ color: isBossWave ? 0xfacc15 : 0xef4444 });
+                const bodyMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
+                const clothMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+                const eyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
 
-                const legs = new THREE.Mesh(new THREE.BoxGeometry(0.7 * scale, 0.8 * scale, 0.4 * scale), clothesMat);
-                legs.position.y = 0.4 * scale;
-                legs.castShadow = true;
-                zombieGroup.add(legs);
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.25 * scale, 0.7 * scale, 0.25 * scale), clothMat);
+                legL.position.set(-0.2 * scale, 0.35 * scale, 0);
+                legL.castShadow = true;
+                zombieGroup.add(legL);
 
-                const torso = new THREE.Mesh(new THREE.BoxGeometry(0.85 * scale, 1.0 * scale, 0.5 * scale), skinMat);
-                torso.position.y = 1.3 * scale;
+                const legR = new THREE.Mesh(new THREE.BoxGeometry(0.25 * scale, 0.7 * scale, 0.25 * scale), clothMat);
+                legR.position.set(0.2 * scale, 0.35 * scale, 0);
+                legR.castShadow = true;
+                zombieGroup.add(legR);
+
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7 * scale, 0.9 * scale, 0.4 * scale), bodyMat);
+                torso.position.y = 1.15 * scale;
                 torso.castShadow = true;
                 zombieGroup.add(torso);
 
-                const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.25 * scale, 0.25 * scale, 0.8 * scale), skinMat);
-                leftArm.position.set(-0.5 * scale, 1.4 * scale, 0.4 * scale);
-                const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.25 * scale, 0.25 * scale, 0.8 * scale), skinMat);
-                rightArm.position.set(0.5 * scale, 1.4 * scale, 0.4 * scale);
-                zombieGroup.add(leftArm);
-                zombieGroup.add(rightArm);
+                const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2 * scale, 0.2 * scale, 0.8 * scale), bodyMat);
+                armL.position.set(-0.45 * scale, 1.2 * scale, 0.3 * scale);
+                armL.castShadow = true;
+                zombieGroup.add(armL);
 
-                const head = new THREE.Mesh(new THREE.BoxGeometry(0.55 * scale, 0.55 * scale, 0.55 * scale), skinMat);
-                head.position.y = 2.0 * scale;
+                const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2 * scale, 0.2 * scale, 0.8 * scale), bodyMat);
+                armR.position.set(0.45 * scale, 1.2 * scale, 0.3 * scale);
+                armR.castShadow = true;
+                zombieGroup.add(armR);
+
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.45 * scale, 0.45 * scale, 0.45 * scale), bodyMat);
+                head.position.y = 1.75 * scale;
                 head.castShadow = true;
                 zombieGroup.add(head);
 
-                const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.12 * scale, 0.12 * scale, 0.05 * scale), eyeMat);
-                leftEye.position.set(-0.15 * scale, 2.05 * scale, 0.28 * scale);
-                const rightEye = new THREE.Mesh(new THREE.BoxGeometry(0.12 * scale, 0.12 * scale, 0.05 * scale), eyeMat);
-                rightEye.position.set(0.15 * scale, 2.05 * scale, 0.28 * scale);
-                zombieGroup.add(leftEye);
-                zombieGroup.add(rightEye);
+                const eye1 = new THREE.Mesh(new THREE.BoxGeometry(0.08 * scale, 0.08 * scale, 0.08 * scale), eyeMat);
+                eye1.position.set(-0.12 * scale, 1.78 * scale, 0.22 * scale);
+                zombieGroup.add(eye1);
 
-                if (isBossWave) {
-                    const crown = new THREE.Mesh(new THREE.OctahedronGeometry(0.4 * scale), new THREE.MeshBasicMaterial({ color: 0xeab308 }));
-                    crown.position.y = 2.5 * scale;
-                    zombieGroup.add(crown);
-                }
+                const eye2 = new THREE.Mesh(new THREE.BoxGeometry(0.08 * scale, 0.08 * scale, 0.08 * scale), eyeMat);
+                eye2.position.set(0.12 * scale, 1.78 * scale, 0.22 * scale);
+                zombieGroup.add(eye2);
 
                 zombieGroup.userData = {
                     type: type,
@@ -949,28 +1038,212 @@
                     scale: scale,
                     reward: reward,
                     dmgMult: dmgMult,
-                    walkCycle: Math.random() * Math.PI
+                    walkCycle: Math.random() * Math.PI * 2
                 };
 
                 this.zombies.push(zombieGroup);
                 this.scene.add(zombieGroup);
+            }
+
+            updateTurrets() {
+                if (this.isPaused || this.isGameOver || this.zombies.length === 0) return;
+
+                const now = performance.now();
+
+                this.turrets.forEach(turret => {
+                    const ud = turret.userData;
+                    if (now < ud.lastFired + ud.firerate) return;
+
+                    let closestZombie = null;
+                    let minDist = ud.range;
+
+                    this.zombies.forEach(z => {
+                        const dist = turret.position.distanceTo(z.position);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestZombie = z;
+                        }
+                    });
+
+                    if (closestZombie) {
+                        ud.lastFired = now;
+
+                        const angle = Math.atan2(
+                            closestZombie.position.x - turret.position.x,
+                            closestZombie.position.z - turret.position.z
+                        );
+                        ud.head.rotation.y = angle;
+
+                        if (ud.isTesla) {
+                            audio.playTesla();
+                            this.zombies.forEach(z => {
+                                if (turret.position.distanceTo(z.position) <= ud.range) {
+                                    z.userData.hp -= ud.damage;
+                                    z.userData.speed *= 0.7;
+                                    this.flashZombieHit(z);
+                                    this.createBloodSparks(z.position, 0xc084fc);
+                                    if (z.userData.hp <= 0) this.killZombie(z);
+                                }
+                            });
+                        } else {
+                            const bulletGeo = new THREE.CylinderGeometry(0.15, 0.15, 1.2, 8);
+                            bulletGeo.rotateX(Math.PI / 2);
+                            const bulletMat = new THREE.MeshBasicMaterial({ color: ud.isExplosive ? 0xf97316 : 0x38bdf8 });
+                            const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+
+                            bullet.position.copy(turret.position);
+                            bullet.position.y = 1.8;
+                            bullet.rotation.y = angle;
+
+                            bullet.userData = {
+                                dir: new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)).normalize(),
+                                speed: ud.isExplosive ? 35 : 55,
+                                damage: ud.damage,
+                                isExplosive: ud.isExplosive,
+                                splashRadius: ud.splashRadius || 0,
+                                life: 1.5
+                            };
+
+                            this.bullets.push(bullet);
+                            this.scene.add(bullet);
+
+                            if (ud.isExplosive) audio.playRocket();
+                            else audio.playPistol();
+                        }
+                    }
+                });
+            }
+
+            createExplosion(pos, radius, damage) {
+                audio.playExplosion();
+
+                const expMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
+                const expMesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.8, 16, 16), expMat);
+                expMesh.position.copy(pos);
+                this.scene.add(expMesh);
+
+                let scaleProgress = 0.2;
+                const expInterval = setInterval(() => {
+                    scaleProgress += 0.2;
+                    expMesh.scale.set(scaleProgress, scaleProgress, scaleProgress);
+                    expMat.opacity -= 0.15;
+
+                    if (expMat.opacity <= 0) {
+                        clearInterval(expInterval);
+                        this.scene.remove(expMesh);
+                    }
+                }, 30);
+
+                this.createBloodSparks(pos, 0xfacc15);
+
+                if (damage > 0) {
+                    for (let i = this.zombies.length - 1; i >= 0; i--) {
+                        const z = this.zombies[i];
+                        const dist = pos.distanceTo(z.position);
+                        if (dist <= radius) {
+                            const falloff = 1 - (dist / radius) * 0.5;
+                            z.userData.hp -= damage * falloff;
+                            this.flashZombieHit(z);
+                            if (z.userData.hp <= 0) this.killZombie(z);
+                        }
+                    }
+                }
+            }
+
+            startPlacementMode(kind, specId) {
+                const spec = kind === 'turret' ? TURRET_TYPES[specId] : WALL_TYPES[specId];
+                if (!spec || this.money < spec.cost) return;
+
+                this.isPlacementMode = true;
+                this.pendingPlacement = { kind, specId, cost: spec.cost, spec };
+                this.isPaused = true;
+
+                if (this.ghostMesh) this.scene.remove(this.ghostMesh);
+
+                this.ghostMesh = new THREE.Group();
+                const radius = spec.radius || 1.2;
+
+                const ringGeo = new THREE.RingGeometry(radius * 0.8, radius, 32);
+                ringGeo.rotateX(-Math.PI / 2);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.position.y = 0.1;
+                this.ghostMesh.add(ring);
+
+                const bodyGeo = new THREE.CylinderGeometry(radius * 0.8, radius * 0.8, 1.5, 12);
+                const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.6 });
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                body.position.y = 0.75;
+                this.ghostMesh.add(body);
+
+                this.ghostMesh.userData = { ringMat, bodyMat, isValid: true, radius };
+                this.scene.add(this.ghostMesh);
+
+                document.getElementById('placement-item-name').innerText = spec.name;
+                document.getElementById('placement-hud').classList.remove('hidden');
+                toggleShop(false);
+            }
+
+            updateGhostPosition(x, z) {
+                if (!this.ghostMesh) return;
+
+                this.ghostMesh.position.set(x, 0, z);
+
+                let isValid = true;
+                const distToBase = Math.hypot(x, z);
+                if (distToBase < 10.0 || Math.abs(x) > 74 || Math.abs(z) > 74) {
+                    isValid = false;
+                }
+
+                const r = this.ghostMesh.userData.radius;
+                this.turrets.forEach(t => {
+                    if (Math.hypot(t.position.x - x, t.position.z - z) < r + 1.2) isValid = false;
+                });
+                this.walls.forEach(w => {
+                    if (Math.hypot(w.position.x - x, w.position.z - z) < r + w.userData.radius) isValid = false;
+                });
+
+                this.ghostMesh.userData.isValid = isValid;
+                const colorHex = isValid ? 0x22c55e : 0xef4444;
+                this.ghostMesh.userData.ringMat.color.setHex(colorHex);
+                this.ghostMesh.userData.bodyMat.color.setHex(colorHex);
+            }
+
+            confirmPlacement() {
+                if (!this.isPlacementMode || !this.pendingPlacement || !this.ghostMesh) return;
+                if (!this.ghostMesh.userData.isValid) return;
+
+                const { kind, specId, cost } = this.pendingPlacement;
+                if (this.money < cost) return;
+
+                this.money -= cost;
+
+                const x = this.ghostMesh.position.x;
+                const z = this.ghostMesh.position.z;
+
+                if (kind === 'turret') {
+                    this.buildTurretAt(specId, x, z);
+                } else {
+                    this.buildWallAt(specId, x, z);
+                }
+
+                this.cancelPlacement();
                 this.syncHUD();
             }
 
-            buildTurret(turretTypeId) {
+            cancelPlacement() {
+                this.isPlacementMode = false;
+                this.pendingPlacement = null;
+                if (this.ghostMesh) {
+                    this.scene.remove(this.ghostMesh);
+                    this.ghostMesh = null;
+                }
+                document.getElementById('placement-hud').classList.add('hidden');
+                this.isPaused = false;
+            }
+
+            buildTurretAt(turretTypeId, x, z) {
                 const spec = TURRET_TYPES[turretTypeId];
-                if (!spec || this.money < spec.cost) return false;
-
-                const maxTurrets = 8;
-                if (this.turrets.length >= maxTurrets) return false;
-
-                this.money -= spec.cost;
-
-                const turretIndex = this.turrets.length;
-                const angle = (turretIndex / maxTurrets) * Math.PI * 2;
-                const radius = 10.2;
-                const x = Math.cos(angle) * radius;
-                const z = Math.sin(angle) * radius;
 
                 const turretGroup = new THREE.Group();
                 turretGroup.position.set(x, 0, z);
@@ -1018,7 +1291,9 @@
                 turretGroup.add(headGroup);
 
                 turretGroup.userData = {
+                    isTurret: true,
                     typeId: spec.id,
+                    name: spec.name,
                     head: headGroup,
                     range: spec.range,
                     damage: spec.damage,
@@ -1026,112 +1301,109 @@
                     isExplosive: spec.isExplosive,
                     splashRadius: spec.splashRadius,
                     isTesla: spec.isTesla,
+                    level: 1,
+                    totalInvested: spec.cost,
                     lastFired: 0
                 };
 
                 this.turrets.push(turretGroup);
                 this.scene.add(turretGroup);
-                this.syncHUD();
-                return true;
             }
 
-            updateTurrets() {
-                if (this.isPaused || this.isGameOver) return;
-                const now = performance.now();
+            buildWallAt(wallTypeId, x, z) {
+                const spec = WALL_TYPES[wallTypeId];
 
-                this.turrets.forEach(turret => {
-                    if (now < turret.userData.lastFired + turret.userData.firerate) return;
+                const wallGroup = new THREE.Group();
+                wallGroup.position.set(x, 0, z);
 
-                    let nearestZombies = [];
-                    this.zombies.forEach(z => {
-                        const dist = turret.position.distanceTo(z.position);
-                        if (dist <= turret.userData.range) {
-                            nearestZombies.push({ zombie: z, dist: dist });
-                        }
-                    });
+                let wallMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+                let wallGeo = new THREE.BoxGeometry(2.4, 1.8, 1.0);
 
-                    nearestZombies.sort((a, b) => a.dist - b.dist);
+                if (spec.id === 'concrete') {
+                    wallMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.5 });
+                    wallGeo = new THREE.BoxGeometry(2.8, 2.2, 1.2);
+                } else if (spec.id === 'laser_wall') {
+                    wallMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.2, metalness: 0.9 });
+                    wallGeo = new THREE.BoxGeometry(3.0, 2.5, 0.8);
+                }
 
-                    if (nearestZombies.length > 0) {
-                        const targetZombie = nearestZombies[0].zombie;
-                        turret.userData.lastFired = now;
+                const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+                wallMesh.position.y = wallGeo.parameters.height / 2;
+                wallMesh.castShadow = true;
+                wallMesh.receiveShadow = true;
+                wallGroup.add(wallMesh);
 
-                        const dx = targetZombie.position.x - turret.position.x;
-                        const dz = targetZombie.position.z - turret.position.z;
-                        const angle = Math.atan2(dx, dz);
-                        turret.userData.head.rotation.y = angle;
+                if (spec.id === 'laser_wall') {
+                    const glowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                    const glowBar = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.2, 0.9), glowMat);
+                    glowBar.position.y = 2.4;
+                    wallGroup.add(glowBar);
+                }
 
-                        if (turret.userData.isTesla) {
-                            audio.playTesla();
-                            const zapCount = Math.min(3, nearestZombies.length);
-                            for (let i = 0; i < zapCount; i++) {
-                                const z = nearestZombies[i].zombie;
-                                z.userData.hp -= turret.userData.damage;
-                                z.userData.speed *= 0.6;
-                                this.flashZombieHit(z);
-                                this.createBloodSparks(z.position, 0xc084fc);
-                                if (z.userData.hp <= 0) this.killZombie(z);
-                            }
-                        } else {
-                            const bulletGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.2, 8);
-                            bulletGeo.rotateX(Math.PI / 2);
-                            const bulletMat = new THREE.MeshBasicMaterial({ 
-                                color: turret.userData.isExplosive ? 0xf97316 : 0x38bdf8 
-                            });
-                            const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+                wallGroup.userData = {
+                    isWall: true,
+                    typeId: spec.id,
+                    name: spec.name,
+                    hp: spec.hp,
+                    maxHp: spec.hp,
+                    radius: spec.radius,
+                    totalInvested: spec.cost
+                };
 
-                            bullet.position.set(turret.position.x, 1.4, turret.position.z);
-                            bullet.rotation.y = angle;
-
-                            bullet.userData = {
-                                dir: new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)).normalize(),
-                                speed: turret.userData.isExplosive ? 36 : 55,
-                                damage: turret.userData.damage,
-                                isExplosive: turret.userData.isExplosive,
-                                splashRadius: turret.userData.splashRadius || 0,
-                                life: 1.8
-                            };
-
-                            this.bullets.push(bullet);
-                            this.scene.add(bullet);
-                            
-                            if (turret.userData.isExplosive) audio.playRocket();
-                            else audio.playPistol();
-                        }
-                    }
-                });
+                this.walls.push(wallGroup);
+                this.scene.add(wallGroup);
             }
 
-            createExplosion(pos, radius, damage) {
-                audio.playExplosion();
+            inspectStructure(structureGroup) {
+                this.selectedStructure = structureGroup;
+                const ud = structureGroup.userData;
+                this.isPaused = true;
 
-                const expMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.95 });
-                const expMesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.7, 16, 16), expMat);
-                expMesh.position.copy(pos);
-                expMesh.position.y = 1.0;
-                this.scene.add(expMesh);
+                const modal = document.getElementById('inspect-modal');
+                const title = document.getElementById('inspect-title');
+                const subtitle = document.getElementById('inspect-subtitle');
+                const stats = document.getElementById('inspect-stats');
+                const upgradeBtn = document.getElementById('inspect-upgrade-btn');
+                const repairBtn = document.getElementById('inspect-repair-btn');
 
-                let scale = 0.3;
-                const expInterval = setInterval(() => {
-                    scale += 0.3;
-                    expMesh.scale.set(scale, scale, scale);
-                    expMat.opacity -= 0.15;
-                    if (expMat.opacity <= 0) {
-                        clearInterval(expInterval);
-                        this.scene.remove(expMesh);
-                    }
-                }, 30);
+                title.innerText = ud.name;
 
-                for (let j = this.zombies.length - 1; j >= 0; j--) {
-                    const z = this.zombies[j];
-                    const dist = z.position.distanceTo(pos);
-                    if (dist <= radius) {
-                        const falloff = 1 - (dist / radius) * 0.4;
-                        z.userData.hp -= damage * falloff;
-                        this.flashZombieHit(z);
-                        this.createBloodSparks(z.position, 0xf97316);
-                        if (z.userData.hp <= 0) this.killZombie(z);
-                    }
+                if (ud.isTurret) {
+                    subtitle.innerText = `Lvl ${ud.level} Geschützturm`;
+                    stats.innerHTML = `
+                        <div>• Schaden: <strong class="text-amber-400">${Math.round(ud.damage)}</strong></div>
+                        <div>• Reichweite: <strong class="text-sky-400">${ud.range}m</strong></div>
+                        <div>• Cadence: <strong class="text-emerald-400">${ud.firerate}ms</strong></div>
+                    `;
+                    const upgCost = Math.round(ud.totalInvested * 0.75);
+                    document.getElementById('inspect-upgrade-text').innerText = `Upgrade ($${upgCost})`;
+                    upgradeBtn.classList.remove('hidden');
+                    repairBtn.classList.add('hidden');
+                } else {
+                    subtitle.innerText = `Schutzmauer Barriere`;
+                    stats.innerHTML = `
+                        <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
+                        <div>• Stoppt normale Zombies & Schüsse</div>
+                        <div>• Endboss-Schutz: <strong class="text-rose-400">${ud.typeId === 'laser_wall' ? 'Hoch' : 'Mittel'}</strong></div>
+                    `;
+                    const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.6);
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Voll Intakt';
+                    upgradeBtn.classList.add('hidden');
+                    repairBtn.classList.remove('hidden');
+                }
+
+                const sellRefund = Math.round(ud.totalInvested * 0.7);
+                document.getElementById('inspect-sell-text').innerText = `Verkaufen (+$${sellRefund})`;
+
+                modal.classList.remove('hidden');
+            }
+
+            destroyWall(wallGroup) {
+                const idx = this.walls.indexOf(wallGroup);
+                if (idx !== -1) {
+                    this.createExplosion(wallGroup.position, 3.0, 0);
+                    this.scene.remove(wallGroup);
+                    this.walls.splice(idx, 1);
                 }
             }
 
@@ -1166,7 +1438,6 @@
                     }, 40);
                 }
 
-                // Fire in the direction the player is currently facing
                 const baseAngle = this.playerGroup.rotation.y;
 
                 const wLvl = this.weaponLevels[this.currentWeapon.id] || 1;
@@ -1261,7 +1532,6 @@
                     if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
                     if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
 
-                    // Combine with Floating Touch Joystick
                     if (this.touchJoystick.active) {
                         moveX = this.touchJoystick.vectorX;
                         moveZ = this.touchJoystick.vectorY;
@@ -1274,21 +1544,27 @@
                         this.playerGroup.rotation.y += diff * 14.0 * dt;
 
                         const speedUpgradeBonus = 1 + (this.upgrades.player_speed * 0.12);
-                        // Fine-tuned analog speed for mobile touch responsiveness
                         const inputMagnitude = this.touchJoystick.active ? Math.min(1.0, Math.hypot(moveX, moveZ)) : 1.0;
                         const baseSpeed = this.touchJoystick.active ? 11.5 : 15.0;
                         const moveSpeed = (baseSpeed * speedUpgradeBonus * inputMagnitude) * dt;
 
                         const moveLen = Math.hypot(moveX, moveZ) || 1;
-                        this.playerGroup.position.x = THREE.MathUtils.clamp(
-                            this.playerGroup.position.x + (moveX / moveLen) * moveSpeed, -76, 76
-                        );
-                        this.playerGroup.position.z = THREE.MathUtils.clamp(
-                            this.playerGroup.position.z + (moveZ / moveLen) * moveSpeed, -76, 76
-                        );
+                        const nextX = THREE.MathUtils.clamp(this.playerGroup.position.x + (moveX / moveLen) * moveSpeed, -76, 76);
+                        const nextZ = THREE.MathUtils.clamp(this.playerGroup.position.z + (moveZ / moveLen) * moveSpeed, -76, 76);
+
+                        let blockedByWall = false;
+                        for (let w of this.walls) {
+                            if (Math.hypot(nextX - w.position.x, nextZ - w.position.z) < w.userData.radius + 0.6) {
+                                blockedByWall = true;
+                                break;
+                            }
+                        }
+                        if (!blockedByWall) {
+                            this.playerGroup.position.x = nextX;
+                            this.playerGroup.position.z = nextZ;
+                        }
                     }
 
-                    // SCHIESSEN NUR WENN LEERTASTE ODER TOUCH-FEUER AKTIV IST
                     if (!isShopOpen && (this.keys['Space'] || this.isTouchFiring)) {
                         this.tryShoot();
                     }
@@ -1299,9 +1575,6 @@
                     this.camera.lookAt(this.playerGroup.position);
 
                     if (this.baseCoreCrystal) this.baseCoreCrystal.rotation.y += 0.02;
-                    if (this.baseRing1) this.baseRing1.rotation.z += 0.03;
-                    if (this.baseRing2) this.baseRing2.rotation.y -= 0.02;
-                    if (this.baseRadarDish) this.baseRadarDish.rotation.y += 0.04;
 
                     for (let i = this.bullets.length - 1; i >= 0; i--) {
                         const b = this.bullets[i];
@@ -1309,26 +1582,37 @@
                         b.userData.life -= dt;
 
                         let bulletHit = false;
-                        for (let j = this.zombies.length - 1; j >= 0; j--) {
-                            const z = this.zombies[j];
-                            const dx = b.position.x - z.position.x;
-                            const dz = b.position.z - z.position.z;
-                            const distXZ = Math.hypot(dx, dz);
 
-                            if (distXZ < 1.4 * z.userData.scale) {
+                        for (let w of this.walls) {
+                            if (Math.hypot(b.position.x - w.position.x, b.position.z - w.position.z) < w.userData.radius) {
                                 bulletHit = true;
-                                if (b.userData.isExplosive) {
-                                    this.createExplosion(b.position, b.userData.splashRadius, b.userData.damage);
-                                } else {
-                                    z.userData.hp -= b.userData.damage;
-                                    z.position.x += b.userData.dir.x * 0.3;
-                                    z.position.z += b.userData.dir.z * 0.3;
-                                    this.flashZombieHit(z);
-                                    this.createBloodSparks(new THREE.Vector3(z.position.x, 1.2 * z.userData.scale, z.position.z), 0xef4444);
-                                    audio.playZombieHit();
-                                    if (z.userData.hp <= 0) this.killZombie(z);
-                                }
+                                this.createBloodSparks(b.position, 0x94a3b8);
                                 break;
+                            }
+                        }
+
+                        if (!bulletHit) {
+                            for (let j = this.zombies.length - 1; j >= 0; j--) {
+                                const z = this.zombies[j];
+                                const dx = b.position.x - z.position.x;
+                                const dz = b.position.z - z.position.z;
+                                const distXZ = Math.hypot(dx, dz);
+
+                                if (distXZ < 1.4 * z.userData.scale) {
+                                    bulletHit = true;
+                                    if (b.userData.isExplosive) {
+                                        this.createExplosion(b.position, b.userData.splashRadius, b.userData.damage);
+                                    } else {
+                                        z.userData.hp -= b.userData.damage;
+                                        z.position.x += b.userData.dir.x * 0.3;
+                                        z.position.z += b.userData.dir.z * 0.3;
+                                        this.flashZombieHit(z);
+                                        this.createBloodSparks(new THREE.Vector3(z.position.x, 1.2 * z.userData.scale, z.position.z), 0xef4444);
+                                        audio.playZombieHit();
+                                        if (z.userData.hp <= 0) this.killZombie(z);
+                                    }
+                                    break;
+                                }
                             }
                         }
 
@@ -1350,37 +1634,56 @@
 
                         const nextX = z.position.x + Math.sin(angle) * z.userData.speed;
                         const nextZ = z.position.z + Math.cos(angle) * z.userData.speed;
-                        const distToBaseNext = Math.hypot(nextX - basePos.x, nextZ - basePos.z);
 
-                        if (distToBaseNext < BASE_RADIUS) {
-                            const dirX = (nextX - basePos.x) / (distToBaseNext || 1);
-                            const dirZ = (nextZ - basePos.z) / (distToBaseNext || 1);
-                            
-                            z.position.x = basePos.x + dirX * BASE_RADIUS;
-                            z.position.z = basePos.z + dirZ * BASE_RADIUS;
-
-                            let dmg = (0.35 * z.userData.dmgMult) * dt * 60;
-
-                            if (this.baseShield > 0) {
-                                const absorbed = Math.min(this.baseShield, dmg);
-                                this.baseShield -= absorbed;
-                                dmg -= absorbed;
+                        let hitWall = null;
+                        for (let w of this.walls) {
+                            const minDist = w.userData.radius + (0.55 * z.userData.scale);
+                            if (Math.hypot(nextX - w.position.x, nextZ - w.position.z) < minDist) {
+                                hitWall = w;
+                                break;
                             }
-                            if (dmg > 0) {
-                                this.baseHp = Math.max(0, this.baseHp - dmg);
-                            }
+                        }
 
-                            if (this.upgrades.base_spikes > 0) {
-                                const spikeDmg = (this.upgrades.base_spikes * 18) * dt;
-                                z.userData.hp -= spikeDmg;
-                                if (z.userData.hp <= 0) this.killZombie(z);
+                        if (hitWall) {
+                            if (z.userData.type === 'boss') {
+                                hitWall.userData.hp -= (60 * z.userData.dmgMult) * dt;
+                                this.createBloodSparks(hitWall.position, 0xeab308);
+                                if (hitWall.userData.hp <= 0) {
+                                    this.destroyWall(hitWall);
+                                }
                             }
-
-                            this.syncHUD();
-                            if (this.baseHp <= 0) this.triggerGameOver();
                         } else {
-                            z.position.x = nextX;
-                            z.position.z = nextZ;
+                            const distToBaseNext = Math.hypot(nextX - basePos.x, nextZ - basePos.z);
+                            if (distToBaseNext < BASE_RADIUS) {
+                                const dirX = (nextX - basePos.x) / (distToBaseNext || 1);
+                                const dirZ = (nextZ - basePos.z) / (distToBaseNext || 1);
+
+                                z.position.x = basePos.x + dirX * BASE_RADIUS;
+                                z.position.z = basePos.z + dirZ * BASE_RADIUS;
+
+                                let dmg = (0.35 * z.userData.dmgMult) * dt * 60;
+
+                                if (this.baseShield > 0) {
+                                    const absorbed = Math.min(this.baseShield, dmg);
+                                    this.baseShield -= absorbed;
+                                    dmg -= absorbed;
+                                }
+                                if (dmg > 0) {
+                                    this.baseHp = Math.max(0, this.baseHp - dmg);
+                                }
+
+                                if (this.upgrades.base_spikes > 0) {
+                                    const spikeDmg = (this.upgrades.base_spikes * 18) * dt;
+                                    z.userData.hp -= spikeDmg;
+                                    if (z.userData.hp <= 0) this.killZombie(z);
+                                }
+
+                                this.syncHUD();
+                                if (this.baseHp <= 0) this.triggerGameOver();
+                            } else {
+                                z.position.x = nextX;
+                                z.position.z = nextZ;
+                            }
                         }
 
                         z.userData.walkCycle += 0.15;
@@ -1511,7 +1814,6 @@
                 const isMobile = window.innerWidth < 768;
                 this.camera = new THREE.PerspectiveCamera(isMobile ? 48 : 52, aspect, 0.1, 1000);
                 
-                // Closer camera perspective while maintaining the exact same isometric angle (Y/Z ratio = ~0.555)
                 this.cameraOffset = isMobile ? new THREE.Vector3(0, 8.5, 15.3) : new THREE.Vector3(0, 14, 25.2);
 
                 const ambientLight = new THREE.AmbientLight(0x384152, 1.2);
@@ -1778,7 +2080,6 @@
                 mag.rotation.x = -0.2;
                 gunGroup.add(mag);
 
-                const scopeMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
                 const scope = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8), gunMetal);
                 scope.rotation.x = Math.PI / 2;
                 scope.position.set(0, 0.22, 0.0);
@@ -1889,9 +2190,33 @@
                             <div class="text-xs text-slate-400 mt-1">${t.desc}</div>
                             <div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m</div>
                         </div>
-                        <button onclick="buyTurretSpec('${t.id}')" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold">$${t.cost}</button>
+                        <button onclick="startBuildPlacement('turret', '${t.id}')" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-hammer text-xs"></i>
+                            <span>Bauen $${t.cost}</span>
+                        </button>
                     `;
                     turretsContainer.appendChild(card);
+                });
+            }
+
+            const wallsContainer = document.getElementById('shop-walls-container');
+            if (wallsContainer) {
+                wallsContainer.innerHTML = '';
+                Object.values(WALL_TYPES).forEach(w => {
+                    const card = document.createElement('div');
+                    card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
+                    card.innerHTML = `
+                        <div>
+                            <div class="font-bold text-sky-400 text-sm"><i class="fa-solid fa-cubes mr-1"></i>${w.name}</div>
+                            <div class="text-xs text-slate-400 mt-1">${w.desc}</div>
+                            <div class="text-[10px] text-emerald-400 font-mono mt-0.5">HP: ${w.hp}</div>
+                        </div>
+                        <button onclick="startBuildPlacement('wall', '${w.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-hammer text-xs"></i>
+                            <span>Plazieren $${w.cost}</span>
+                        </button>
+                    `;
+                    wallsContainer.appendChild(card);
                 });
             }
 
@@ -1899,7 +2224,6 @@
             if (upgradesContainer) {
                 upgradesContainer.innerHTML = '';
 
-                // Base repair option
                 const repairCard = document.createElement('div');
                 repairCard.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
                 repairCard.innerHTML = `
@@ -1911,7 +2235,6 @@
                 `;
                 upgradesContainer.appendChild(repairCard);
 
-                // Heal player option
                 const healCard = document.createElement('div');
                 healCard.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
                 healCard.innerHTML = `
@@ -1923,7 +2246,6 @@
                 `;
                 upgradesContainer.appendChild(healCard);
 
-                // Upgrades catalog
                 Object.entries(UPGRADES).forEach(([key, upg]) => {
                     const currentLvl = gameInstance.upgrades[key] || 0;
                     const cost = Math.round(upg.costBase * Math.pow(1.6, currentLvl));
@@ -1946,6 +2268,76 @@
                     upgradesContainer.appendChild(card);
                 });
             }
+        }
+
+        function startBuildPlacement(kind, specId) {
+            if (!gameInstance) return;
+            gameInstance.startPlacementMode(kind, specId);
+        }
+
+        function cancelPlacement() {
+            if (!gameInstance) return;
+            gameInstance.cancelPlacement();
+        }
+
+        function closeInspectModal() {
+            document.getElementById('inspect-modal').classList.add('hidden');
+            if (gameInstance) {
+                gameInstance.selectedStructure = null;
+                gameInstance.isPaused = false;
+            }
+        }
+
+        function upgradeSelectedStructure() {
+            if (!gameInstance || !gameInstance.selectedStructure) return;
+            const ud = gameInstance.selectedStructure.userData;
+            if (!ud.isTurret) return;
+
+            const cost = Math.round(ud.totalInvested * 0.75);
+            if (gameInstance.money >= cost) {
+                gameInstance.money -= cost;
+                ud.level++;
+                ud.damage *= 1.35;
+                ud.range += 2;
+                ud.totalInvested += cost;
+                gameInstance.syncHUD();
+                gameInstance.inspectStructure(gameInstance.selectedStructure);
+            }
+        }
+
+        function repairSelectedStructure() {
+            if (!gameInstance || !gameInstance.selectedStructure) return;
+            const ud = gameInstance.selectedStructure.userData;
+            if (!ud.isWall) return;
+
+            const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.6);
+            if (repairCost > 0 && gameInstance.money >= repairCost) {
+                gameInstance.money -= repairCost;
+                ud.hp = ud.maxHp;
+                gameInstance.syncHUD();
+                gameInstance.inspectStructure(gameInstance.selectedStructure);
+            }
+        }
+
+        function sellSelectedStructure() {
+            if (!gameInstance || !gameInstance.selectedStructure) return;
+            const struct = gameInstance.selectedStructure;
+            const ud = struct.userData;
+
+            const refund = Math.round(ud.totalInvested * 0.7);
+            gameInstance.money += refund;
+
+            if (ud.isTurret) {
+                const idx = gameInstance.turrets.indexOf(struct);
+                if (idx !== -1) gameInstance.turrets.splice(idx, 1);
+            } else if (ud.isWall) {
+                const idx = gameInstance.walls.indexOf(struct);
+                if (idx !== -1) gameInstance.walls.splice(idx, 1);
+            }
+
+            gameInstance.scene.remove(struct);
+            gameInstance.syncHUD();
+            closeInspectModal();
         }
 
         let isPauseModalOpen = false;
@@ -1996,8 +2388,8 @@
             document.getElementById('main-menu').classList.remove('opacity-0', 'pointer-events-none');
         }
 
-        function toggleShop() {
-            isShopOpen = !isShopOpen;
+        function toggleShop(explicitState) {
+            isShopOpen = explicitState !== undefined ? explicitState : !isShopOpen;
             const shopModal = document.getElementById('shop-modal');
             if (gameInstance) {
                 gameInstance.isPaused = isShopOpen || isPauseModalOpen;
@@ -2041,13 +2433,6 @@
             gameInstance.currentWeapon = WEAPONS[id];
             gameInstance.syncHUD();
             renderShopCatalog();
-        }
-
-        function buyTurretSpec(typeId) {
-            if (!gameInstance) return;
-            if (gameInstance.buildTurret(typeId)) {
-                renderShopCatalog();
-            }
         }
 
         function buyUpgrade(key) {
