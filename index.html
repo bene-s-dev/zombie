@@ -146,28 +146,28 @@
         </div>
 
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
-        <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between p-4 sm:p-6">
+        <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between p-2 sm:p-4">
             <!-- Top Status Bar -->
-            <div class="flex justify-between items-start w-full max-w-6xl mx-auto">
+            <div class="flex justify-between items-start w-full max-w-6xl mx-auto space-x-2">
                 <!-- Player & Base Stats -->
-                <div class="space-y-2 pointer-events-auto bg-slate-950/80 border border-slate-800 p-3 sm:p-4 rounded-2xl backdrop-blur-md shadow-lg min-w-[240px]">
+                <div class="space-y-1 sm:space-y-2 pointer-events-auto bg-slate-950/80 border border-slate-800 p-2 sm:p-3 rounded-xl sm:rounded-2xl backdrop-blur-md shadow-lg min-w-[150px] sm:min-w-[220px]">
                     <!-- Player Health -->
                     <div>
-                        <div class="flex justify-between text-xs font-bold mb-1">
-                            <span class="text-slate-300"><i class="fa-solid fa-user-shield text-emerald-400 mr-1"></i> SPIELER HP</span>
+                        <div class="flex justify-between text-[10px] sm:text-xs font-bold mb-0.5 sm:mb-1">
+                            <span class="text-slate-300"><i class="fa-solid fa-user-shield text-emerald-400 mr-1"></i> SPIELER</span>
                             <span id="hud-player-hp-text" class="text-emerald-400 font-mono">100/100</span>
                         </div>
-                        <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div class="w-full h-1.5 sm:h-2.5 bg-slate-800 rounded-full overflow-hidden">
                             <div id="hud-player-hp-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%;"></div>
                         </div>
                     </div>
                     <!-- Base Health & Shield -->
                     <div>
-                        <div class="flex justify-between text-xs font-bold mb-1">
-                            <span class="text-slate-300"><i class="fa-solid fa-fort-awesome text-sky-400 mr-1"></i> BASIS HP</span>
+                        <div class="flex justify-between text-[10px] sm:text-xs font-bold mb-0.5 sm:mb-1">
+                            <span class="text-slate-300"><i class="fa-solid fa-fort-awesome text-sky-400 mr-1"></i> BASIS</span>
                             <span id="hud-base-hp-text" class="text-sky-400 font-mono">500/500</span>
                         </div>
-                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden relative">
+                        <div class="w-full h-2 sm:h-3 bg-slate-800 rounded-full overflow-hidden relative">
                             <div id="hud-base-hp-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 100%;"></div>
                             <div id="hud-base-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
                         </div>
@@ -175,34 +175,86 @@
                 </div>
 
                 <!-- Wave Counter & Timer -->
-                <div class="text-center bg-slate-950/80 border border-slate-800 px-6 py-3 rounded-2xl backdrop-blur-md shadow-lg pointer-events-auto">
-                    <div id="hud-wave-title" class="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center justify-center space-x-1">
+                <div class="text-center bg-slate-950/80 border border-slate-800 px-3 sm:px-6 py-1.5 sm:py-3 rounded-xl sm:rounded-2xl backdrop-blur-md shadow-lg pointer-events-auto">
+                    <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center justify-center space-x-1">
                         <i class="fa-solid fa-skull"></i>
                         <span>WELLE 1</span>
                     </div>
-                    <div id="hud-zombies-left" class="font-teko text-3xl font-bold text-white leading-none">0 ZOMBIES</div>
-                    <div id="hud-timer" class="text-xs text-slate-400 font-mono mt-1">Zeit: 00:00</div>
+                    <div id="hud-zombies-left" class="font-teko text-xl sm:text-3xl font-bold text-white leading-none">0 ZOMBIES</div>
+                    <div id="hud-timer" class="text-[10px] sm:text-xs text-slate-400 font-mono mt-0.5">Zeit: 00:00</div>
                 </div>
 
-                <!-- Currency & Shop Button -->
-                <div class="flex items-center space-x-2 sm:space-x-3 pointer-events-auto">
-                    <div class="bg-slate-950/80 border border-slate-800 px-3 sm:px-4 py-3 rounded-2xl backdrop-blur-md shadow-lg flex items-center space-x-2">
-                        <i class="fa-solid fa-coins text-amber-400 text-lg sm:text-xl"></i>
-                        <span id="hud-money" class="font-mono text-lg sm:text-xl font-bold text-amber-400">$ 0</span>
+                <!-- Currency, Shop & Pause Buttons -->
+                <div class="flex items-center space-x-1.5 sm:space-x-3 pointer-events-auto">
+                    <div class="bg-slate-950/80 border border-slate-800 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl backdrop-blur-md shadow-lg flex items-center space-x-1 sm:space-x-2">
+                        <i class="fa-solid fa-coins text-amber-400 text-sm sm:text-xl"></i>
+                        <span id="hud-money" class="font-mono text-xs sm:text-xl font-bold text-amber-400">$ 0</span>
                     </div>
-                    <button onclick="toggleShop()" class="bg-red-600 hover:bg-red-500 text-white p-3.5 rounded-2xl shadow-lg transition active:scale-95 flex items-center justify-center relative">
-                        <i class="fa-solid fa-store text-xl"></i>
-                        <span class="absolute -top-1 -right-1 bg-amber-400 text-slate-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase">Shop [B]</span>
+                    <button onclick="toggleShop()" class="bg-red-600 hover:bg-red-500 text-white p-2 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-lg transition active:scale-95 flex items-center justify-center relative">
+                        <i class="fa-solid fa-store text-sm sm:text-xl"></i>
+                        <span class="hidden sm:block absolute -top-1 -right-1 bg-amber-400 text-slate-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase">Shop [B]</span>
+                    </button>
+                    <button onclick="togglePauseModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-lg border border-slate-700 transition active:scale-95 flex items-center justify-center">
+                        <i class="fa-solid fa-pause text-sm sm:text-xl"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Bottom Center Active Weapon / Ammo -->
-            <div class="self-center bg-slate-950/80 border border-slate-800 px-6 py-2.5 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-4">
-                <div class="text-slate-400 text-xs uppercase font-semibold">Aktive Waffe:</div>
-                <div id="hud-weapon-name" class="font-bold text-amber-400 text-sm">Pistole (Lvl 1)</div>
-                <div class="h-4 w-px bg-slate-700"></div>
-                <div id="hud-weapon-stats" class="text-xs font-mono text-slate-300"><i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Dmg: 30</div>
+            <div class="self-center bg-slate-950/80 border border-slate-800 px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-2 sm:space-x-4 text-xs">
+                <div class="text-slate-400 uppercase font-semibold hidden sm:block">Aktive Waffe:</div>
+                <div id="hud-weapon-name" class="font-bold text-amber-400 text-xs sm:text-sm">Pistole (Lvl 1)</div>
+                <div class="h-3 w-px bg-slate-700"></div>
+                <div id="hud-weapon-stats" class="text-[10px] sm:text-xs font-mono text-slate-300"><i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Dmg: 30</div>
+            </div>
+        </div>
+
+        <!-- ================= PAUSE & SETTINGS MODAL ================= -->
+        <div id="pause-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+            <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-pause text-amber-400 text-2xl"></i>
+                        <h2 class="font-teko text-3xl font-bold text-white tracking-wider uppercase">SPIEL PAUSIERT</h2>
+                    </div>
+                    <button onclick="togglePauseModal()" class="text-slate-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Steuerung & Audio Einstellungen</h3>
+                    
+                    <!-- Touch Layout Swap -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <div>
+                            <div class="text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-2"></i> Touch-Layout</div>
+                            <div id="pause-touch-swap-label" class="text-[10px] text-slate-400 mt-0.5">Joystick rechts / Feuer links</div>
+                        </div>
+                        <button onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
+                            Tauschen
+                        </button>
+                    </div>
+
+                    <!-- Toggles -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-1.5"></i> Musik</span>
+                            <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                        </label>
+                        <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-1.5"></i> SFX</span>
+                            <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3 pt-2">
+                    <button onclick="togglePauseModal()" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm transition">
+                        WEITER
+                    </button>
+                    <button onclick="returnToMainMenu()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
+                        Hauptmenü
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -305,7 +357,8 @@
                 highScoreSeconds: 0,
                 difficulty: 'medium',
                 musicEnabled: true,
-                sfxEnabled: true
+                sfxEnabled: true,
+                swapTouchControls: false
             },
             load() {
                 try {
@@ -620,24 +673,28 @@
                     if (e.code === 'KeyB') {
                         toggleShop();
                     }
+                    if (e.code === 'Escape') {
+                        togglePauseModal();
+                    }
                 });
 
                 window.addEventListener('keyup', (e) => {
                     this.keys[e.code] = false;
                 });
 
-                // MOBILE TOUCH HANDLERS (RIGHT HALF JOYSTICK, LEFT HALF UNANCHORED FIRE)
+                // MOBILE TOUCH HANDLERS (SUPPORT CONTROL SWAPPING)
                 const onTouchStart = (e) => {
                     if (this.isPaused || this.isGameOver) return;
                     for (let i = 0; i < e.changedTouches.length; i++) {
                         const touch = e.changedTouches[i];
                         const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-                        if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu')) continue;
+                        if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal')) continue;
 
                         const halfWidth = window.innerWidth / 2;
+                        const isJoystickSide = Storage.data.swapTouchControls ? (touch.clientX <= halfWidth) : (touch.clientX > halfWidth);
 
-                        // RIGHT HALF: Movement Touch Joystick
-                        if (touch.clientX > halfWidth) {
+                        // MOVEMENT TOUCH JOYSTICK
+                        if (isJoystickSide) {
                             if (!this.touchJoystick.active) {
                                 this.touchJoystick.active = true;
                                 this.touchJoystick.touchId = touch.identifier;
@@ -653,7 +710,7 @@
                                 this.updateJoystickKnob(0, 0);
                             }
                         } else {
-                            // LEFT HALF: Unanchored Touch Fire Trigger
+                            // UNANCHORED TOUCH FIRE TRIGGER
                             if (this.fireTouchId === null) {
                                 this.fireTouchId = touch.identifier;
                                 this.isTouchFiring = true;
@@ -1176,7 +1233,6 @@
                         moveZ = this.touchJoystick.vectorY;
                     }
 
-                    // Blickrichtung bestimmt sich ausschließlich durch die Bewegungsrichtung
                     if (moveX !== 0 || moveZ !== 0) {
                         const targetAngle = Math.atan2(moveX, moveZ);
                         let diff = targetAngle - this.playerGroup.rotation.y;
@@ -1184,9 +1240,12 @@
                         this.playerGroup.rotation.y += diff * 14.0 * dt;
 
                         const speedUpgradeBonus = 1 + (this.upgrades.player_speed * 0.12);
-                        const moveSpeed = (16.5 * speedUpgradeBonus) * dt;
-                        const moveLen = Math.hypot(moveX, moveZ);
+                        // Fine-tuned analog speed for mobile touch responsiveness
+                        const inputMagnitude = this.touchJoystick.active ? Math.min(1.0, Math.hypot(moveX, moveZ)) : 1.0;
+                        const baseSpeed = this.touchJoystick.active ? 11.5 : 15.0;
+                        const moveSpeed = (baseSpeed * speedUpgradeBonus * inputMagnitude) * dt;
 
+                        const moveLen = Math.hypot(moveX, moveZ) || 1;
                         this.playerGroup.position.x = THREE.MathUtils.clamp(
                             this.playerGroup.position.x + (moveX / moveLen) * moveSpeed, -76, 76
                         );
@@ -1195,7 +1254,7 @@
                         );
                     }
 
-                    // SCHIESSEN NUR WENN LEERTASTE ODER TOUCH-FEUER AKTIV IST (IN BLICKRICHTUNG)
+                    // SCHIESSEN NUR WENN LEERTASTE ODER TOUCH-FEUER AKTIV IST
                     if (!isShopOpen && (this.keys['Space'] || this.isTouchFiring)) {
                         this.tryShoot();
                     }
@@ -1415,8 +1474,11 @@
                 this.container.appendChild(this.renderer.domElement);
 
                 const aspect = window.innerWidth / window.innerHeight;
-                this.camera = new THREE.PerspectiveCamera(55, aspect, 0.1, 1000);
-                this.cameraOffset = new THREE.Vector3(0, 20, 36);
+                const isMobile = window.innerWidth < 768;
+                this.camera = new THREE.PerspectiveCamera(isMobile ? 50 : 55, aspect, 0.1, 1000);
+                
+                // Closer camera perspective for mobile screens
+                this.cameraOffset = isMobile ? new THREE.Vector3(0, 15, 25) : new THREE.Vector3(0, 20, 36);
 
                 const ambientLight = new THREE.AmbientLight(0x384152, 1.2);
                 this.scene.add(ambientLight);
@@ -1782,64 +1844,129 @@
             });
 
             const turretsContainer = document.getElementById('shop-turrets-container');
-            turretsContainer.innerHTML = '';
-
-            Object.values(TURRET_TYPES).forEach(t => {
-                const card = document.createElement('div');
-                card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
-                card.innerHTML = `
-                    <div>
-                        <div class="font-bold text-white text-sm"><i class="fa-solid fa-tower-observation text-sky-400 mr-1.5"></i> ${t.name}</div>
-                        <div class="text-xs text-slate-400 mt-0.5">${t.desc}</div>
-                        <div class="text-[11px] text-slate-500 font-mono mt-1">Dmg: ${t.damage} | Reichweite: ${t.range}m</div>
-                    </div>
-                    <button onclick="buyTurretSpec('${t.id}')" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold shadow-lg">$${t.cost}</button>
-                `;
-                turretsContainer.appendChild(card);
-            });
+            if (turretsContainer) {
+                turretsContainer.innerHTML = '';
+                Object.values(TURRET_TYPES).forEach(t => {
+                    const card = document.createElement('div');
+                    card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
+                    card.innerHTML = `
+                        <div>
+                            <div class="font-bold text-white text-sm">${t.name}</div>
+                            <div class="text-xs text-slate-400 mt-1">${t.desc}</div>
+                            <div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m</div>
+                        </div>
+                        <button onclick="buyTurretSpec('${t.id}')" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold">$${t.cost}</button>
+                    `;
+                    turretsContainer.appendChild(card);
+                });
+            }
 
             const upgradesContainer = document.getElementById('shop-upgrades-container');
-            upgradesContainer.innerHTML = `
-                <div class="p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center col-span-1 sm:col-span-2">
+            if (upgradesContainer) {
+                upgradesContainer.innerHTML = '';
+
+                // Base repair option
+                const repairCard = document.createElement('div');
+                repairCard.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
+                repairCard.innerHTML = `
                     <div>
-                        <div class="font-bold text-white text-sm"><i class="fa-solid fa-screwdriver-wrench text-sky-400 mr-1.5"></i> Basis Sofort-Reparatur (+250 HP)</div>
-                        <div class="text-xs text-slate-400">Repariert Beschädigungen der Basis nach Zombie-Angriffen</div>
+                        <div class="font-bold text-sky-400 text-sm"><i class="fa-solid fa-wrench mr-1"></i> Basis Reparieren (+250 HP)</div>
+                        <div class="text-xs text-slate-400 mt-1">Stellt Basis-Gesundheit wieder her</div>
                     </div>
                     <button onclick="repairBase()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold">$120</button>
-                </div>
-            `;
-
-            Object.entries(UPGRADES).forEach(([key, upg]) => {
-                const currentLvl = gameInstance.upgrades[key] || 0;
-                const isMax = currentLvl >= upg.maxLevel;
-                const cost = Math.round(upg.costBase * Math.pow(1.6, currentLvl));
-
-                const card = document.createElement('div');
-                card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
-                card.innerHTML = `
-                    <div>
-                        <div class="font-bold text-white text-sm flex items-center space-x-2">
-                            <span>${upg.name}</span>
-                            <span class="text-xs text-amber-400 font-mono">(${currentLvl}/${upg.maxLevel})</span>
-                        </div>
-                        <div class="text-xs text-slate-400 mt-0.5">${upg.desc}</div>
-                    </div>
-                    <div>
-                        ${isMax ? 
-                            `<span class="px-3 py-1.5 bg-emerald-950 text-emerald-400 border border-emerald-500/50 rounded-lg text-xs font-bold">MAX</span>` :
-                            `<button onclick="buyUpgrade('${key}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">$${cost}</button>`
-                        }
-                    </div>
                 `;
-                upgradesContainer.appendChild(card);
-            });
+                upgradesContainer.appendChild(repairCard);
+
+                // Heal player option
+                const healCard = document.createElement('div');
+                healCard.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
+                healCard.innerHTML = `
+                    <div>
+                        <div class="font-bold text-emerald-400 text-sm"><i class="fa-solid fa-kit-medical mr-1"></i> Medkit / Spieler Heilung</div>
+                        <div class="text-xs text-slate-400 mt-1">Stellt volle Spieler-Gesundheit her</div>
+                    </div>
+                    <button onclick="healPlayer()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">$80</button>
+                `;
+                upgradesContainer.appendChild(healCard);
+
+                // Upgrades catalog
+                Object.entries(UPGRADES).forEach(([key, upg]) => {
+                    const currentLvl = gameInstance.upgrades[key] || 0;
+                    const cost = Math.round(upg.costBase * Math.pow(1.6, currentLvl));
+                    const isMax = currentLvl >= upg.maxLevel;
+
+                    const card = document.createElement('div');
+                    card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
+                    card.innerHTML = `
+                        <div>
+                            <div class="font-bold text-white text-sm flex items-center space-x-2">
+                                <span>${upg.name}</span>
+                                <span class="bg-slate-800 text-amber-400 font-mono text-[10px] px-2 py-0.5 rounded-full">Lvl ${currentLvl}/${upg.maxLevel}</span>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-1">${upg.desc}</div>
+                        </div>
+                        <button onclick="buyUpgrade('${key}')" ${isMax ? 'disabled' : ''} class="px-4 py-2 ${isMax ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white'} rounded-lg text-xs font-bold">
+                            ${isMax ? 'MAX' : '$' + cost}
+                        </button>
+                    `;
+                    upgradesContainer.appendChild(card);
+                });
+            }
+        }
+
+        let isPauseModalOpen = false;
+
+        function togglePauseModal() {
+            if (!gameInstance || gameInstance.isGameOver) return;
+            isPauseModalOpen = !isPauseModalOpen;
+            gameInstance.isPaused = isPauseModalOpen || isShopOpen;
+
+            const modal = document.getElementById('pause-modal');
+            if (isPauseModalOpen) {
+                document.getElementById('pause-toggle-music').checked = Storage.data.musicEnabled;
+                document.getElementById('pause-toggle-sfx').checked = Storage.data.sfxEnabled;
+                updateTouchSwapUI();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function toggleTouchSwap() {
+            Storage.data.swapTouchControls = !Storage.data.swapTouchControls;
+            Storage.save();
+            updateTouchSwapUI();
+        }
+
+        function updateTouchSwapUI() {
+            const isSwapped = Storage.data.swapTouchControls;
+            const label = document.getElementById('pause-touch-swap-label');
+            if (label) {
+                label.innerText = isSwapped ? "Joystick links / Feuer rechts" : "Joystick rechts / Feuer links";
+            }
+        }
+
+        function returnToMainMenu() {
+            if (isPauseModalOpen) togglePauseModal();
+            if (isShopOpen) toggleShop();
+
+            if (gameInstance) {
+                gameInstance.isRunning = false;
+                clearInterval(gameInstance.secondTimer);
+                clearInterval(gameInstance.spawnTimer);
+                clearInterval(gameInstance.turretTimer);
+            }
+            audio.stopMusic();
+
+            document.getElementById('game-hud').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('opacity-0', 'pointer-events-none');
         }
 
         function toggleShop() {
             isShopOpen = !isShopOpen;
             const shopModal = document.getElementById('shop-modal');
             if (gameInstance) {
-                gameInstance.isPaused = isShopOpen;
+                gameInstance.isPaused = isShopOpen || isPauseModalOpen;
             }
             if (isShopOpen) {
                 renderShopCatalog();
