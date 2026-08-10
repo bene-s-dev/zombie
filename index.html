@@ -109,14 +109,18 @@
         </div>
 
         <!-- ================= PLACEMENT / BUILD MODE OVERLAY ================= -->
-        <div id="placement-hud" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-slate-950/90 border border-amber-500/60 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl flex items-center space-x-4 pointer-events-auto animate-pulse">
-            <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-hammer text-amber-400 text-lg"></i>
-                <span class="font-teko text-xl font-bold text-amber-400 tracking-wider">BAUMODUS: <span id="placement-item-name" class="text-white">TURM</span></span>
+        <div id="placement-hud" class="hidden absolute top-3 left-1/2 transform -translate-x-1/2 z-50 bg-slate-950/90 border border-amber-500/60 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-2xl flex items-center space-x-2 pointer-events-auto text-xs">
+            <div class="flex items-center space-x-1">
+                <i class="fa-solid fa-hammer text-amber-400"></i>
+                <span class="font-teko text-base font-bold text-amber-400 tracking-wider">BAU: <span id="placement-item-name" class="text-white">TURM</span></span>
             </div>
-            <span class="text-xs text-slate-300 hidden sm:inline">Klicke / Tippe auf die Karte zum Platzieren</span>
-            <button onclick="cancelPlacement()" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition">
-                <i class="fa-solid fa-xmark mr-1"></i>Abbrechen
+            <button onclick="rotatePlacement()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-[11px] transition flex items-center space-x-1">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Drehen</span>
+            </button>
+            <button onclick="cancelPlacement()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-[11px] transition flex items-center space-x-1">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Abbrechen</span>
             </button>
         </div>
 
@@ -625,9 +629,9 @@
         };
 
         const WALL_TYPES = {
-            sandbag: { id: 'sandbag', name: 'Sandsack-Barrikade', cost: 45, hp: 250, radius: 1.2, desc: 'Günstige Barrikade. Stoppt normale Zombies & Schüsse.' },
-            concrete: { id: 'concrete', name: 'Beton-Schutzwall', cost: 95, hp: 650, radius: 1.4, desc: 'Schwerer Schutzwall mit sehr hoher Widerstandskraft.' },
-            laser_wall: { id: 'laser_wall', name: 'Plasma-Barriere', cost: 180, hp: 1200, radius: 1.5, desc: 'High-Tech Kraftfeld. Nur Endbosse können sie beschädigen!' }
+            sandbag: { id: 'sandbag', name: 'Sandsack-Barrikade', cost: 45, hp: 250, radius: 1.8, desc: 'Günstige Barrikade. Stoppt normale Zombies & Schüsse.' },
+            concrete: { id: 'concrete', name: 'Beton-Schutzwall', cost: 95, hp: 650, radius: 2.1, desc: 'Schwerer Schutzwall mit sehr hoher Widerstandskraft.' },
+            laser_wall: { id: 'laser_wall', name: 'Plasma-Barriere', cost: 180, hp: 1200, radius: 2.25, desc: 'High-Tech Kraftfeld. Nur Endbosse können sie beschädigen!' }
         };
 
         const UPGRADES = {
@@ -761,6 +765,9 @@
                 window.addEventListener('keydown', (e) => {
                     this.keys[e.code] = true;
                     if (e.code === 'Space') e.preventDefault();
+                    if (e.code === 'KeyR' && this.isPlacementMode) {
+                        rotatePlacement();
+                    }
                     if (e.code === 'KeyB') {
                         if (this.isPlacementMode) cancelPlacement();
                         else toggleShop();
@@ -794,6 +801,10 @@
                     if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal, #inspect-modal')) return;
 
                     if (this.isPlacementMode) {
+                        if (this.placementJustStarted) {
+                            this.placementJustStarted = false;
+                            return;
+                        }
                         this.confirmPlacement();
                         return;
                     }
@@ -818,8 +829,22 @@
                 window.addEventListener('pointermove', onPointerMove);
                 window.addEventListener('click', onPointerClick);
 
-                // Touch Handlers
                 const onTouchStart = (e) => {
+                    if (this.isPlacementMode) {
+                        const touch = e.touches[0] || e.changedTouches[0];
+                        if (touch) {
+                            this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                            this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                            this.raycaster.setFromCamera(this.mousePos, this.camera);
+                            const intersects = new THREE.Vector3();
+                            if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                                this.pointerWorldPos.copy(intersects);
+                                if (this.ghostMesh) {
+                                    this.updateGhostPosition(intersects.x, intersects.z);
+                                }
+                            }
+                        }
+                    }
                     if (this.isPaused || this.isGameOver) return;
                     for (let i = 0; i < e.changedTouches.length; i++) {
                         const touch = e.changedTouches[i];
@@ -861,6 +886,21 @@
                 };
 
                 const onTouchMove = (e) => {
+                    if (this.isPlacementMode) {
+                        const touch = e.touches[0] || e.changedTouches[0];
+                        if (touch) {
+                            this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                            this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                            this.raycaster.setFromCamera(this.mousePos, this.camera);
+                            const intersects = new THREE.Vector3();
+                            if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                                this.pointerWorldPos.copy(intersects);
+                                if (this.ghostMesh) {
+                                    this.updateGhostPosition(intersects.x, intersects.z);
+                                }
+                            }
+                        }
+                    }
                     if (this.isPaused || this.isGameOver) return;
                     for (let i = 0; i < e.changedTouches.length; i++) {
                         const touch = e.changedTouches[i];
@@ -1155,29 +1195,61 @@
                 if (!spec || this.money < spec.cost) return;
 
                 this.isPlacementMode = true;
+                this.isPaused = true; // Spiel im Baumodus strikt pausieren
+                this.placementJustStarted = true;
+                this.placementRotation = 0;
+                setTimeout(() => { this.placementJustStarted = false; }, 250);
+
                 this.pendingPlacement = { kind, specId, cost: spec.cost, spec };
-                this.isPaused = true;
 
                 if (this.ghostMesh) this.scene.remove(this.ghostMesh);
 
                 this.ghostMesh = new THREE.Group();
-                const radius = spec.radius || 1.2;
+                const materials = [];
 
-                const ringGeo = new THREE.RingGeometry(radius * 0.8, radius, 32);
-                ringGeo.rotateX(-Math.PI / 2);
-                const ringMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
-                const ring = new THREE.Mesh(ringGeo, ringMat);
-                ring.position.y = 0.1;
-                this.ghostMesh.add(ring);
+                if (kind === 'turret') {
+                    const radius = spec.radius || 1.2;
+                    const ringGeo = new THREE.RingGeometry(radius * 0.8, radius, 32);
+                    ringGeo.rotateX(-Math.PI / 2);
+                    const ringMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.position.y = 0.05;
+                    this.ghostMesh.add(ring);
 
-                const bodyGeo = new THREE.CylinderGeometry(radius * 0.8, radius * 0.8, 1.5, 12);
-                const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.6 });
-                const body = new THREE.Mesh(bodyGeo, bodyMat);
-                body.position.y = 0.75;
-                this.ghostMesh.add(body);
+                    const bodyGeo = new THREE.CylinderGeometry(1.1, 1.4, 1.2, 8);
+                    const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.5 });
+                    const body = new THREE.Mesh(bodyGeo, bodyMat);
+                    body.position.y = 0.6;
+                    this.ghostMesh.add(body);
 
-                this.ghostMesh.userData = { ringMat, bodyMat, isValid: true, radius };
+                    materials.push(ringMat, bodyMat);
+                    this.ghostMesh.userData = { materials, isValid: true, radius, kind: 'turret' };
+                } else {
+                    let wWidth = 3.6, wHeight = 1.8, wDepth = 1.0;
+                    if (spec.id === 'concrete') { wWidth = 4.2; wHeight = 2.2; wDepth = 1.2; }
+                    if (spec.id === 'laser_wall') { wWidth = 4.5; wHeight = 2.5; wDepth = 0.8; }
+
+                    const boxGeo = new THREE.BoxGeometry(wWidth, wHeight, wDepth);
+                    const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.6 });
+                    const body = new THREE.Mesh(boxGeo, bodyMat);
+                    body.position.y = wHeight / 2;
+                    this.ghostMesh.add(body);
+
+                    const outlineMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.3 });
+                    const basePlate = new THREE.Mesh(new THREE.PlaneGeometry(wWidth + 0.4, wDepth + 0.4), outlineMat);
+                    basePlate.rotation.x = -Math.PI / 2;
+                    basePlate.position.y = 0.05;
+                    this.ghostMesh.add(basePlate);
+
+                    materials.push(bodyMat, outlineMat);
+                    this.ghostMesh.userData = { materials, isValid: true, radius: spec.radius || (wWidth / 2), kind: 'wall' };
+                }
+
                 this.scene.add(this.ghostMesh);
+
+                if (this.pointerWorldPos) {
+                    this.updateGhostPosition(this.pointerWorldPos.x, this.pointerWorldPos.z);
+                }
 
                 document.getElementById('placement-item-name').innerText = spec.name;
                 document.getElementById('placement-hud').classList.remove('hidden');
@@ -1188,6 +1260,7 @@
                 if (!this.ghostMesh) return;
 
                 this.ghostMesh.position.set(x, 0, z);
+                this.ghostMesh.rotation.y = this.placementRotation || 0;
 
                 let isValid = true;
                 const distToBase = Math.hypot(x, z);
@@ -1195,18 +1268,24 @@
                     isValid = false;
                 }
 
-                const r = this.ghostMesh.userData.radius;
+                const r = this.ghostMesh.userData.radius || 1.5;
+                const isBuildingWall = (this.ghostMesh.userData.kind === 'wall');
+
                 this.turrets.forEach(t => {
                     if (Math.hypot(t.position.x - x, t.position.z - z) < r + 1.2) isValid = false;
                 });
                 this.walls.forEach(w => {
-                    if (Math.hypot(w.position.x - x, w.position.z - z) < r + w.userData.radius) isValid = false;
+                    // Mauern dürfen ineinander gebaut werden, um Lücken nahtlos zu schließen
+                    if (!isBuildingWall) {
+                        if (Math.hypot(w.position.x - x, w.position.z - z) < r + w.userData.radius) isValid = false;
+                    }
                 });
 
                 this.ghostMesh.userData.isValid = isValid;
                 const colorHex = isValid ? 0x22c55e : 0xef4444;
-                this.ghostMesh.userData.ringMat.color.setHex(colorHex);
-                this.ghostMesh.userData.bodyMat.color.setHex(colorHex);
+                if (this.ghostMesh.userData.materials) {
+                    this.ghostMesh.userData.materials.forEach(m => m.color.setHex(colorHex));
+                }
             }
 
             confirmPlacement() {
@@ -1220,15 +1299,22 @@
 
                 const x = this.ghostMesh.position.x;
                 const z = this.ghostMesh.position.z;
+                const rot = this.ghostMesh.rotation.y;
 
                 if (kind === 'turret') {
-                    this.buildTurretAt(specId, x, z);
+                    this.buildTurretAt(specId, x, z, rot);
                 } else {
-                    this.buildWallAt(specId, x, z);
+                    this.buildWallAt(specId, x, z, rot);
                 }
 
-                this.cancelPlacement();
                 this.syncHUD();
+
+                // Bleibe im Baumodus für fortlaufendes Bauen, falls noch genug Geld vorhanden ist
+                if (this.money >= cost) {
+                    this.updateGhostPosition(x, z);
+                } else {
+                    this.cancelPlacement();
+                }
             }
 
             cancelPlacement() {
@@ -1242,11 +1328,12 @@
                 this.isPaused = false;
             }
 
-            buildTurretAt(turretTypeId, x, z) {
+            buildTurretAt(turretTypeId, x, z, rot = 0) {
                 const spec = TURRET_TYPES[turretTypeId];
 
                 const turretGroup = new THREE.Group();
                 turretGroup.position.set(x, 0, z);
+                turretGroup.rotation.y = rot;
 
                 const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
                 const baseMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 1.2, 8), baseMat);
@@ -1310,21 +1397,22 @@
                 this.scene.add(turretGroup);
             }
 
-            buildWallAt(wallTypeId, x, z) {
+            buildWallAt(wallTypeId, x, z, rot = 0) {
                 const spec = WALL_TYPES[wallTypeId];
 
                 const wallGroup = new THREE.Group();
                 wallGroup.position.set(x, 0, z);
+                wallGroup.rotation.y = rot;
 
                 let wallMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
-                let wallGeo = new THREE.BoxGeometry(2.4, 1.8, 1.0);
+                let wallGeo = new THREE.BoxGeometry(3.6, 1.8, 1.0);
 
                 if (spec.id === 'concrete') {
                     wallMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.5 });
-                    wallGeo = new THREE.BoxGeometry(2.8, 2.2, 1.2);
+                    wallGeo = new THREE.BoxGeometry(4.2, 2.2, 1.2);
                 } else if (spec.id === 'laser_wall') {
                     wallMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.2, metalness: 0.9 });
-                    wallGeo = new THREE.BoxGeometry(3.0, 2.5, 0.8);
+                    wallGeo = new THREE.BoxGeometry(4.5, 2.5, 0.8);
                 }
 
                 const wallMesh = new THREE.Mesh(wallGeo, wallMat);
@@ -1335,7 +1423,7 @@
 
                 if (spec.id === 'laser_wall') {
                     const glowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-                    const glowBar = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.2, 0.9), glowMat);
+                    const glowBar = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.2, 0.9), glowMat);
                     glowBar.position.y = 2.4;
                     wallGroup.add(glowBar);
                 }
@@ -2273,6 +2361,15 @@
         function startBuildPlacement(kind, specId) {
             if (!gameInstance) return;
             gameInstance.startPlacementMode(kind, specId);
+        }
+
+        function rotatePlacement() {
+            if (!gameInstance || !gameInstance.isPlacementMode || !gameInstance.ghostMesh) return;
+            gameInstance.placementRotation = ((gameInstance.placementRotation || 0) + Math.PI / 4) % (Math.PI * 2);
+            gameInstance.ghostMesh.rotation.y = gameInstance.placementRotation;
+            if (gameInstance.pointerWorldPos) {
+                gameInstance.updateGhostPosition(gameInstance.ghostMesh.position.x, gameInstance.ghostMesh.position.z);
+            }
         }
 
         function cancelPlacement() {
