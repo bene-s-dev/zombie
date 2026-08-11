@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Zombie Siege 3D: Base Defense</title>
+    <title>Taskforce: Undead</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -168,7 +168,7 @@
                     <div class="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center">
                         <i class="fa-solid fa-biohazard text-red-500 text-xl animate-pulse"></i>
                     </div>
-                    <span class="font-teko text-2xl font-bold tracking-wider text-slate-200">ZOMBIE SIEGE 3D</span>
+                    <span class="font-teko text-2xl font-bold tracking-wider text-slate-200">Taskforce: Undead</span>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl flex items-center space-x-2 text-xs font-bold">
                     <i class="fa-solid fa-trophy text-amber-400"></i>
@@ -180,10 +180,10 @@
             <div class="max-w-xl mx-auto text-center my-auto space-y-6">
                 <div>
                     <h1 class="font-teko text-6xl sm:text-8xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 uppercase leading-none drop-shadow-lg">
-                        ZOMBIE SIEGE 3D
+                        Taskforce: Undead
                     </h1>
                     <p class="text-slate-400 text-sm sm:text-base mt-2">
-                        Erlebe die Zombie-Invasion in isometrischer 3D-Schrägansicht. Verteidige deine Festung, baue automatische Geschütze und schalte mächtige Waffen frei!
+                    Verteidige deine Festung, baue automatische Geschütze und schalte mächtige Waffen frei!
                     </p>
                 </div>
 
@@ -191,7 +191,7 @@
                 <div class="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl text-left space-y-4 shadow-2xl">
                     <h3 class="text-slate-300 text-xs font-bold uppercase tracking-wider border-b border-slate-800 pb-2 flex items-center justify-between">
                         <span><i class="fa-solid fa-sliders text-red-500 mr-2"></i> Spiel-Einstellungen</span>
-                        <span id="profile-name" class="text-slate-500 font-normal">Profil: Überlebender</span>
+                       
                     </h3>
 
                     <!-- Difficulty -->
@@ -220,7 +220,7 @@
                 <!-- Start Button -->
                 <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-teko text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 hover:scale-[1.02] active:scale-[0.98] transition transform flex items-center justify-center space-x-3">
                     <i class="fa-solid fa-play"></i>
-                    <span>3D SPIEL STARTEN (VOLLBILD)</span>
+                    <span>Start</span>
                 </button>
             </div>
 
@@ -261,14 +261,16 @@
                     </div>
                 </div>
 
-                <!-- Wave Counter & Timer -->
-                <div class="text-center bg-slate-950/85 border border-slate-800 px-2 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg pointer-events-auto min-w-[100px] sm:min-w-[150px]">
-                    <div id="hud-wave-title" class="text-[9px] sm:text-[11px] font-bold text-red-400 uppercase tracking-wider flex items-center justify-center space-x-1">
+                <!-- Wave Counter & Timer (Transparent horizontal row at top edge) -->
+                <div id="hud-wave-container" class="flex flex-row items-center justify-center space-x-1.5 sm:space-x-3 pointer-events-auto py-0.5 text-center drop-shadow-md">
+                    <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1">
                         <i class="fa-solid fa-skull"></i>
                         <span>WELLE 1</span>
                     </div>
-                    <div id="hud-zombies-left" class="font-teko text-base sm:text-2xl font-bold text-white leading-none">0 ZOMBIES</div>
-                    <div id="hud-timer" class="text-[8px] sm:text-[10px] text-slate-400 font-mono">Zeit: 00:00</div>
+                    <span class="text-slate-600 text-xs font-bold">|</span>
+                    <div id="hud-zombies-left" class="font-teko text-sm sm:text-xl font-bold text-white leading-none">0 ZOMBIES</div>
+                    <span class="text-slate-600 text-xs font-bold">|</span>
+                    <div id="hud-timer" class="text-[10px] sm:text-xs text-slate-300 font-mono">Zeit: 00:00</div>
                 </div>
 
                 <!-- Currency, Shop & Pause Buttons -->
@@ -351,7 +353,7 @@
                 <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
                     <div class="flex items-center space-x-3">
                         <i class="fa-solid fa-cart-shopping text-red-500 text-2xl"></i>
-                        <h2 class="font-teko text-3xl font-bold text-white tracking-wider uppercase">Waffenschmiede & Basis-Upgrades</h2>
+                        <h2 class="font-teko text-3xl font-bold text-white tracking-wider uppercase">Laden</h2>
                         <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-bold uppercase animate-pulse ml-2"><i class="fa-solid fa-pause mr-1"></i> Spiel Pausiert</span>
                     </div>
                     <div class="flex items-center space-x-4">
@@ -363,13 +365,13 @@
                 <!-- Shop Navigation Tabs -->
                 <div class="flex space-x-2 border-b border-slate-800 pb-3 mb-4 overflow-x-auto">
                     <button onclick="switchShopTab('weapons')" id="tab-btn-weapons" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-red-600 text-white flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-gun"></i><span>Waffen & Tuning</span>
+                        <i class="fa-solid fa-gun"></i><span>Waffen</span>
                     </button>
                     <button onclick="switchShopTab('turrets')" id="tab-btn-turrets" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
                         <i class="fa-solid fa-tower-observation"></i><span>Geschütztürme</span>
                     </button>
                     <button onclick="switchShopTab('walls')" id="tab-btn-walls" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-cubes-stacked"></i><span>Barrieren & Mauern</span>
+                        <i class="fa-solid fa-cubes-stacked"></i><span>Mauern</span>
                     </button>
                     <button onclick="switchShopTab('upgrades')" id="tab-btn-upgrades" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
                         <i class="fa-solid fa-shield-halved"></i><span>Spieler & Basis</span>
@@ -398,7 +400,7 @@
 
                     <!-- Tab 4: Upgrades -->
                     <div id="shop-tab-upgrades" class="shop-tab-content hidden">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Permanent Upgrades & Reparatur</h3>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Upgrades & Reparatur</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-upgrades-container"></div>
                     </div>
                 </div>
@@ -412,17 +414,17 @@
         </div>
 
         <!-- ================= GAME OVER / VICTORY OVERLAY ================= -->
-        <div id="game-over-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-lg">
-            <div class="bg-slate-900 border border-red-900/50 w-full max-w-md rounded-3xl p-8 text-center space-y-6 shadow-2xl">
-                <div class="w-16 h-16 bg-red-950/80 border border-red-600/50 rounded-full flex items-center justify-center mx-auto">
-                    <i class="fa-solid fa-skull text-3xl text-red-500 animate-bounce"></i>
+        <div id="game-over-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-lg overflow-y-auto">
+            <div class="bg-slate-900 border border-red-900/50 w-full max-w-xs sm:max-w-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center space-y-3 sm:space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-red-950/80 border border-red-600/50 rounded-full flex items-center justify-center mx-auto">
+                    <i class="fa-solid fa-skull text-2xl sm:text-3xl text-red-500 animate-bounce"></i>
                 </div>
                 <div>
-                    <h2 class="font-teko text-5xl font-bold text-red-500 tracking-wider">BASIS ZERSTÖRT</h2>
-                    <p class="text-slate-400 text-sm mt-1">Die Untoten haben die 3D-Verteidigung überrannt.</p>
+                    <h2 id="go-title" class="font-teko text-3xl sm:text-5xl font-bold text-red-500 tracking-wider leading-none">BASIS ZERSTÖRT</h2>
+                    <p id="go-desc" class="text-slate-400 text-xs sm:text-sm mt-1">Die Untoten haben die Stellung überrannt.</p>
                 </div>
 
-                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-sm">
+                <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                     <div class="flex justify-between text-slate-400">
                         <span>Überlebte Zeit:</span>
                         <strong id="go-time" class="text-white font-mono">00:00</strong>
@@ -437,7 +439,7 @@
                     </div>
                 </div>
 
-                <button onclick="restartGame()" class="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-teko text-2xl font-bold rounded-xl transition shadow-lg shadow-red-950/50">
+                <button onclick="restartGame()" class="w-full py-2.5 sm:py-3.5 bg-red-600 hover:bg-red-500 text-white font-teko text-xl sm:text-2xl font-bold rounded-xl transition shadow-lg shadow-red-950/50">
                     ERNEUT VERSUCHEN
                 </button>
             </div>
@@ -468,6 +470,30 @@
                 } catch(e) { console.error("Could not save profile", e); }
             }
         };
+
+        // Shared Geometries for zero Garbage Collection during combat
+        const SHARED_BULLET_GEO = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 6);
+        SHARED_BULLET_GEO.rotateX(Math.PI / 2);
+
+        const SHARED_PARTICLE_GEO = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+
+        function checkWallCollision(px, pz, entityRadius, wall) {
+            const wWidth = wall.userData.wWidth || 3.6;
+            const wDepth = wall.userData.wDepth || 1.0;
+            const rot = wall.rotation.y;
+
+            const dx = px - wall.position.x;
+            const dz = pz - wall.position.z;
+
+            // Rotate into wall local space
+            const localX = dx * Math.cos(-rot) - dz * Math.sin(-rot);
+            const localZ = dx * Math.sin(-rot) + dz * Math.cos(-rot);
+
+            const hw = wWidth / 2 + entityRadius;
+            const hd = wDepth / 2 + entityRadius;
+
+            return Math.abs(localX) < hw && Math.abs(localZ) < hd;
+        }
 
         class SoundEngine {
             constructor() {
@@ -698,6 +724,7 @@
                 this.isPaused = false;
                 this.isGameOver = false;
                 this.isWaveTransitioning = false;
+                this.lastFrameTime = performance.now();
 
                 // Build & Placement mode state
                 this.isPlacementMode = false;
@@ -1406,13 +1433,16 @@
 
                 let wallMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
                 let wallGeo = new THREE.BoxGeometry(3.6, 1.8, 1.0);
+                let wWidth = 3.6, wDepth = 1.0;
 
                 if (spec.id === 'concrete') {
                     wallMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.5 });
                     wallGeo = new THREE.BoxGeometry(4.2, 2.2, 1.2);
+                    wWidth = 4.2; wDepth = 1.2;
                 } else if (spec.id === 'laser_wall') {
                     wallMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.2, metalness: 0.9 });
                     wallGeo = new THREE.BoxGeometry(4.5, 2.5, 0.8);
+                    wWidth = 4.5; wDepth = 0.8;
                 }
 
                 const wallMesh = new THREE.Mesh(wallGeo, wallMat);
@@ -1435,6 +1465,8 @@
                     hp: spec.hp,
                     maxHp: spec.hp,
                     radius: spec.radius,
+                    wWidth: wWidth,
+                    wDepth: wDepth,
                     totalInvested: spec.cost
                 };
 
@@ -1605,12 +1637,14 @@
                 if (!this.isRunning) return;
                 requestAnimationFrame(() => this.animate());
 
+                const now = performance.now();
+                const dt = Math.min((now - (this.lastFrameTime || now)) / 1000, 0.1);
+                this.lastFrameTime = now;
+
                 if (this.isPaused) {
                     this.renderer.render(this.scene, this.camera);
                     return;
                 }
-
-                const dt = 0.016;
 
                 if (!this.isGameOver) {
                     let moveX = 0, moveZ = 0;
@@ -1629,27 +1663,40 @@
                         const targetAngle = Math.atan2(moveX, moveZ);
                         let diff = targetAngle - this.playerGroup.rotation.y;
                         diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                        this.playerGroup.rotation.y += diff * 14.0 * dt;
+                        this.playerGroup.rotation.y += diff * 12.0 * dt;
 
-                        const speedUpgradeBonus = 1 + (this.upgrades.player_speed * 0.12);
-                        const inputMagnitude = this.touchJoystick.active ? Math.min(1.0, Math.hypot(moveX, moveZ)) : 1.0;
-                        const baseSpeed = this.touchJoystick.active ? 11.5 : 15.0;
-                        const moveSpeed = (baseSpeed * speedUpgradeBonus * inputMagnitude) * dt;
+                        const speedUpgradeBonus = 1 + (this.upgrades.player_speed * 0.08);
+                        const rawMag = Math.hypot(moveX, moveZ);
 
-                        const moveLen = Math.hypot(moveX, moveZ) || 1;
-                        const nextX = THREE.MathUtils.clamp(this.playerGroup.position.x + (moveX / moveLen) * moveSpeed, -76, 76);
-                        const nextZ = THREE.MathUtils.clamp(this.playerGroup.position.z + (moveZ / moveLen) * moveSpeed, -76, 76);
-
-                        let blockedByWall = false;
-                        for (let w of this.walls) {
-                            if (Math.hypot(nextX - w.position.x, nextZ - w.position.z) < w.userData.radius + 0.6) {
-                                blockedByWall = true;
-                                break;
+                        let inputMagnitude = 1.0;
+                        if (this.touchJoystick.active) {
+                            const deadzone = 0.15;
+                            if (rawMag < deadzone) {
+                                inputMagnitude = 0;
+                            } else {
+                                inputMagnitude = Math.min(1.0, (rawMag - deadzone) / (1.0 - deadzone));
                             }
                         }
-                        if (!blockedByWall) {
-                            this.playerGroup.position.x = nextX;
-                            this.playerGroup.position.z = nextZ;
+
+                        if (inputMagnitude > 0) {
+                            const baseSpeed = 9.0;
+                            const moveSpeed = (baseSpeed * speedUpgradeBonus * inputMagnitude) * dt;
+
+                            const moveLen = rawMag || 1;
+                            const nextX = THREE.MathUtils.clamp(this.playerGroup.position.x + (moveX / moveLen) * moveSpeed, -76, 76);
+                            const nextZ = THREE.MathUtils.clamp(this.playerGroup.position.z + (moveZ / moveLen) * moveSpeed, -76, 76);
+
+                            let blockedByWall = false;
+                            for (let w of this.walls) {
+                                if (checkWallCollision(nextX, nextZ, 0.45, w)) {
+                                    blockedByWall = true;
+                                    break;
+                                }
+                            }
+                            if (!blockedByWall) {
+                                this.playerGroup.position.x = nextX;
+                                this.playerGroup.position.z = nextZ;
+                            }
                         }
                     }
 
@@ -1717,30 +1764,41 @@
                         const distToPlayer = z.position.distanceTo(this.playerGroup.position);
                         const target = distToPlayer < 18 ? this.playerGroup.position : basePos;
 
-                        const angle = Math.atan2(target.x - z.position.x, target.z - z.position.z);
-                        z.rotation.y = angle;
+                        const directAngle = Math.atan2(target.x - z.position.x, target.z - z.position.z);
+                        const stepSize = z.userData.speed * (dt * 60);
+                        const zRadius = 0.4 * z.userData.scale;
 
-                        const nextX = z.position.x + Math.sin(angle) * z.userData.speed;
-                        const nextZ = z.position.z + Math.cos(angle) * z.userData.speed;
+                        let chosenAngle = null;
+                        let hitWallTarget = null;
 
-                        let hitWall = null;
-                        for (let w of this.walls) {
-                            const minDist = w.userData.radius + (0.55 * z.userData.scale);
-                            if (Math.hypot(nextX - w.position.x, nextZ - w.position.z) < minDist) {
-                                hitWall = w;
+                        // Probe direct path and side angles to navigate around walls
+                        const angleOffsets = [0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5, 2.0, -2.0];
+
+                        for (let offset of angleOffsets) {
+                            const testAngle = directAngle + offset;
+                            const testX = z.position.x + Math.sin(testAngle) * stepSize;
+                            const testZ = z.position.z + Math.cos(testAngle) * stepSize;
+
+                            let blocked = false;
+                            for (let w of this.walls) {
+                                if (checkWallCollision(testX, testZ, zRadius, w)) {
+                                    blocked = true;
+                                    if (offset === 0) hitWallTarget = w;
+                                    break;
+                                }
+                            }
+
+                            if (!blocked) {
+                                chosenAngle = testAngle;
                                 break;
                             }
                         }
 
-                        if (hitWall) {
-                            if (z.userData.type === 'boss') {
-                                hitWall.userData.hp -= (60 * z.userData.dmgMult) * dt;
-                                this.createBloodSparks(hitWall.position, 0xeab308);
-                                if (hitWall.userData.hp <= 0) {
-                                    this.destroyWall(hitWall);
-                                }
-                            }
-                        } else {
+                        if (chosenAngle !== null) {
+                            z.rotation.y = chosenAngle;
+                            const nextX = z.position.x + Math.sin(chosenAngle) * stepSize;
+                            const nextZ = z.position.z + Math.cos(chosenAngle) * stepSize;
+
                             const distToBaseNext = Math.hypot(nextX - basePos.x, nextZ - basePos.z);
                             if (distToBaseNext < BASE_RADIUS) {
                                 const dirX = (nextX - basePos.x) / (distToBaseNext || 1);
@@ -1767,10 +1825,17 @@
                                 }
 
                                 this.syncHUD();
-                                if (this.baseHp <= 0) this.triggerGameOver();
+                                if (this.baseHp <= 0) this.triggerGameOver('base');
                             } else {
                                 z.position.x = nextX;
                                 z.position.z = nextZ;
+                            }
+                        } else if (hitWallTarget) {
+                            z.rotation.y = directAngle;
+                            hitWallTarget.userData.hp -= (35 * z.userData.dmgMult) * dt;
+                            this.createBloodSparks(hitWallTarget.position, 0xeab308);
+                            if (hitWallTarget.userData.hp <= 0) {
+                                this.destroyWall(hitWallTarget);
                             }
                         }
 
@@ -1781,7 +1846,7 @@
                             let pDmg = (0.3 * z.userData.dmgMult) * dt * 60;
                             this.playerHp = Math.max(0, this.playerHp - pDmg);
                             this.syncHUD();
-                            if (this.playerHp <= 0) this.triggerGameOver();
+                            if (this.playerHp <= 0) this.triggerGameOver('player');
                         }
                     });
 
@@ -1867,7 +1932,7 @@
                 }, 2200);
             }
 
-            triggerGameOver() {
+            triggerGameOver(reason = 'base') {
                 this.isGameOver = true;
                 this.isRunning = false;
                 clearInterval(this.secondTimer);
@@ -1876,6 +1941,17 @@
 
                 audio.stopMusic();
                 audio.playExplosion();
+
+                const titleEl = document.getElementById('go-title');
+                const descEl = document.getElementById('go-desc');
+
+                if (reason === 'player') {
+                    if (titleEl) titleEl.innerText = "SPIELER ELIMINIERT";
+                    if (descEl) descEl.innerText = "Du wurdest von den Untoten überwältigt.";
+                } else {
+                    if (titleEl) titleEl.innerText = "BASIS ZERSTÖRT";
+                    if (descEl) descEl.innerText = "Die Untoten haben die 3D-Verteidigung überrannt.";
+                }
 
                 const m = Math.floor(this.gameSeconds / 60).toString().padStart(2, '0');
                 const s = (this.gameSeconds % 60).toString().padStart(2, '0');
@@ -1890,31 +1966,38 @@
             initScene() {
                 this.scene = new THREE.Scene();
                 this.scene.background = new THREE.Color(0x020617);
-                this.scene.fog = new THREE.FogExp2(0x020617, 0.012);
+                this.scene.fog = new THREE.FogExp2(0x020617, 0.007);
 
-                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2.0);
+
+                this.renderer = new THREE.WebGLRenderer({ 
+                    antialias: true,
+                    precision: 'highp',
+                    powerPreference: 'high-performance'
+                });
+                this.renderer.setPixelRatio(dpr);
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.shadowMap.enabled = true;
                 this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 this.container.appendChild(this.renderer.domElement);
 
                 const aspect = window.innerWidth / window.innerHeight;
-                const isMobile = window.innerWidth < 768;
                 this.camera = new THREE.PerspectiveCamera(isMobile ? 48 : 52, aspect, 0.1, 1000);
                 
                 this.cameraOffset = isMobile ? new THREE.Vector3(0, 8.5, 15.3) : new THREE.Vector3(0, 14, 25.2);
 
-                const ambientLight = new THREE.AmbientLight(0x384152, 1.2);
+                const ambientLight = new THREE.AmbientLight(0x475569, 1.4);
                 this.scene.add(ambientLight);
 
-                const dirLight = new THREE.DirectionalLight(0xffedd5, 1.5);
+                const dirLight = new THREE.DirectionalLight(0xffedd5, 1.6);
                 dirLight.position.set(30, 50, 20);
                 dirLight.castShadow = true;
-                dirLight.shadow.mapSize.width = 2048;
-                dirLight.shadow.mapSize.height = 2048;
+                dirLight.shadow.mapSize.width = 1024;
+                dirLight.shadow.mapSize.height = 1024;
                 dirLight.shadow.camera.near = 0.5;
                 dirLight.shadow.camera.far = 150;
-                const d = 40;
+                const d = 45;
                 dirLight.shadow.camera.left = -d;
                 dirLight.shadow.camera.right = d;
                 dirLight.shadow.camera.top = d;
@@ -1929,156 +2012,84 @@
                 const groundGeo = new THREE.PlaneGeometry(160, 160);
                 
                 const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 256;
+                canvas.width = 512;
+                canvas.height = 512;
                 const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#0a0f1d';
+                ctx.fillRect(0, 0, 512, 512);
                 ctx.strokeStyle = '#1e293b';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(0, 0, 256, 256);
+                ctx.lineWidth = 6;
+                ctx.strokeRect(0, 0, 512, 512);
 
-                const groundTexture = new THREE.CanvasTexture(canvas);
-                groundTexture.wrapS = THREE.RepeatWrapping;
-                groundTexture.wrapT = THREE.RepeatWrapping;
-                groundTexture.repeat.set(40, 40);
+                ctx.fillStyle = '#1e293b';
+                for(let x = 64; x < 512; x += 64) {
+                    for(let y = 64; y < 512; y += 64) {
+                        ctx.fillRect(x - 2, y - 2, 4, 4);
+                    }
+                }
 
-                const groundMat = new THREE.MeshStandardMaterial({
-                    map: groundTexture,
-                    roughness: 0.8,
-                    metalness: 0.2
-                });
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(20, 20);
+                texture.generateMipmaps = true;
+                texture.minFilter = THREE.LinearMipmapLinearFilter;
+                texture.magFilter = THREE.LinearFilter;
 
+                const groundMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.85, metalness: 0.1 });
                 const ground = new THREE.Mesh(groundGeo, groundMat);
                 ground.rotation.x = -Math.PI / 2;
                 ground.receiveShadow = true;
                 this.scene.add(ground);
-
-                const wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
-                const createWall = (x, z, w, d) => {
-                    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 4, d), wallMat);
-                    wall.position.set(x, 2, z);
-                    wall.castShadow = true;
-                    wall.receiveShadow = true;
-                    this.scene.add(wall);
-                };
-                createWall(0, -80, 160, 2);
-                createWall(0, 80, 160, 2);
-                createWall(-80, 0, 2, 160);
-                createWall(80, 0, 2, 160);
             }
 
             createBaseCore() {
                 this.baseGroup = new THREE.Group();
 
-                const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.6 });
-                const foundation = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 8.2, 1.4, 8), baseMat);
-                foundation.position.y = 0.7;
-                foundation.castShadow = true;
+                const fMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.7 });
+                const foundation = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 9.0, 0.6, 32), fMat);
+                foundation.position.y = 0.3;
                 foundation.receiveShadow = true;
+                foundation.castShadow = true;
                 this.baseGroup.add(foundation);
 
-                const hazardMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.5 });
-                const hazardRing = new THREE.Mesh(new THREE.TorusGeometry(8.0, 0.25, 6, 8), hazardMat);
-                hazardRing.rotation.x = Math.PI / 2;
-                hazardRing.position.y = 1.35;
-                this.baseGroup.add(hazardRing);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                const borderRing = new THREE.Mesh(new THREE.TorusGeometry(8.5, 0.12, 12, 64), ringMat);
+                borderRing.rotation.x = Math.PI / 2;
+                borderRing.position.y = 0.62;
+                this.baseGroup.add(borderRing);
 
-                const bunkerMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.8 });
-                const bunker = new THREE.Mesh(new THREE.BoxGeometry(5.2, 3.8, 5.2), bunkerMat);
-                bunker.position.y = 2.6;
+                const wallMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.3, metalness: 0.8 });
+                const baseWall = new THREE.Mesh(new THREE.CylinderGeometry(7.8, 8.2, 1.2, 32, 1, true), wallMat);
+                baseWall.position.y = 1.2;
+                this.baseGroup.add(baseWall);
+
+                const bunkerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.8 });
+                const bunker = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.5, 5.2), bunkerMat);
+                bunker.position.y = 1.85;
                 bunker.castShadow = true;
                 this.baseGroup.add(bunker);
 
-                const plateMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.2, metalness: 0.9 });
-                const frontPlate = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.2, 0.2), plateMat);
-                frontPlate.position.set(0, 2.6, 2.65);
-                this.baseGroup.add(frontPlate);
+                const crystalMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x0284c7, 
+                    emissive: 0x38bdf8, 
+                    emissiveIntensity: 0.8,
+                    wireframe: false,
+                    roughness: 0.1
+                });
+                this.baseCoreCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(1.2, 0), crystalMat);
+                this.baseCoreCrystal.position.set(0, 3.8, 0);
+                this.baseGroup.add(this.baseCoreCrystal);
 
-                const doorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5, metalness: 0.7 });
-                const door = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.2, 0.1), doorMat);
-                door.position.set(0, 2.2, 2.72);
-                this.baseGroup.add(door);
-
-                const coreMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-                const core = new THREE.Mesh(new THREE.OctahedronGeometry(1.2), coreMat);
-                core.position.y = 5.8;
-                this.baseCoreCrystal = core;
-                this.baseGroup.add(core);
-
-                const ringMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.9, roughness: 0.1 });
-                this.baseRing1 = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.12, 8, 24), ringMat);
-                this.baseRing1.position.y = 5.8;
-                this.baseGroup.add(this.baseRing1);
-
-                this.baseRing2 = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.12, 8, 24), ringMat);
-                this.baseRing2.position.y = 5.8;
-                this.baseRing2.rotation.x = Math.PI / 3;
-                this.baseGroup.add(this.baseRing2);
-
-                const coreLight = new THREE.PointLight(0x0284c7, 4, 18);
-                coreLight.position.y = 5.8;
-                this.baseGroup.add(coreLight);
-
-                const towerMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
-                const towerPole = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 3.0), towerMat);
-                towerPole.position.set(-2.0, 5.5, -2.0);
-                this.baseGroup.add(towerPole);
-
-                this.baseRadarDish = new THREE.Group();
-                this.baseRadarDish.position.set(-2.0, 7.0, -2.0);
-                const dishMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 0.2, 0.3, 12, 1, true), towerMat);
-                dishMesh.rotation.x = Math.PI / 4;
-                this.baseRadarDish.add(dishMesh);
-                this.baseGroup.add(this.baseRadarDish);
-
-                const lightPostMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
-                const createSearchlight = (x, z) => {
-                    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 3.2), lightPostMat);
-                    post.position.set(x, 2.3, z);
-                    this.baseGroup.add(post);
-
-                    const spot = new THREE.SpotLight(0xfef08a, 2.5, 30, Math.PI / 5, 0.5);
-                    spot.position.set(x, 3.8, z);
-                    spot.target.position.set(x * 3, 0, z * 3);
-                    this.baseGroup.add(spot);
-                    this.baseGroup.add(spot.target);
-                    return spot;
-                };
-                this.baseSearchlight1 = createSearchlight(4.5, 4.5);
-                this.baseSearchlight2 = createSearchlight(-4.5, -4.5);
-
-                const sandbagMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
-                const ammoBoxMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.5 });
-                const fuelDrumMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.7, roughness: 0.3 });
-
-                for (let i = 0; i < 12; i++) {
-                    const angle = (i / 12) * Math.PI * 2;
-                    if (i % 3 === 0) {
-                        const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.9), ammoBoxMat);
-                        box.position.set(Math.cos(angle) * 8.8, 0.8, Math.sin(angle) * 8.8);
-                        box.rotation.y = -angle;
-                        box.castShadow = true;
-                        this.baseGroup.add(box);
-                    } else if (i % 3 === 1) {
-                        const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.4, 12), fuelDrumMat);
-                        drum.position.set(Math.cos(angle) * 8.8, 0.7, Math.sin(angle) * 8.8);
-                        drum.castShadow = true;
-                        this.baseGroup.add(drum);
-                    } else {
-                        const sb = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.2, 0.9), sandbagMat);
-                        sb.position.set(Math.cos(angle) * 8.8, 0.6, Math.sin(angle) * 8.8);
-                        sb.rotation.y = -angle + Math.PI / 2;
-                        sb.castShadow = true;
-                        this.baseGroup.add(sb);
-                    }
-                }
+                const crystalGlow = new THREE.PointLight(0x38bdf8, 2.0, 15);
+                crystalGlow.position.set(0, 3.8, 0);
+                this.baseGroup.add(crystalGlow);
 
                 const beaconGeo = new THREE.SphereGeometry(0.25, 8, 8);
                 const beaconMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
                 [[-2.6, 2.6], [2.6, 2.6], [-2.6, -2.6], [2.6, -2.6]].forEach(pt => {
                     const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-                    beacon.position.set(pt[0], 4.6, pt[1]);
+                    beacon.position.set(pt[0], 3.2, pt[1]);
                     this.baseGroup.add(beacon);
                 });
 
@@ -2178,8 +2189,8 @@
                 barrel.position.set(0, 0.05, 0.85);
                 gunGroup.add(barrel);
 
-                const laserMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-                const laserSight = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 8.0), laserMat);
+                const laserMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.85 });
+                const laserSight = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 8.0), laserMat);
                 laserSight.rotation.x = Math.PI / 2;
                 laserSight.position.set(0.1, 0.0, 4.5);
                 gunGroup.add(laserSight);
@@ -2387,7 +2398,8 @@
 
         function upgradeSelectedStructure() {
             if (!gameInstance || !gameInstance.selectedStructure) return;
-            const ud = gameInstance.selectedStructure.userData;
+            const struct = gameInstance.selectedStructure;
+            const ud = struct.userData;
             if (!ud.isTurret) return;
 
             const cost = Math.round(ud.totalInvested * 0.75);
@@ -2397,6 +2409,43 @@
                 ud.damage *= 1.35;
                 ud.range += 2;
                 ud.totalInvested += cost;
+
+                // Visual upgrade modifications
+                if (ud.head) {
+                    ud.head.scale.multiplyScalar(1.06);
+
+                    // Add level ring to turret base
+                    const ringMat = new THREE.MeshBasicMaterial({ 
+                        color: ud.level % 2 === 0 ? 0x06b6d4 : 0xfacc15 
+                    });
+                    const levelRing = new THREE.Mesh(
+                        new THREE.TorusGeometry(1.2 + ud.level * 0.04, 0.06, 8, 16),
+                        ringMat
+                    );
+                    levelRing.rotation.x = Math.PI / 2;
+                    levelRing.position.y = 0.2 + ud.level * 0.22;
+                    struct.add(levelRing);
+
+                    // Level 2: Side armor plates
+                    if (ud.level === 2) {
+                        const armorMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 });
+                        const plateL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.8), armorMat);
+                        plateL.position.set(-0.65, 0, 0);
+                        const plateR = plateL.clone();
+                        plateR.position.set(0.65, 0, 0);
+                        ud.head.add(plateL);
+                        ud.head.add(plateR);
+                    } 
+                    // Level 3: Auxiliary top barrel
+                    else if (ud.level === 3) {
+                        const barrelMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9 });
+                        const topBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9), barrelMat);
+                        topBarrel.rotation.x = Math.PI / 2;
+                        topBarrel.position.set(0, 0.38, 0.6);
+                        ud.head.add(topBarrel);
+                    }
+                }
+
                 gameInstance.syncHUD();
                 gameInstance.inspectStructure(gameInstance.selectedStructure);
             }
