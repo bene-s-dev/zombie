@@ -49,7 +49,7 @@
             outline: none;
         }
 
-        /* Desktop-Geräte mit Maus/Pointer */
+        /* Responsive Fix für mobile/desktop */
         @media (hover: hover) and (pointer: fine) {
             #portrait-warning,
             .mobile-only {
@@ -57,14 +57,12 @@
             }
         }
 
-        /* Mobile Touch-Geräte */
         @media (pointer: coarse) {
             .desktop-only {
                 display: none !important;
             }
         }
 
-        /* Querformat-Hinweis strikt nur bei Touch-Geräten im Hochformat */
         #portrait-warning {
             display: none;
         }
@@ -72,6 +70,11 @@
             #portrait-warning {
                 display: flex !important;
             }
+        }
+
+        /* Touch target optimieren */
+        button {
+            touch-action: manipulation;
         }
     </style>
 </head>
@@ -114,11 +117,11 @@
                 <i class="fa-solid fa-hammer text-amber-400"></i>
                 <span class="font-teko text-base font-bold text-amber-400 tracking-wider">BAU: <span id="placement-item-name" class="text-white">TURM</span></span>
             </div>
-            <button onclick="rotatePlacement()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-[11px] transition flex items-center space-x-1">
+            <button onclick="rotatePlacement()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
                 <i class="fa-solid fa-rotate-right"></i>
                 <span>Drehen</span>
             </button>
-            <button onclick="cancelPlacement()" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-[11px] transition flex items-center space-x-1">
+            <button onclick="cancelPlacement()" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
                 <i class="fa-solid fa-xmark"></i>
                 <span>Abbrechen</span>
             </button>
@@ -135,25 +138,24 @@
                             <span id="inspect-subtitle" class="text-[10px] text-amber-400 font-mono">Level 1</span>
                         </div>
                     </div>
-                    <button onclick="closeInspectModal()" class="text-slate-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="closeInspectModal()" class="text-slate-400 hover:text-white p-2 text-2xl"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
                 <div id="inspect-stats" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1 text-left font-mono">
-                    <!-- Dynamic stats injected here -->
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 pt-1">
-                    <button id="inspect-upgrade-btn" onclick="upgradeSelectedStructure()" class="py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                    <button id="inspect-upgrade-btn" onclick="upgradeSelectedStructure()" class="py-3 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
                         <i class="fa-solid fa-arrow-up"></i>
                         <span id="inspect-upgrade-text">Upgrade ($150)</span>
                     </button>
-                    <button id="inspect-repair-btn" onclick="repairSelectedStructure()" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                    <button id="inspect-repair-btn" onclick="repairSelectedStructure()" class="py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
                         <i class="fa-solid fa-wrench"></i>
                         <span id="inspect-repair-text">Reparieren</span>
                     </button>
                 </div>
 
-                <button onclick="sellSelectedStructure()" class="w-full py-2.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/60 font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                <button onclick="sellSelectedStructure()" class="w-full py-3 bg-rose-950/80 hover:bg-rose-900 active:bg-rose-950 text-rose-300 border border-rose-800/60 font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
                     <i class="fa-solid fa-trash-can mr-1"></i>
                     <span id="inspect-sell-text">Verkaufen (+$70)</span>
                 </button>
@@ -162,13 +164,12 @@
 
         <!-- ================= START SCREEN / MAIN MENU OVERLAY ================= -->
         <div id="main-menu" class="absolute inset-0 z-50 flex flex-col justify-between p-4 sm:p-10 bg-slate-950/90 backdrop-blur-md transition-opacity duration-500 overflow-y-auto">
-            <!-- Top bar -->
             <div class="flex justify-between items-center w-full max-w-4xl mx-auto">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center">
                         <i class="fa-solid fa-biohazard text-red-500 text-xl animate-pulse"></i>
                     </div>
-                    <span class="font-teko text-2xl font-bold tracking-wider text-slate-200">Taskforce: Undead</span>
+                    <span class="font-teko text-2xl font-bold tracking-wider text-slate-200">Zombie Survival</span>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl flex items-center space-x-2 text-xs font-bold">
                     <i class="fa-solid fa-trophy text-amber-400"></i>
@@ -176,7 +177,6 @@
                 </div>
             </div>
 
-            <!-- Middle Title & Actions -->
             <div class="max-w-xl mx-auto text-center my-auto space-y-6">
                 <div>
                     <h1 class="font-teko text-6xl sm:text-8xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 uppercase leading-none drop-shadow-lg">
@@ -187,44 +187,38 @@
                     </p>
                 </div>
 
-                <!-- Settings Box -->
                 <div class="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl text-left space-y-4 shadow-2xl">
                     <h3 class="text-slate-300 text-xs font-bold uppercase tracking-wider border-b border-slate-800 pb-2 flex items-center justify-between">
                         <span><i class="fa-solid fa-sliders text-red-500 mr-2"></i> Spiel-Einstellungen</span>
-                       
                     </h3>
 
-                    <!-- Difficulty -->
                     <div>
                         <label class="block text-xs text-slate-400 mb-1 font-semibold">SCHWIERIGKEITSGRAD</label>
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="setDifficulty('easy')" id="diff-easy" class="diff-btn py-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-emerald-950 hover:border-emerald-500 transition">LEICHT</button>
-                            <button onclick="setDifficulty('medium')" id="diff-medium" class="diff-btn py-2 text-xs font-bold rounded-lg border border-amber-600 bg-amber-950/60 text-amber-400 transition">MITTEL</button>
-                            <button onclick="setDifficulty('hard')" id="diff-hard" class="diff-btn py-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-rose-950 hover:border-rose-500 transition">SCHWER</button>
+                            <button onclick="setDifficulty('easy')" id="diff-easy" class="diff-btn py-3 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition">LEICHT</button>
+                            <button onclick="setDifficulty('medium')" id="diff-medium" class="diff-btn py-3 text-xs font-bold rounded-lg border border-amber-600 bg-amber-950/60 text-amber-400 transition">MITTEL</button>
+                            <button onclick="setDifficulty('hard')" id="diff-hard" class="diff-btn py-3 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition">SCHWER</button>
                         </div>
                     </div>
 
-                    <!-- Toggles -->
                     <div class="grid grid-cols-2 gap-4 pt-2">
-                        <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                        <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-lg border border-slate-800">
                             <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-2"></i> Musik</span>
-                            <input type="checkbox" id="toggle-music" checked onchange="toggleAudio('music', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                            <input type="checkbox" id="toggle-music" checked onchange="toggleAudio('music', this.checked)" class="w-5 h-5 accent-red-600 rounded">
                         </label>
-                        <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                            <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-2"></i> Sound-Effekte</span>
-                            <input type="checkbox" id="toggle-sfx" checked onchange="toggleAudio('sfx', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                        <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-2"></i> SFX</span>
+                            <input type="checkbox" id="toggle-sfx" checked onchange="toggleAudio('sfx', this.checked)" class="w-5 h-5 accent-red-600 rounded">
                         </label>
                     </div>
                 </div>
 
-                <!-- Start Button -->
-                <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-teko text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 hover:scale-[1.02] active:scale-[0.98] transition transform flex items-center justify-center space-x-3">
+                <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-teko text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3">
                     <i class="fa-solid fa-play"></i>
                     <span>Start</span>
                 </button>
             </div>
 
-            <!-- Footer Controls info (Desktop Only) -->
             <div class="desktop-only text-center text-xs text-slate-500 flex justify-center space-x-6 mt-2">
                 <span><i class="fa-solid fa-keyboard text-slate-400 mr-1"></i> [WASD / Pfeile] Bewegung & Blickrichtung</span>
                 <span><i class="fa-solid fa-crosshairs text-slate-400 mr-1"></i> [Leertaste] Schießen</span>
@@ -233,36 +227,9 @@
         </div>
 
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
-        <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between p-1.5 sm:p-3">
-            <!-- Top Status Bar -->
-            <div class="flex justify-between items-start w-full max-w-5xl mx-auto space-x-1.5 sm:space-x-2">
-                <!-- Player & Base Stats -->
-                <div class="space-y-0.5 sm:space-y-1 pointer-events-auto bg-slate-950/85 border border-slate-800 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[110px] sm:min-w-[180px]">
-                    <!-- Player Health -->
-                    <div>
-                        <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-0.5">
-                            <span class="text-slate-300"><i class="fa-solid fa-user-shield text-emerald-400 mr-0.5"></i> SPIELER</span>
-                            <span id="hud-player-hp-text" class="text-emerald-400 font-mono">100/100</span>
-                        </div>
-                        <div class="w-full h-1 sm:h-2 bg-slate-800 rounded-full overflow-hidden">
-                            <div id="hud-player-hp-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%;"></div>
-                        </div>
-                    </div>
-                    <!-- Base Health & Shield -->
-                    <div>
-                        <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-0.5">
-                            <span class="text-slate-300"><i class="fa-solid fa-fort-awesome text-sky-400 mr-0.5"></i> BASIS</span>
-                            <span id="hud-base-hp-text" class="text-sky-400 font-mono">500/500</span>
-                        </div>
-                        <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
-                            <div id="hud-base-hp-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 100%;"></div>
-                            <div id="hud-base-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Wave Counter & Timer (Transparent horizontal row at top edge) -->
-                <div id="hud-wave-container" class="flex flex-row items-center justify-center space-x-1.5 sm:space-x-3 pointer-events-auto py-0.5 text-center drop-shadow-md">
+        <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between">
+            <div class="flex justify-between items-start w-full max-w-5xl mx-auto p-1.5 sm:p-3 pointer-events-auto">
+                <div id="hud-wave-container" class="flex flex-row items-center space-x-1.5 sm:space-x-3 py-0.5 text-center drop-shadow-md">
                     <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1">
                         <i class="fa-solid fa-skull"></i>
                         <span>WELLE 1</span>
@@ -273,27 +240,49 @@
                     <div id="hud-timer" class="text-[10px] sm:text-xs text-slate-300 font-mono">Zeit: 00:00</div>
                 </div>
 
-                <!-- Currency, Shop & Pause Buttons -->
-                <div class="flex items-center space-x-1 sm:space-x-2 pointer-events-auto">
-                    <div class="bg-slate-950/85 border border-slate-800 px-2 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg flex items-center space-x-1">
+                <div class="flex items-center space-x-1.5 sm:space-x-2">
+                    <div class="bg-slate-950/85 border border-slate-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg flex items-center space-x-1">
                         <i class="fa-solid fa-coins text-amber-400 text-xs sm:text-base"></i>
                         <span id="hud-money" class="font-mono text-xs sm:text-base font-bold text-amber-400">$ 0</span>
                     </div>
-                    <button onclick="toggleShop()" class="bg-red-600 hover:bg-red-500 text-white p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center">
-                        <i class="fa-solid fa-store text-xs sm:text-base"></i>
+                    <button onclick="toggleShop()" class="bg-red-600 hover:bg-red-500 active:bg-red-700 text-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center min-w-[40px] min-h-[40px]">
+                        <i class="fa-solid fa-store text-sm sm:text-base"></i>
                     </button>
-                    <button onclick="togglePauseModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl shadow-lg border border-slate-700 transition active:scale-95 flex items-center justify-center">
-                        <i class="fa-solid fa-pause text-xs sm:text-base"></i>
+                    <button onclick="togglePauseModal()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg border border-slate-700 transition active:scale-95 flex items-center justify-center min-w-[40px] min-h-[40px]">
+                        <i class="fa-solid fa-pause text-sm sm:text-base"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Bottom Center Active Weapon / Ammo -->
-            <div class="self-center bg-slate-950/85 border border-slate-800 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-1.5 sm:space-x-3 text-[10px] sm:text-xs mb-0.5 sm:mb-1">
-                <div class="text-slate-400 uppercase font-semibold hidden sm:block">Waffe:</div>
-                <div id="hud-weapon-name" class="font-bold text-amber-400 text-[10px] sm:text-xs">Pistole (Lvl 1)</div>
-                <div class="h-2.5 w-px bg-slate-700"></div>
-                <div id="hud-weapon-stats" class="text-[9px] sm:text-[11px] font-mono text-slate-300"><i class="fa-solid fa-bolt text-amber-400 mr-0.5"></i> Dmg: 32</div>
+            <!-- Bottom HUD -->
+            <div class="w-full flex justify-between items-end p-2 sm:p-4 pointer-events-none">
+                <div class="bg-slate-950/85 border border-slate-800 p-2 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[100px] sm:min-w-[140px] pointer-events-auto">
+                    <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1">
+                        <span class="text-slate-300"><i class="fa-solid fa-user-shield text-emerald-400 mr-1"></i> SPIELER</span>
+                        <span id="hud-player-hp-text" class="text-emerald-400 font-mono">100/100</span>
+                    </div>
+                    <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="hud-player-hp-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/85 border border-slate-800 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-2 sm:space-x-3 text-[10px] sm:text-xs">
+                    <div class="text-slate-400 uppercase font-semibold hidden sm:block">Waffe:</div>
+                    <div id="hud-weapon-name" class="font-bold text-amber-400 text-[10px] sm:text-xs">Pistole (Lvl 1)</div>
+                    <div class="h-3 w-px bg-slate-700"></div>
+                    <div id="hud-weapon-stats" class="text-[9px] sm:text-[11px] font-mono text-slate-300"><i class="fa-solid fa-bolt text-amber-400 mr-0.5"></i> Dmg: 32</div>
+                </div>
+
+                <div class="bg-slate-950/85 border border-slate-800 p-2 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[100px] sm:min-w-[140px] pointer-events-auto">
+                    <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1">
+                        <span class="text-slate-300"><i class="fa-solid fa-fort-awesome text-sky-400 mr-1"></i> BASIS</span>
+                        <span id="hud-base-hp-text" class="text-sky-400 font-mono">500/500</span>
+                    </div>
+                    <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
+                        <div id="hud-base-hp-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 100%;"></div>
+                        <div id="hud-base-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -305,41 +294,52 @@
                         <i class="fa-solid fa-pause text-amber-400 text-2xl"></i>
                         <h2 class="font-teko text-3xl font-bold text-white tracking-wider uppercase">SPIEL PAUSIERT</h2>
                     </div>
-                    <button onclick="togglePauseModal()" class="text-slate-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="togglePauseModal()" class="text-slate-400 hover:text-white p-2 text-2xl"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
                 <div class="space-y-3">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Steuerung & Audio Einstellungen</h3>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kamera-Einstellungen</h3>
                     
-                    <!-- Touch Layout Swap (Mobile / Touch Only) -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex items-center space-x-3 text-xs text-slate-300">
+                            <label class="w-16 font-semibold">Zoom</label>
+                            <input type="range" id="cam-zoom" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-6">
+                        </div>
+                        <div class="flex items-center space-x-3 text-xs text-slate-300">
+                            <label class="w-16 font-semibold">Winkel</label>
+                            <input type="range" id="cam-angle" min="0" max="1" step="0.1" value="0.5" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-6">
+                        </div>
+                        <div id="cam-preview-container" class="w-full h-24 mt-2 bg-black rounded border border-slate-700 overflow-hidden relative"></div>
+                    </div>
+
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mt-4">Steuerung & Audio</h3>
                     <div class="mobile-only bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
                         <div>
                             <div class="text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-2"></i> Touch-Layout</div>
                             <div id="pause-touch-swap-label" class="text-[10px] text-slate-400 mt-0.5">Joystick rechts / Feuer links</div>
                         </div>
-                        <button onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
+                        <button onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
                             Tauschen
                         </button>
                     </div>
 
-                    <!-- Toggles -->
                     <div class="grid grid-cols-2 gap-3">
                         <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
                             <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-1.5"></i> Musik</span>
-                            <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                            <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-5 h-5 accent-red-600 rounded">
                         </label>
                         <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
                             <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-1.5"></i> SFX</span>
-                            <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                            <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-5 h-5 accent-red-600 rounded">
                         </label>
                     </div>
                 </div>
 
                 <div class="flex space-x-3 pt-2">
-                    <button onclick="togglePauseModal()" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm transition">
+                    <button onclick="togglePauseModal()" class="flex-1 py-3 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold rounded-xl text-sm transition">
                         WEITER
                     </button>
-                    <button onclick="returnToMainMenu()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
+                    <button onclick="returnToMainMenu()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs transition">
                         Hauptmenü
                     </button>
                 </div>
@@ -354,62 +354,53 @@
                     <div class="flex items-center space-x-3">
                         <i class="fa-solid fa-cart-shopping text-red-500 text-2xl"></i>
                         <h2 class="font-teko text-3xl font-bold text-white tracking-wider uppercase">Laden</h2>
-                        <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-bold uppercase animate-pulse ml-2"><i class="fa-solid fa-pause mr-1"></i> Spiel Pausiert</span>
+                        <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs px-2.5 py-1 rounded-full font-bold uppercase animate-pulse ml-2"><i class="fa-solid fa-pause mr-1"></i> Pausiert</span>
                     </div>
                     <div class="flex items-center space-x-4">
                         <span class="font-mono text-amber-400 font-bold text-lg"><i class="fa-solid fa-coins mr-1"></i> <span id="shop-money-display">$0</span></span>
-                        <button onclick="toggleShop()" class="text-slate-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+                        <button onclick="toggleShop()" class="text-slate-400 hover:text-white p-2 text-2xl"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                 </div>
 
-                <!-- Shop Navigation Tabs -->
+                <!-- Shop Navigation Tabs (Anpassung für normale Größe auf Mobilgeräten) -->
                 <div class="flex space-x-2 border-b border-slate-800 pb-3 mb-4 overflow-x-auto">
-                    <button onclick="switchShopTab('weapons')" id="tab-btn-weapons" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-red-600 text-white flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-gun"></i><span>Waffen</span>
+                    <button onclick="switchShopTab('weapons')" id="tab-btn-weapons" class="shop-tab-btn px-4 py-2.5 rounded-xl font-bold text-xs sm:text-xs bg-red-600 text-white flex items-center space-x-2 whitespace-nowrap min-h-[40px]">
+                        <i class="fa-solid fa-gun text-sm"></i><span>Waffen</span>
                     </button>
-                    <button onclick="switchShopTab('turrets')" id="tab-btn-turrets" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-tower-observation"></i><span>Geschütztürme</span>
+                    <button onclick="switchShopTab('turrets')" id="tab-btn-turrets" class="shop-tab-btn px-4 py-2.5 rounded-xl font-bold text-xs sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap min-h-[40px]">
+                        <i class="fa-solid fa-tower-observation text-sm"></i><span>Geschütztürme</span>
                     </button>
-                    <button onclick="switchShopTab('walls')" id="tab-btn-walls" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-cubes-stacked"></i><span>Mauern</span>
+                    <button onclick="switchShopTab('walls')" id="tab-btn-walls" class="shop-tab-btn px-4 py-2.5 rounded-xl font-bold text-xs sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap min-h-[40px]">
+                        <i class="fa-solid fa-cubes-stacked text-sm"></i><span>Mauern</span>
                     </button>
-                    <button onclick="switchShopTab('upgrades')" id="tab-btn-upgrades" class="shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-shield-halved"></i><span>Spieler & Basis</span>
+                    <button onclick="switchShopTab('upgrades')" id="tab-btn-upgrades" class="shop-tab-btn px-4 py-2.5 rounded-xl font-bold text-xs sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap min-h-[40px]">
+                        <i class="fa-solid fa-shield-halved text-sm"></i><span>Spieler & Basis</span>
                     </button>
                 </div>
 
                 <!-- Shop Items Container -->
                 <div class="overflow-y-auto space-y-4 pr-2 flex-1">
-                    <!-- Tab 1: Weapons -->
                     <div id="shop-tab-weapons" class="shop-tab-content">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Arsenal kaufen & aufrüsten</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-weapons-container"></div>
                     </div>
 
-                    <!-- Tab 2: Turrets -->
                     <div id="shop-tab-turrets" class="shop-tab-content hidden">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Automatische Geschütztürme platzieren</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-turrets-container"></div>
                     </div>
 
-                    <!-- Tab 3: Walls & Barriers -->
                     <div id="shop-tab-walls" class="shop-tab-content hidden">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Schutzmauern & Barrikaden bauen (Blockiert Zombies & Schüsse)</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-walls-container"></div>
                     </div>
 
-                    <!-- Tab 4: Upgrades -->
                     <div id="shop-tab-upgrades" class="shop-tab-content hidden">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Upgrades & Reparatur</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-upgrades-container"></div>
                     </div>
                 </div>
-
-                <div class="mt-4 pt-4 border-t border-slate-800 text-right">
-                    <button onclick="toggleShop()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs sm:text-sm transition">
-                        Schließen
-                    </button>
-                </div>
+                <!-- Unterer Schließen-Button wurde entfernt -->
             </div>
         </div>
 
@@ -439,7 +430,7 @@
                     </div>
                 </div>
 
-                <button onclick="restartGame()" class="w-full py-2.5 sm:py-3.5 bg-red-600 hover:bg-red-500 text-white font-teko text-xl sm:text-2xl font-bold rounded-xl transition shadow-lg shadow-red-950/50">
+                <button onclick="restartGame()" class="w-full py-3 sm:py-3.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-teko text-xl sm:text-2xl font-bold rounded-xl transition shadow-lg shadow-red-950/50">
                     ERNEUT VERSUCHEN
                 </button>
             </div>
@@ -455,7 +446,9 @@
                 difficulty: 'medium',
                 musicEnabled: true,
                 sfxEnabled: true,
-                swapTouchControls: false
+                swapTouchControls: false,
+                cameraZoom: 1.0,
+                cameraAngle: 0.5
             },
             load() {
                 try {
@@ -471,7 +464,61 @@
             }
         };
 
-        // Shared Geometries for zero Garbage Collection during combat
+        const savedData = Storage.load();
+        document.getElementById('toggle-music').checked = savedData.musicEnabled;
+        document.getElementById('toggle-sfx').checked = savedData.sfxEnabled;
+        document.getElementById('cam-zoom').value = savedData.cameraZoom;
+        document.getElementById('cam-angle').value = savedData.cameraAngle;
+
+        let previewScene, previewCamera, previewRenderer, previewPlayer;
+        function initCameraPreview() {
+            const container = document.getElementById('cam-preview-container');
+            if (previewRenderer || !container) return;
+            
+            previewRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            previewRenderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(previewRenderer.domElement);
+
+            previewScene = new THREE.Scene();
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 10, 5);
+            previewScene.add(light);
+            previewScene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+            previewCamera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.1, 50);
+
+            const mat = new THREE.MeshStandardMaterial({color: 0x0284c7});
+            previewPlayer = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2, 0.8), mat);
+            previewScene.add(previewPlayer);
+            
+            const gridHelper = new THREE.GridHelper(10, 10, 0x475569, 0x1e293b);
+            gridHelper.position.y = -1;
+            previewScene.add(gridHelper);
+
+            updateCameraPreview();
+        }
+
+        function updateCameraPreview() {
+            const zoom = parseFloat(document.getElementById('cam-zoom').value);
+            const angle = parseFloat(document.getElementById('cam-angle').value);
+            
+            Storage.data.cameraZoom = zoom;
+            Storage.data.cameraAngle = angle;
+            Storage.save();
+
+            if (previewCamera && previewRenderer) {
+                const baseZ = 12;
+                const baseY = 8;
+                previewCamera.position.set(0, baseY * zoom * (0.3 + angle), baseZ * zoom * (1.2 - angle * 0.5));
+                previewCamera.lookAt(0, 0, 0);
+                previewRenderer.render(previewScene, previewCamera);
+            }
+
+            if (gameInstance) {
+                gameInstance.updateCameraSettings();
+            }
+        }
+
         const SHARED_BULLET_GEO = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 6);
         SHARED_BULLET_GEO.rotateX(Math.PI / 2);
 
@@ -485,7 +532,6 @@
             const dx = px - wall.position.x;
             const dz = pz - wall.position.z;
 
-            // Rotate into wall local space
             const localX = dx * Math.cos(-rot) - dz * Math.sin(-rot);
             const localZ = dx * Math.sin(-rot) + dz * Math.cos(-rot);
 
@@ -675,9 +721,6 @@
         let gameInstance = null;
         let isShopOpen = false;
 
-        const savedData = Storage.load();
-        document.getElementById('toggle-music').checked = savedData.musicEnabled;
-        document.getElementById('toggle-sfx').checked = savedData.sfxEnabled;
         updateDifficultyUI(savedData.difficulty);
         updateHighscoreUI();
 
@@ -689,13 +732,13 @@
 
         function updateDifficultyUI(diff) {
             document.querySelectorAll('.diff-btn').forEach(btn => {
-                btn.className = "diff-btn py-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+                btn.className = "diff-btn py-3 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition";
             });
             const activeBtn = document.getElementById(`diff-${diff}`);
             if (activeBtn) {
-                if(diff === 'easy') activeBtn.className = "diff-btn py-2 text-xs font-bold rounded-lg border border-emerald-500 bg-emerald-950/80 text-emerald-400 transition";
-                if(diff === 'medium') activeBtn.className = "diff-btn py-2 text-xs font-bold rounded-lg border border-amber-500 bg-amber-950/80 text-amber-400 transition";
-                if(diff === 'hard') activeBtn.className = "diff-btn py-2 text-xs font-bold rounded-lg border border-rose-500 bg-rose-950/80 text-rose-400 transition";
+                if(diff === 'easy') activeBtn.className = "diff-btn py-3 text-xs font-bold rounded-lg border border-emerald-500 bg-emerald-950/80 text-emerald-400 transition";
+                if(diff === 'medium') activeBtn.className = "diff-btn py-3 text-xs font-bold rounded-lg border border-amber-500 bg-amber-950/80 text-amber-400 transition";
+                if(diff === 'hard') activeBtn.className = "diff-btn py-3 text-xs font-bold rounded-lg border border-rose-500 bg-rose-950/80 text-rose-400 transition";
             }
         }
 
@@ -725,14 +768,13 @@
                 this.isGameOver = false;
                 this.isWaveTransitioning = false;
                 this.lastFrameTime = performance.now();
+                this.playerWalkCycle = 0;
 
-                // Build & Placement mode state
                 this.isPlacementMode = false;
                 this.pendingPlacement = null; 
                 this.ghostMesh = null;
                 this.selectedStructure = null; 
 
-                // Touch Joystick & Fire State
                 this.touchJoystick = { active: false, touchId: null, startX: 0, startY: 0, vectorX: 0, vectorY: 0 };
                 this.isTouchFiring = false;
                 this.fireTouchId = null;
@@ -771,8 +813,10 @@
                 this.keys = {};
                 this.mousePos = new THREE.Vector2();
                 this.pointerWorldPos = new THREE.Vector3();
+                this.cameraOffset = new THREE.Vector3();
 
                 this.initScene();
+                this.updateCameraSettings();
                 this.buildEnvironment();
                 this.createBaseCore();
                 this.createPlayer();
@@ -786,6 +830,19 @@
                 this.animate();
                 this.syncHUD();
                 renderShopCatalog();
+            }
+
+            updateCameraSettings() {
+                const zoom = Storage.data.cameraZoom || 1.0;
+                const angle = Storage.data.cameraAngle || 0.5;
+                const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                
+                const baseZ = isMobile ? 15.3 : 25.2;
+                const baseY = isMobile ? 8.5 : 14;
+
+                this.cameraOffset.x = 0;
+                this.cameraOffset.y = baseY * zoom * (0.3 + angle);
+                this.cameraOffset.z = baseZ * zoom * (1.2 - angle * 0.5);
             }
 
             setupControls() {
@@ -821,10 +878,10 @@
                     }
                 };
 
-                const onPointerClick = (e) => {
+                const handleSelection = (clientX, clientY) => {
                     if (this.isPaused && !this.isPlacementMode) return;
 
-                    const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+                    const targetEl = document.elementFromPoint(clientX, clientY);
                     if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal, #inspect-modal')) return;
 
                     if (this.isPlacementMode) {
@@ -836,10 +893,14 @@
                         return;
                     }
 
+                    // Touch Raycast mit etwas vergrößerter Trefferzone
+                    this.mousePos.x = (clientX / window.innerWidth) * 2 - 1;
+                    this.mousePos.y = -(clientY / window.innerHeight) * 2 + 1;
                     this.raycaster.setFromCamera(this.mousePos, this.camera);
+                    
                     const clickableObjects = [];
-                    this.turrets.forEach(t => clickableObjects.push(t));
-                    this.walls.forEach(w => clickableObjects.push(w));
+                    this.turrets.forEach(t => clickableObjects.push(t.userData.hitBox || t));
+                    this.walls.forEach(w => clickableObjects.push(w.userData.hitBox || w));
 
                     const intersects = this.raycaster.intersectObjects(clickableObjects, true);
                     if (intersects.length > 0) {
@@ -854,7 +915,7 @@
                 };
 
                 window.addEventListener('pointermove', onPointerMove);
-                window.addEventListener('click', onPointerClick);
+                window.addEventListener('click', (e) => handleSelection(e.clientX, e.clientY));
 
                 const onTouchStart = (e) => {
                     if (this.isPlacementMode) {
@@ -1222,7 +1283,7 @@
                 if (!spec || this.money < spec.cost) return;
 
                 this.isPlacementMode = true;
-                this.isPaused = true; // Spiel im Baumodus strikt pausieren
+                this.isPaused = true;
                 this.placementJustStarted = true;
                 this.placementRotation = 0;
                 setTimeout(() => { this.placementJustStarted = false; }, 250);
@@ -1302,7 +1363,6 @@
                     if (Math.hypot(t.position.x - x, t.position.z - z) < r + 1.2) isValid = false;
                 });
                 this.walls.forEach(w => {
-                    // Mauern dürfen ineinander gebaut werden, um Lücken nahtlos zu schließen
                     if (!isBuildingWall) {
                         if (Math.hypot(w.position.x - x, w.position.z - z) < r + w.userData.radius) isValid = false;
                     }
@@ -1336,7 +1396,6 @@
 
                 this.syncHUD();
 
-                // Bleibe im Baumodus für fortlaufendes Bauen, falls noch genug Geld vorhanden ist
                 if (this.money >= cost) {
                     this.updateGhostPosition(x, z);
                 } else {
@@ -1367,6 +1426,12 @@
                 baseMesh.position.y = 0.6;
                 baseMesh.castShadow = true;
                 turretGroup.add(baseMesh);
+
+                // Invisible Touch HitBox genau in der Größe des Turmes für präzises Antippen
+                const hitBoxMat = new THREE.MeshBasicMaterial({ visible: false });
+                const hitBox = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 2.2, 8), hitBoxMat);
+                hitBox.position.y = 1.1;
+                turretGroup.add(hitBox);
 
                 const headGroup = new THREE.Group();
                 headGroup.position.y = 1.4;
@@ -1409,6 +1474,7 @@
                     typeId: spec.id,
                     name: spec.name,
                     head: headGroup,
+                    hitBox: hitBox,
                     range: spec.range,
                     damage: spec.damage,
                     firerate: spec.firerate,
@@ -1697,7 +1763,18 @@
                                 this.playerGroup.position.x = nextX;
                                 this.playerGroup.position.z = nextZ;
                             }
+                            
+                            this.playerWalkCycle += dt * 18 * inputMagnitude;
+                            const legSwing = Math.sin(this.playerWalkCycle) * 0.6;
+                            if (this.leftLegWrap) this.leftLegWrap.rotation.x = legSwing;
+                            if (this.rightLegWrap) this.rightLegWrap.rotation.x = -legSwing;
+                        } else {
+                            if (this.leftLegWrap) this.leftLegWrap.rotation.x = THREE.MathUtils.lerp(this.leftLegWrap.rotation.x, 0, 0.1);
+                            if (this.rightLegWrap) this.rightLegWrap.rotation.x = THREE.MathUtils.lerp(this.rightLegWrap.rotation.x, 0, 0.1);
                         }
+                    } else {
+                        if (this.leftLegWrap) this.leftLegWrap.rotation.x = THREE.MathUtils.lerp(this.leftLegWrap.rotation.x, 0, 0.1);
+                        if (this.rightLegWrap) this.rightLegWrap.rotation.x = THREE.MathUtils.lerp(this.rightLegWrap.rotation.x, 0, 0.1);
                     }
 
                     if (!isShopOpen && (this.keys['Space'] || this.isTouchFiring)) {
@@ -1705,7 +1782,7 @@
                     }
 
                     this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, this.playerGroup.position.x + this.cameraOffset.x, 0.08);
-                    this.camera.position.y = this.playerGroup.position.y + this.cameraOffset.y;
+                    this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, this.playerGroup.position.y + this.cameraOffset.y, 0.08);
                     this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, this.playerGroup.position.z + this.cameraOffset.z, 0.08);
                     this.camera.lookAt(this.playerGroup.position);
 
@@ -1771,7 +1848,6 @@
                         let chosenAngle = null;
                         let hitWallTarget = null;
 
-                        // Probe direct path and side angles to navigate around walls
                         const angleOffsets = [0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5, 2.0, -2.0];
 
                         for (let offset of angleOffsets) {
@@ -1985,8 +2061,6 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 this.camera = new THREE.PerspectiveCamera(isMobile ? 48 : 52, aspect, 0.1, 1000);
                 
-                this.cameraOffset = isMobile ? new THREE.Vector3(0, 8.5, 15.3) : new THREE.Vector3(0, 14, 25.2);
-
                 const ambientLight = new THREE.AmbientLight(0x475569, 1.4);
                 this.scene.add(ambientLight);
 
@@ -2106,18 +2180,24 @@
                 const helmetMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.7 });
                 const visorMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9, roughness: 0.1 });
 
-                const leftBoot = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.55), bootsMat);
-                leftBoot.position.set(-0.28, 0.18, 0.05);
+                this.leftLegWrap = new THREE.Group();
+                this.leftLegWrap.position.set(-0.28, 0.4, 0);
+                const leftBoot = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.55), bootsMat);
+                leftBoot.position.set(0, -0.2, 0.05);
                 leftBoot.castShadow = true;
-                this.playerGroup.add(leftBoot);
+                this.leftLegWrap.add(leftBoot);
+                this.playerGroup.add(this.leftLegWrap);
 
-                const rightBoot = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.55), bootsMat);
-                rightBoot.position.set(0.28, 0.18, 0.05);
+                this.rightLegWrap = new THREE.Group();
+                this.rightLegWrap.position.set(0.28, 0.4, 0);
+                const rightBoot = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.55), bootsMat);
+                rightBoot.position.set(0, -0.2, 0.05);
                 rightBoot.castShadow = true;
-                this.playerGroup.add(rightBoot);
+                this.rightLegWrap.add(rightBoot);
+                this.playerGroup.add(this.rightLegWrap);
 
-                const legs = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.45), pantsMat);
-                legs.position.y = 0.75;
+                const legs = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.45), pantsMat);
+                legs.position.y = 0.7;
                 legs.castShadow = true;
                 this.playerGroup.add(legs);
 
@@ -2224,12 +2304,12 @@
         function switchShopTab(tabId) {
             activeShopTab = tabId;
             document.querySelectorAll('.shop-tab-btn').forEach(btn => {
-                btn.className = "shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2";
+                btn.className = "shop-tab-btn px-4 py-2.5 rounded-xl font-bold text-xs sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex items-center space-x-2 whitespace-nowrap min-h-[40px]";
             });
             document.querySelectorAll('.shop-tab-content').forEach(c => c.classList.add('hidden'));
 
             const activeBtn = document.getElementById(`tab-btn-${tabId}`);
-            if (activeBtn) activeBtn.className = "shop-tab-btn px-4 py-2 rounded-xl font-bold text-xs bg-red-600 text-white flex items-center space-x-2";
+            if (activeBtn) activeBtn.className = "shop-tab-btn px-4 py-2.5 rounded-xl font-bold text-xs sm:text-xs bg-red-600 text-white flex items-center space-x-2 whitespace-nowrap min-h-[40px]";
 
             const activeContent = document.getElementById(`shop-tab-${tabId}`);
             if (activeContent) activeContent.classList.remove('hidden');
@@ -2263,14 +2343,14 @@
                     </div>
                     <div class="flex items-center space-x-2">
                         ${isUnlocked ? `
-                            <button onclick="upgradeWeapon('${w.id}')" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1">
+                            <button onclick="upgradeWeapon('${w.id}')" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px]">
                                 <i class="fa-solid fa-arrow-up"></i><span>+$${upgradeCost}</span>
                             </button>
-                            <button onclick="equipWeapon('${w.id}')" class="px-3 py-1.5 ${isEquipped ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-default' : 'bg-slate-800 hover:bg-slate-700 text-white'} rounded-lg text-xs font-bold">
+                            <button onclick="equipWeapon('${w.id}')" class="px-3 py-2 ${isEquipped ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-default' : 'bg-slate-800 hover:bg-slate-700 text-white'} rounded-lg text-xs font-bold min-h-[36px]">
                                 ${isEquipped ? 'Aktiv' : 'Wählen'}
                             </button>
                         ` : `
-                            <button onclick="buyWeapon('${w.id}')" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold">$${w.cost}</button>
+                            <button onclick="buyWeapon('${w.id}')" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold min-h-[36px]">$${w.cost}</button>
                         `}
                     </div>
                 `;
@@ -2289,7 +2369,7 @@
                             <div class="text-xs text-slate-400 mt-1">${t.desc}</div>
                             <div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m</div>
                         </div>
-                        <button onclick="startBuildPlacement('turret', '${t.id}')" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1">
+                        <button onclick="startBuildPlacement('turret', '${t.id}')" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px]">
                             <i class="fa-solid fa-hammer text-xs"></i>
                             <span>Bauen $${t.cost}</span>
                         </button>
@@ -2310,7 +2390,7 @@
                             <div class="text-xs text-slate-400 mt-1">${w.desc}</div>
                             <div class="text-[10px] text-emerald-400 font-mono mt-0.5">HP: ${w.hp}</div>
                         </div>
-                        <button onclick="startBuildPlacement('wall', '${w.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1">
+                        <button onclick="startBuildPlacement('wall', '${w.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px]">
                             <i class="fa-solid fa-hammer text-xs"></i>
                             <span>Plazieren $${w.cost}</span>
                         </button>
@@ -2330,7 +2410,7 @@
                         <div class="font-bold text-sky-400 text-sm"><i class="fa-solid fa-wrench mr-1"></i> Basis Reparieren (+250 HP)</div>
                         <div class="text-xs text-slate-400 mt-1">Stellt Basis-Gesundheit wieder her</div>
                     </div>
-                    <button onclick="repairBase()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold">$120</button>
+                    <button onclick="repairBase()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold min-h-[36px]">$120</button>
                 `;
                 upgradesContainer.appendChild(repairCard);
 
@@ -2341,7 +2421,7 @@
                         <div class="font-bold text-emerald-400 text-sm"><i class="fa-solid fa-kit-medical mr-1"></i> Medkit / Spieler Heilung</div>
                         <div class="text-xs text-slate-400 mt-1">Stellt volle Spieler-Gesundheit her</div>
                     </div>
-                    <button onclick="healPlayer()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">$80</button>
+                    <button onclick="healPlayer()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold min-h-[36px]">$80</button>
                 `;
                 upgradesContainer.appendChild(healCard);
 
@@ -2360,7 +2440,7 @@
                             </div>
                             <div class="text-xs text-slate-400 mt-1">${upg.desc}</div>
                         </div>
-                        <button onclick="buyUpgrade('${key}')" ${isMax ? 'disabled' : ''} class="px-4 py-2 ${isMax ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white'} rounded-lg text-xs font-bold">
+                        <button onclick="buyUpgrade('${key}')" ${isMax ? 'disabled' : ''} class="px-4 py-2 ${isMax ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white'} rounded-lg text-xs font-bold min-h-[36px]">
                             ${isMax ? 'MAX' : '$' + cost}
                         </button>
                     `;
@@ -2410,11 +2490,9 @@
                 ud.range += 2;
                 ud.totalInvested += cost;
 
-                // Visual upgrade modifications
                 if (ud.head) {
                     ud.head.scale.multiplyScalar(1.06);
 
-                    // Add level ring to turret base
                     const ringMat = new THREE.MeshBasicMaterial({ 
                         color: ud.level % 2 === 0 ? 0x06b6d4 : 0xfacc15 
                     });
@@ -2426,7 +2504,6 @@
                     levelRing.position.y = 0.2 + ud.level * 0.22;
                     struct.add(levelRing);
 
-                    // Level 2: Side armor plates
                     if (ud.level === 2) {
                         const armorMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 });
                         const plateL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.8), armorMat);
@@ -2436,7 +2513,6 @@
                         ud.head.add(plateL);
                         ud.head.add(plateR);
                     } 
-                    // Level 3: Auxiliary top barrel
                     else if (ud.level === 3) {
                         const barrelMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9 });
                         const topBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9), barrelMat);
@@ -2498,6 +2574,7 @@
                 document.getElementById('pause-toggle-music').checked = Storage.data.musicEnabled;
                 document.getElementById('pause-toggle-sfx').checked = Storage.data.sfxEnabled;
                 updateTouchSwapUI();
+                initCameraPreview();
                 modal.classList.remove('hidden');
             } else {
                 modal.classList.add('hidden');
