@@ -929,9 +929,8 @@
                 if (!Storage.data.sfxEnabled) return;
                 try {
                     // Generate a radio-squelch WAV on the fly and play via HTML5 Audio
-                    // (completely bypasses AudioContext state issues)
                     const sampleRate = 44100;
-                    const dur = 0.48;
+                    const dur = 0.42;
                     const n = Math.floor(sampleRate * dur);
                     const ab = new ArrayBuffer(44 + n * 2);
                     const v = new DataView(ab);
@@ -944,10 +943,12 @@
                     ws(36, 'data'); v.setUint32(40, n * 2, true);
                     for (let i = 0; i < n; i++) {
                         const t = i / sampleRate;
-                        const env = Math.exp(-t * 7) * 0.85 + 0.15 * Math.exp(-t * 2);
-                        const noise = (Math.random() * 2 - 1) * 0.7 * env;
-                        const freq = 1600 + 900 * Math.sin(t * 40 + Math.random() * 0.3);
-                        const tone = Math.sin(2 * Math.PI * freq * t) * 0.55 * env;
+                        const env = Math.exp(-t * 6) * 0.9 + 0.1 * Math.exp(-t * 1.5);
+                        // Low-range noise (radio warmth)
+                        const noise = (Math.random() * 2 - 1) * 0.45 * env;
+                        // Deeper tone: 350-600 Hz sweep
+                        const freq = 350 + 250 * Math.sin(t * 18);
+                        const tone = Math.sin(2 * Math.PI * freq * t) * 0.65 * env;
                         const s = Math.max(-1, Math.min(1, noise + tone));
                         v.setInt16(44 + i * 2, Math.round(s * 32767), true);
                     }
@@ -2745,7 +2746,7 @@
                 const data = INTEL_DATA[type];
                 if (!data) return;
 
-                audio.playRadioChatter();
+                // NO sound when wave intel modal opens
 
                 const modal = document.getElementById('intel-modal');
                 const titleEl = document.getElementById('intel-title');
