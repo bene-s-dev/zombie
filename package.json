@@ -1,0 +1,10 @@
+{
+  "name": "zombie-survival",
+  "version": "1.0.0",
+  "description": "Taskforce: Undead - 3D Zombie Survival Tower Defense",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx -y serve -l 3000 .",
+    "start": "npx -y serve -l 3000 ."
+  }
+}
