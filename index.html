@@ -3679,6 +3679,12 @@
                     this.saveGameSession();
                 }
 
+                // Safety: trigger next wave if all zombies gone but nextWave() was missed
+                // (e.g. due to spawn being skipped while paused)
+                if (this.zombiesLeftToSpawn <= 0 && this.zombies.length === 0 && !this.isWaveTransitioning && !this.isGameOver) {
+                    this.nextWave();
+                }
+
                 this.syncHUD();
             }
 
