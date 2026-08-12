@@ -1981,7 +1981,10 @@
             }
 
             spawnZombie() {
-                if (this.isPaused || this.isWaveTransitioning || this.isGameOver || this.zombiesLeftToSpawn <= 0) return;
+                if (this.isWaveTransitioning || this.isGameOver || this.zombiesLeftToSpawn <= 0) return;
+                // Do not block spawn when paused — the interval still ticks during pause,
+                // but we skip the actual spawn. zombiesLeftToSpawn is not decremented.
+                if (this.isPaused) return;
 
                 this.zombiesLeftToSpawn--;
 
@@ -4498,26 +4501,24 @@
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
+                // Only auto-pause when page is truly hidden (tab switch, phone lock)
                 if (gameInstance && gameInstance.isRunning && !gameInstance.isGameOver) {
                     if (!isPauseModalOpen) togglePauseModal();
                     else gameInstance.isPaused = true;
                 }
                 audio.suspendAll();
             } else {
+                // Resume audio when page becomes visible again
                 if (!isShopOpen && !isPauseModalOpen && gameInstance && !gameInstance.isPaused) {
                     audio.resumeAll();
                 }
             }
         });
 
-        window.addEventListener('blur', () => {
-            if (gameInstance && gameInstance.isRunning && !gameInstance.isGameOver) {
-                if (!isPauseModalOpen && !isShopOpen) togglePauseModal();
-            }
-            audio.suspendAll();
-        });
-
+        // NOTE: window.blur intentionally removed — on mobile/touch devices it fires on
+        // every HUD button tap, causing unwanted pause menu, music cutoff and fullscreen exit.
         window.addEventListener('focus', () => {
+            // Resume audio on refocus (e.g. after notification, without opening pause menu)
             if (!isShopOpen && !isPauseModalOpen && gameInstance && !gameInstance.isPaused) {
                 audio.resumeAll();
             }
