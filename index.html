@@ -290,11 +290,9 @@
                             <span>WELLE 1</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Top-Right Controls: Transparent background, uniform height h-10 sm:h-11, fixed-size x2 speed button stacked under Pause button -->
+                             <!-- Top-Right Controls: Transparent background, uniform height h-10 sm:h-11, fixed-size x2 speed button stacked under Pause button -->
                 <div class="flex items-start space-x-1.5 sm:space-x-2">
-                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center space-x-1.5 h-10 sm:h-11 pointer-events-auto animate-pulse" title="Orbitaler Doppel-Luftschlag [E]">
+                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" style="touch-action: manipulation;" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center space-x-1.5 h-10 sm:h-11 pointer-events-auto animate-pulse" title="Orbitaler Doppel-Luftschlag [E]">
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="airstrike-icon" class="relative z-10 flex items-center pr-1 text-amber-400 airstrike-ready-blink">
                             <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm"></i>
@@ -311,16 +309,16 @@
                         <span id="hud-money" class="font-mono text-xs sm:text-base font-bold text-amber-400">$ 0</span>
                     </div>
 
-                    <button onclick="toggleShop()" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 text-red-400 border border-red-500/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-10 sm:h-11 min-w-[40px] sm:min-w-[44px]" title="Laden öffnen">
+                    <button onclick="toggleShop()" style="touch-action: manipulation;" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 text-red-400 border border-red-500/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-10 sm:h-11 min-w-[40px] sm:min-w-[44px]" title="Laden öffnen">
                         <i class="fa-solid fa-store text-sm sm:text-base"></i>
                     </button>
 
                     <!-- Pause button column with fixed size x2 Speed button stacked directly below -->
                     <div class="flex flex-col space-y-1 items-center">
-                        <button onclick="togglePauseModal()" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 text-slate-200 border border-slate-700/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-10 sm:h-11 min-w-[40px] sm:min-w-[44px]" title="Pause">
+                        <button onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 text-slate-200 border border-slate-700/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-10 sm:h-11 min-w-[40px] sm:min-w-[44px]" title="Pause">
                             <i class="fa-solid fa-pause text-sm sm:text-base"></i>
                         </button>
-                        <button id="game-speed-btn" onclick="toggleGameSpeed()" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-950/80 text-slate-300 rounded-lg border border-slate-700/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 text-[10px]" title="Vorspulen 2x / Normal 1x">
+                        <button id="game-speed-btn" onclick="toggleGameSpeed()" style="touch-action: manipulation;" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-950/80 text-slate-300 rounded-lg border border-slate-700/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 text-[10px]" title="Vorspulen 2x / Normal 1x">
                             <i id="speed-btn-icon" class="fa-solid fa-forward text-[10px] text-slate-400"></i>
                             <span id="speed-btn-text" class="font-mono text-[10px] font-bold">1x</span>
                         </button>
