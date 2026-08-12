@@ -1752,6 +1752,11 @@
                     if (this.isPlacementMode) {
                         const touch = e.touches[0] || e.changedTouches[0];
                         if (touch) {
+                            this.placementTouchStart = {
+                                x: touch.clientX,
+                                y: touch.clientY,
+                                time: Date.now()
+                            };
                             this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
                             this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
                             this.raycaster.setFromCamera(this.mousePos, this.camera);
@@ -1888,7 +1893,16 @@
                                     this.updateGhostPosition(intersects.x, intersects.z);
                                 }
                             }
-                            this.confirmPlacement();
+                            if (this.placementTouchStart) {
+                                const dx = Math.abs(touch.clientX - this.placementTouchStart.x);
+                                const dy = Math.abs(touch.clientY - this.placementTouchStart.y);
+                                const duration = Date.now() - this.placementTouchStart.time;
+
+                                const isTap = (dx < 15 && dy < 15 && duration < 280);
+                                if (isTap) {
+                                    this.confirmPlacement();
+                                }
+                            }
                             break;
                         }
                     }
