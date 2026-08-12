@@ -964,15 +964,15 @@
                         if (elapsed < 3.0) {
                             // Fade-in up to second 3 (0.0 to 0.9)
                             radio.volume = Math.min(0.9, (elapsed / 3.0) * 0.9);
-                        } else if (elapsed <= 6.0) {
-                            // Hold full volume (seconds 3 to 6)
+                        } else if (elapsed <= 7.0) {
+                            // Hold full volume 1s longer (seconds 3 to 7)
                             radio.volume = 0.9;
-                        } else if (elapsed <= 8.0) {
-                            // Fast fade-out between second 6 and 8 (0.9 down to 0.0)
-                            const fadeProgress = (elapsed - 6.0) / 2.0;
+                        } else if (elapsed <= 9.0) {
+                            // Fast fade-out between second 7 and 9 (0.9 down to 0.0)
+                            const fadeProgress = (elapsed - 7.0) / 2.0;
                             radio.volume = Math.max(0.0, 0.9 * (1.0 - fadeProgress));
                         } else {
-                            // From second 8: quiet & paused
+                            // From second 9: quiet & paused
                             radio.volume = 0.0;
                             radio.pause();
                             clearInterval(fadeInterval);
@@ -980,10 +980,10 @@
                         }
                     }, 50);
 
-                    // Trigger jet flyover callback at second 10.0 (8s radio + 2s pause)
+                    // Trigger jet flyover callback at second 11.0 (9s radio + 2s pause)
                     setTimeout(() => {
                         finishCallback();
-                    }, 10000);
+                    }, 11000);
 
                 }).catch(e => {
                     console.log("radio.mp3 play blocked", e);
@@ -2497,11 +2497,11 @@
 
                     this.activeAirstrike = {
                         jetMesh: jetGroup,
-                        speed: 70,
+                        speed: 75,
                         playerX: playerX,
                         droppedBombs: 0,
-                        maxBombs: 6,
-                        lastDropZ: -50
+                        maxBombs: 12,
+                        lastDropZ: -60
                     };
                 });
             }
@@ -2533,8 +2533,8 @@
                         if (zone.damageTimer >= 0.4) {
                             zone.damageTimer = 0;
                             this.zombies.forEach(z => {
-                                if (z.position.distanceTo(zone.pos) < 4.8) {
-                                    z.userData.hp -= 70;
+                                if (z.position.distanceTo(zone.pos) < 5.2) {
+                                    z.userData.hp -= 80;
                                     this.flashZombieHit(z);
                                     if (z.userData.hp <= 0) this.killZombie(z);
                                 }
@@ -2553,18 +2553,24 @@
                 const strike = this.activeAirstrike;
                 strike.jetMesh.position.z += strike.speed * dt;
 
-                if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 18)) {
+                // Double Line Corridor across the entire map (-60 to +60 Z-axis)
+                // Left Line (X - 3.8m) / Right Line (X + 3.8m) alternating drops!
+                if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 10)) {
                     strike.droppedBombs++;
                     strike.lastDropZ = strike.jetMesh.position.z;
 
-                    const dropX = strike.playerX + (Math.random() - 0.5) * 6;
+                    const isLeft = (strike.droppedBombs % 2 === 1);
+                    const offsetX = isLeft ? -3.8 : 3.8;
+                    const dropX = THREE.MathUtils.clamp(strike.playerX + offsetX + (Math.random() - 0.5) * 1.2, -72, 72);
                     const dropZ = strike.jetMesh.position.z;
                     const impactPos = new THREE.Vector3(dropX, 0, dropZ);
 
-                    audio.playExplosion();
+                    // Rocket Turret Style Blast: Shockwave, Sub-Bass Sound, Spark Burst, High Instant AoE Damage!
+                    this.createExplosion(impactPos, 6.0, 320);
 
+                    // Napalm Persistent Burning Zone
                     const fireMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
-                    const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(4.5, 4.5, 0.15, 12), fireMat);
+                    const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 4.8, 0.15, 12), fireMat);
                     fireZone.position.copy(impactPos);
                     fireZone.position.y = 0.1;
                     this.scene.add(fireZone);
@@ -2573,7 +2579,7 @@
                     this.napalmZones.push({
                         mesh: fireZone,
                         pos: impactPos,
-                        life: 5.0,
+                        life: 5.5,
                         damageTimer: 0
                     });
                 }
