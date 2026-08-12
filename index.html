@@ -189,37 +189,9 @@
                         </p>
                     </div>
 
-                    <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl text-left space-y-3 shadow-2xl">
-                        <h3 class="text-slate-300 text-xs font-bold uppercase tracking-wider border-b border-slate-800 pb-2 flex items-center justify-between">
-                            <span><i class="fa-solid fa-sliders text-red-500 mr-2"></i> Spiel-Einstellungen</span>
-                        </h3>
-
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
-                            <div class="flex items-center space-x-2.5">
-                                <i class="fa-solid fa-chart-line text-amber-400 text-sm"></i>
-                                <div>
-                                    <div class="text-xs font-bold text-slate-200">Progressiver Modus</div>
-                                    <div class="text-[10px] text-slate-400">Schwierigkeit steigt kontinuierlich</div>
-                                </div>
-                            </div>
-                            <span class="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono font-bold uppercase">Aktiv</span>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3 pt-1">
-                            <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                                <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-2"></i> Musik</span>
-                                <input type="checkbox" id="toggle-music" checked onchange="toggleAudio('music', this.checked)" class="w-5 h-5 accent-red-600 rounded">
-                            </label>
-                            <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                                <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-2"></i> SFX</span>
-                                <input type="checkbox" id="toggle-sfx" checked onchange="toggleAudio('sfx', this.checked)" class="w-5 h-5 accent-red-600 rounded">
-                            </label>
-                        </div>
-                    </div>
-
-                    <button onclick="startGame()" class="w-full py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-teko text-2xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3">
-                        <i class="fa-solid fa-play"></i>
-                        <span>Start</span>
+                    <button onclick="startGame()" class="w-full py-4 sm:py-5 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-3xl sm:text-4xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3 my-auto">
+                        <i class="fa-solid fa-play text-2xl"></i>
+                        <span>JETZT SPIELEN</span>
                     </button>
                 </div>
 
@@ -573,10 +545,12 @@
         };
 
         const savedData = Storage.load();
-        document.getElementById('toggle-music').checked = savedData.musicEnabled;
-        document.getElementById('toggle-sfx').checked = savedData.sfxEnabled;
-        document.getElementById('cam-zoom').value = savedData.cameraZoom;
-        document.getElementById('cam-angle').value = savedData.cameraAngle;
+        const mainMusicToggle = document.getElementById('toggle-music');
+        if (mainMusicToggle) mainMusicToggle.checked = savedData.musicEnabled;
+        const mainSfxToggle = document.getElementById('toggle-sfx');
+        if (mainSfxToggle) mainSfxToggle.checked = savedData.sfxEnabled;
+        if (document.getElementById('cam-zoom')) document.getElementById('cam-zoom').value = savedData.cameraZoom;
+        if (document.getElementById('cam-angle')) document.getElementById('cam-angle').value = savedData.cameraAngle;
 
         let previewScene, previewCamera, previewRenderer, previewPlayer;
         function initCameraPreview() {
