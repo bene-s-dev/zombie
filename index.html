@@ -1285,21 +1285,21 @@
         const audio = new SoundEngine();
 
         const WEAPONS = {
-            pistol: { id: 'pistol', name: 'Pistole', cost: 0, level: 1, maxLevel: 10, damage: 38, firerate: 210, speed: 50, spread: 0.03, count: 1, isExplosive: false, color: 0xfacc15 },
-            smg: { id: 'smg', name: 'Maschinenpistole MP5', cost: 200, level: 1, maxLevel: 10, damage: 22, firerate: 110, speed: 52, spread: 0.08, count: 1, isExplosive: false, color: 0xeab308 },
-            shotgun: { id: 'shotgun', name: 'Schrotflinte', cost: 350, level: 1, maxLevel: 10, damage: 24, firerate: 650, speed: 42, spread: 0.28, count: 6, isExplosive: false, color: 0xf97316 },
-            rifle: { id: 'rifle', name: 'Sturmgewehr AK-47', cost: 650, level: 1, maxLevel: 10, damage: 45, firerate: 130, speed: 58, spread: 0.05, count: 1, isExplosive: false, color: 0xef4444 },
-            sniper: { id: 'sniper', name: 'Scharfschützengewehr', cost: 900, level: 1, maxLevel: 10, damage: 180, firerate: 900, speed: 80, spread: 0.01, count: 1, isExplosive: false, color: 0x38bdf8 },
-            rpg: { id: 'rpg', name: 'RPG Raketenwerfer', cost: 1300, level: 1, maxLevel: 10, damage: 220, firerate: 1200, speed: 32, spread: 0.02, count: 1, isExplosive: true, splashRadius: 6.5, color: 0xd97706 },
-            minigun: { id: 'minigun', name: 'Schwere Minigun', cost: 1800, level: 1, maxLevel: 10, damage: 38, firerate: 65, speed: 60, spread: 0.1, count: 1, isExplosive: false, color: 0xa855f7 },
-            plasma: { id: 'plasma', name: 'Plasma-Disruptor', cost: 2500, level: 1, maxLevel: 10, damage: 160, firerate: 450, speed: 45, spread: 0.03, count: 1, isExplosive: true, splashRadius: 4.5, color: 0x06b6d4 }
+            pistol: { id: 'pistol', name: 'Pistole', cost: 0, level: 1, maxLevel: 10, damage: 40, firerate: 200, speed: 52, spread: 0.03, count: 1, isExplosive: false, color: 0xfacc15 },
+            smg: { id: 'smg', name: 'Maschinenpistole MP5', cost: 200, level: 1, maxLevel: 10, damage: 24, firerate: 105, speed: 54, spread: 0.07, count: 1, isExplosive: false, color: 0xeab308 },
+            shotgun: { id: 'shotgun', name: 'Schrotflinte', cost: 350, level: 1, maxLevel: 10, damage: 26, firerate: 620, speed: 45, spread: 0.26, count: 7, isExplosive: false, color: 0xf97316 },
+            rifle: { id: 'rifle', name: 'Sturmgewehr AK-47', cost: 650, level: 1, maxLevel: 10, damage: 48, firerate: 125, speed: 60, spread: 0.04, count: 1, isExplosive: false, color: 0xef4444 },
+            sniper: { id: 'sniper', name: 'Scharfschützengewehr', cost: 900, level: 1, maxLevel: 10, damage: 260, firerate: 850, speed: 85, spread: 0.005, count: 1, isExplosive: false, color: 0x38bdf8 },
+            rpg: { id: 'rpg', name: 'RPG Raketenwerfer', cost: 1300, level: 1, maxLevel: 10, damage: 340, firerate: 1150, speed: 34, spread: 0.02, count: 1, isExplosive: true, splashRadius: 7.5, color: 0xd97706 },
+            minigun: { id: 'minigun', name: 'Schwere Minigun', cost: 1800, level: 1, maxLevel: 10, damage: 42, firerate: 60, speed: 64, spread: 0.09, count: 1, isExplosive: false, color: 0xa855f7 },
+            plasma: { id: 'plasma', name: 'Plasma-Disruptor', cost: 2500, level: 1, maxLevel: 10, damage: 240, firerate: 420, speed: 48, spread: 0.02, count: 1, isExplosive: true, splashRadius: 5.5, color: 0x06b6d4 }
         };
 
         const TURRET_TYPES = {
-            mg: { id: 'mg', name: 'Maschinengewehr-Turm', cost: 280, range: 26, damage: 24, firerate: 300, hp: 350, maxHp: 350, desc: 'Schnellfeuer-Turm. Feuert kontinuierlich auf nahe Feinde!' },
-            cannon: { id: 'cannon', name: 'Artillerie-Kanonenturm', cost: 520, range: 30, damage: 110, firerate: 1100, isExplosive: true, splashRadius: 4.8, hp: 500, maxHp: 500, desc: 'Schwere Artillerie. Flächenschaden gegen Zombie-Horden!' },
-            tesla: { id: 'tesla', name: 'Tesla-Schockspule', cost: 720, range: 20, damage: 55, firerate: 800, isTesla: true, hp: 400, maxHp: 400, desc: 'Schockspule. Schockt & verlangsamt mehrere Feinde gleichzeitig!' },
-            rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 980, range: 34, damage: 160, firerate: 1500, isExplosive: true, splashRadius: 5.5, hp: 450, maxHp: 450, desc: 'Fernkampf-Flak. Verheerender Flächenschaden!' }
+            mg: { id: 'mg', name: 'Maschinengewehr-Turm', cost: 280, range: 27, damage: 26, firerate: 280, hp: 400, maxHp: 400, desc: 'Schnellfeuer-Turm. Feuert kontinuierlich auf nahe Feinde!' },
+            cannon: { id: 'cannon', name: 'Artillerie-Kanonenturm', cost: 520, range: 32, damage: 125, firerate: 1000, isExplosive: true, splashRadius: 5.2, hp: 550, maxHp: 550, desc: 'Schwere Artillerie. Flächenschaden gegen Zombie-Horden!' },
+            tesla: { id: 'tesla', name: 'Tesla-Schockspule', cost: 720, range: 22, damage: 65, firerate: 750, isTesla: true, hp: 450, maxHp: 450, desc: 'Schockspule. Schockt & verlangsamt mehrere Feinde gleichzeitig!' },
+            rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 980, range: 36, damage: 185, firerate: 1400, isExplosive: true, splashRadius: 6.2, hp: 500, maxHp: 500, desc: 'Fernkampf-Flak. Verheerender Flächenschaden!' }
         };
 
         function getTurretCost(turretTypeId) {
@@ -1308,9 +1308,9 @@
         }
 
         const WALL_TYPES = {
-            sandbag: { id: 'sandbag', name: 'Sandsack-Barrikade', cost: 45, hp: 250, radius: 1.8, desc: 'Günstige Barrikade. Stoppt normale Zombies & Schüsse.' },
-            concrete: { id: 'concrete', name: 'Beton-Schutzwall', cost: 95, hp: 650, radius: 2.1, desc: 'Schwerer Schutzwall mit sehr hoher Widerstandskraft.' },
-            laser_wall: { id: 'laser_wall', name: 'Plasma-Barriere', cost: 180, hp: 1200, radius: 2.25, desc: 'High-Tech Kraftfeld. Nur Endbosse können sie beschädigen!' }
+            sandbag: { id: 'sandbag', name: 'Sandsack-Barrikade', cost: 45, hp: 300, radius: 1.8, desc: 'Günstige Barrikade. Stoppt normale Zombies & Schüsse.' },
+            concrete: { id: 'concrete', name: 'Beton-Schutzwall', cost: 95, hp: 850, radius: 2.1, desc: 'Schwerer Schutzwall mit sehr hoher Widerstandskraft.' },
+            laser_wall: { id: 'laser_wall', name: 'Plasma-Barriere', cost: 180, hp: 1600, radius: 2.25, desc: 'High-Tech Kraftfeld. Nur Endbosse können sie beschädigen!' }
         };
 
         const UPGRADES = {
@@ -1890,8 +1890,8 @@
                 const x = Math.cos(angle) * distance;
                 const z = Math.sin(angle) * distance;
 
-                const waveHpScale = 1 + (this.currentWave - 1) * 0.30;
-                const waveDmgScale = 1 + (this.currentWave - 1) * 0.20;
+                const waveHpScale = 1 + (this.currentWave - 1) * 0.24;
+                const waveDmgScale = 1 + (this.currentWave - 1) * 0.16;
 
                 const isBossWave = (this.currentWave % 7 === 0) && (this.zombiesLeftToSpawn === 0);
 
