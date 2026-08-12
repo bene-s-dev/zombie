@@ -1060,8 +1060,45 @@
                 });
             }
 
+            stopJetFlyover() {
+                if (this.activeJetNodes) {
+                    this.activeJetNodes.forEach(node => {
+                        try { node.stop(); } catch(e) {}
+                        try { node.disconnect(); } catch(e) {}
+                    });
+                    this.activeJetNodes = [];
+                }
+                if (this.activeJetAudios) {
+                    this.activeJetAudios.forEach(el => {
+                        try { el.pause(); } catch(e) {}
+                    });
+                    this.activeJetAudios = [];
+                }
+            }
+
+            suspendAll() {
+                this.stopJetFlyover();
+                if (this.bgMusic) {
+                    try { this.bgMusic.pause(); } catch(e) {}
+                }
+                if (this.ctx && this.ctx.state === 'running') {
+                    try { this.ctx.suspend(); } catch(e) {}
+                }
+            }
+
+            resumeAll() {
+                if (Storage.data.musicEnabled && this.bgMusic && (!gameInstance || !gameInstance.isPaused)) {
+                    try { this.bgMusic.play().catch(() => {}); } catch(e) {}
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    try { this.ctx.resume(); } catch(e) {}
+                }
+            }
+
             playJetFlyover() {
                 if (!Storage.data.sfxEnabled) return;
+                if (!this.activeJetNodes) this.activeJetNodes = [];
+                if (!this.activeJetAudios) this.activeJetAudios = [];
                 try {
                     if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
                     if (this.ctx) {
@@ -1089,6 +1126,7 @@
                         filter.connect(gain);
                         gain.connect(this.ctx.destination);
                         jetNoise.start(now);
+                        this.activeJetNodes.push(jetNoise);
                         return;
                     }
                 } catch(e) {}
@@ -1113,6 +1151,7 @@
                     }
                     const url = URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
                     const el = new Audio(url); el.volume = 0.85; el.play().catch(() => {});
+                    this.activeJetAudios.push(el);
                     setTimeout(() => URL.revokeObjectURL(url), 4000);
                 } catch(e) {}
             }
@@ -3234,12 +3273,25 @@
             triggerGameOver(reason = 'base') {
                 this.isGameOver = true;
                 this.isRunning = false;
+                this.isPaused = true;
                 clearInterval(this.secondTimer);
                 clearInterval(this.spawnTimer);
                 clearInterval(this.turretTimer);
 
                 audio.stopMusic();
+                audio.stopJetFlyover();
                 audio.playExplosion();
+
+                if (this.activeAirstrikes) {
+                    this.activeAirstrikes.forEach(strike => {
+                        if (strike.jetMesh) this.scene.remove(strike.jetMesh);
+                    });
+                    this.activeAirstrikes = [];
+                }
+                if (this.targetMarkerGroup) {
+                    this.scene.remove(this.targetMarkerGroup);
+                    this.targetMarkerGroup = null;
+                }
 
                 const titleEl = document.getElementById('go-title');
                 const descEl = document.getElementById('go-desc');
@@ -3880,14 +3932,42 @@
         function updateMusicDucking() {
             const intelModal = document.getElementById('intel-modal');
             const isIntelOpen = intelModal && !intelModal.classList.contains('hidden');
-            const isPausedAny = isShopOpen || isPauseModalOpen || isIntelOpen || (gameInstance && gameInstance.isGameOver);
+            const isPausedAny = isShopOpen || isPauseModalOpen || isIntelOpen || (gameInstance && (gameInstance.isPaused || gameInstance.isGameOver));
 
             if (isPausedAny) {
                 audio.duckMusic();
+                audio.stopJetFlyover();
             } else {
                 audio.unduckMusic();
             }
         }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (gameInstance && gameInstance.isRunning && !gameInstance.isGameOver) {
+                    if (!isPauseModalOpen) togglePauseModal();
+                    else gameInstance.isPaused = true;
+                }
+                audio.suspendAll();
+            } else {
+                if (!isShopOpen && !isPauseModalOpen && gameInstance && !gameInstance.isPaused) {
+                    audio.resumeAll();
+                }
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            if (gameInstance && gameInstance.isRunning && !gameInstance.isGameOver) {
+                if (!isPauseModalOpen && !isShopOpen) togglePauseModal();
+            }
+            audio.suspendAll();
+        });
+
+        window.addEventListener('focus', () => {
+            if (!isShopOpen && !isPauseModalOpen && gameInstance && !gameInstance.isPaused) {
+                audio.resumeAll();
+            }
+        });
 
         function closeIntelModal() {
             const modal = document.getElementById('intel-modal');
