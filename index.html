@@ -1689,6 +1689,16 @@
                             this.placementJustStarted = false;
                             return;
                         }
+                        this.mousePos.x = (clientX / window.innerWidth) * 2 - 1;
+                        this.mousePos.y = -(clientY / window.innerHeight) * 2 + 1;
+                        this.raycaster.setFromCamera(this.mousePos, this.camera);
+                        const intersects = new THREE.Vector3();
+                        if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                            this.pointerWorldPos.copy(intersects);
+                            if (this.ghostMesh) {
+                                this.updateGhostPosition(intersects.x, intersects.z);
+                            }
+                        }
                         this.confirmPlacement();
                         return;
                     }
@@ -2305,9 +2315,11 @@
 
                 this.scene.add(this.ghostMesh);
 
-                if (this.pointerWorldPos) {
-                    this.updateGhostPosition(this.pointerWorldPos.x, this.pointerWorldPos.z);
-                }
+                const initX = (this.playerGroup && Math.abs(this.playerGroup.position.x) > 3) ? this.playerGroup.position.x + 3.2 : 11.5;
+                const initZ = (this.playerGroup && Math.abs(this.playerGroup.position.z) > 3) ? this.playerGroup.position.z + 3.2 : 11.5;
+                if (!this.pointerWorldPos) this.pointerWorldPos = new THREE.Vector3();
+                this.pointerWorldPos.set(initX, 0, initZ);
+                this.updateGhostPosition(initX, initZ);
 
                 document.getElementById('placement-item-name').innerText = spec.name;
                 document.getElementById('placement-hud').classList.remove('hidden');
@@ -2322,7 +2334,7 @@
 
                 let isValid = true;
                 const distToBase = Math.hypot(x, z);
-                if (distToBase < 10.0 || Math.abs(x) > 74 || Math.abs(z) > 74) {
+                if (distToBase < 7.2 || Math.abs(x) > 74 || Math.abs(z) > 74) {
                     isValid = false;
                 }
 
@@ -2360,10 +2372,13 @@
 
                 if (kind === 'turret') {
                     this.buildTurretAt(specId, x, z, rot);
+                    if (typeof showPurchaseToast === 'function') showPurchaseToast(`${TURRET_TYPES[specId]?.name || 'Turm'} platziert!`);
                 } else {
                     this.buildWallAt(specId, x, z, rot);
+                    if (typeof showPurchaseToast === 'function') showPurchaseToast(`${WALL_TYPES[specId]?.name || 'Wall'} platziert!`);
                 }
 
+                audio.playCoin();
                 this.syncHUD();
 
                 if (this.money >= cost) {
