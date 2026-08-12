@@ -990,6 +990,10 @@
 
             playZombieHit() {
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
+                // Throttle: max once per 80ms to prevent AudioContext spam with many zombies
+                const nowMs = performance.now();
+                if (nowMs - (this._lastZombieHitSound || 0) < 80) return;
+                this._lastZombieHitSound = nowMs;
                 try {
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
@@ -2085,8 +2089,8 @@
                 const zombieGroup = new THREE.Group();
                 zombieGroup.position.set(x, 0, z);
 
-                const bodyMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
-                const clothMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+                const bodyMat = new THREE.MeshBasicMaterial({ color: color });
+                const clothMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
                 const eyeMat = new THREE.MeshBasicMaterial({ color: type === 'spitter' ? 0xa3e635 : (type === 'summoner' ? 0xf472b6 : 0xef4444) });
 
                 if (type === 'crawler') {
@@ -2109,32 +2113,26 @@
                 } else {
                     const legL = new THREE.Mesh(new THREE.BoxGeometry(0.25 * scale, 0.7 * scale, 0.25 * scale), clothMat);
                     legL.position.set(-0.2 * scale, 0.35 * scale, 0);
-                    legL.castShadow = true;
                     zombieGroup.add(legL);
 
                     const legR = new THREE.Mesh(new THREE.BoxGeometry(0.25 * scale, 0.7 * scale, 0.25 * scale), clothMat);
                     legR.position.set(0.2 * scale, 0.35 * scale, 0);
-                    legR.castShadow = true;
                     zombieGroup.add(legR);
 
                     const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7 * scale, 0.9 * scale, 0.4 * scale), bodyMat);
                     torso.position.y = 1.15 * scale;
-                    torso.castShadow = true;
                     zombieGroup.add(torso);
 
                     const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2 * scale, 0.2 * scale, 0.8 * scale), bodyMat);
                     armL.position.set(-0.45 * scale, 1.2 * scale, 0.3 * scale);
-                    armL.castShadow = true;
                     zombieGroup.add(armL);
 
                     const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2 * scale, 0.2 * scale, 0.8 * scale), bodyMat);
                     armR.position.set(0.45 * scale, 1.2 * scale, 0.3 * scale);
-                    armR.castShadow = true;
                     zombieGroup.add(armR);
 
                     const head = new THREE.Mesh(new THREE.BoxGeometry(0.45 * scale, 0.45 * scale, 0.45 * scale), bodyMat);
                     head.position.y = 1.75 * scale;
-                    head.castShadow = true;
                     zombieGroup.add(head);
 
                     const eye1 = new THREE.Mesh(new THREE.BoxGeometry(0.08 * scale, 0.08 * scale, 0.08 * scale), eyeMat);
@@ -2194,7 +2192,7 @@
                 const zombieGroup = new THREE.Group();
                 zombieGroup.position.set(x, 0, z);
 
-                const bodyMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.7 });
+                const bodyMat = new THREE.MeshBasicMaterial({ color: 0x451a03 });
                 const eyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
 
                 const scale = 0.55;
@@ -2777,15 +2775,16 @@
             }
 
             flashZombieHit(zombieGroup) {
-                // Use userData timer flag instead of setTimeout to avoid spawning
-                // dozens of concurrent JS timers per second under heavy fire
+                // Set a single group-level flag — no traverse needed per hit
+                // The flag is checked directly on userData.bodyMeshes in the flash loop
+                if (!zombieGroup.userData) return;
+                zombieGroup.userData.flashTimer = 0.09;
                 zombieGroup.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        if (!child.userData.origColor) {
+                    if (child.isMesh && child.material && !child.userData._isEye) {
+                        if (child.userData.origColor === undefined) {
                             child.userData.origColor = child.material.color.getHex();
                         }
                         child.material.color.setHex(0xffffff);
-                        child.userData.flashTimer = 0.08; // seconds — decremented in animate()
                     }
                 });
             }
@@ -3249,6 +3248,12 @@
                 requestAnimationFrame(() => this.animate());
 
                 const now = performance.now();
+
+                // 30fps cap on mobile to halve GPU work
+                const isMob = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                const frameMinMs = isMob ? 33 : 16;
+                if (now - (this.lastFrameTime || 0) < frameMinMs) return;
+
                 const dt = Math.min((now - (this.lastFrameTime || now)) / 1000, 0.1) * (this.gameSpeed || 1);
                 this.lastFrameTime = now;
 
@@ -3541,7 +3546,7 @@
                                     if (z.userData.hp <= 0) this.killZombie(z);
                                 }
 
-                                this.syncHUD();
+                                this._needHudSync = true;
                                 if (this.baseHp <= 0) this.triggerGameOver('base');
                             } else {
                                 z.position.x = nextX;
@@ -3556,8 +3561,12 @@
                             }
                         }
 
-                        z.userData.walkCycle += 0.15;
-                        z.rotation.z = Math.sin(z.userData.walkCycle) * 0.08;
+                        // Walk bob: use dt-scaled counter, skip on mobile when >25 zombies
+                        const skipAnim = isMob && this.zombies.length > 25;
+                        if (!skipAnim) {
+                            z.userData.walkCycle += 0.15;
+                            z.rotation.z = Math.sin(z.userData.walkCycle) * 0.08;
+                        }
 
                         // Zombies attack nearby turrets!
                         for (let k = this.turrets.length - 1; k >= 0; k--) {
@@ -3633,21 +3642,22 @@
                         }
                     }
 
-                    // Process flashTimer flags set by flashZombieHit
-                    // This replaces per-hit setTimeout calls
-                    this.zombies.forEach(z => {
-                        z.traverse(child => {
-                            if (child.userData.flashTimer > 0) {
-                                child.userData.flashTimer -= dt;
-                                if (child.userData.flashTimer <= 0) {
-                                    child.userData.flashTimer = 0;
-                                    if (child.material && child.userData.origColor !== undefined) {
+                    // Process flash: only traverse zombies that are currently flashing
+                    for (let fi = 0; fi < this.zombies.length; fi++) {
+                        const fz = this.zombies[fi];
+                        if (fz.userData.flashTimer > 0) {
+                            fz.userData.flashTimer -= dt;
+                            if (fz.userData.flashTimer <= 0) {
+                                fz.userData.flashTimer = 0;
+                                // Restore colors
+                                fz.traverse(child => {
+                                    if (child.isMesh && child.material && child.userData.origColor !== undefined) {
                                         child.material.color.setHex(child.userData.origColor);
                                     }
-                                }
+                                });
                             }
-                        });
-                    });
+                        }
+                    }
                 }
 
                 // Throttle DOM syncHUD to max 10x per second (every 100ms)
