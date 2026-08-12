@@ -1730,16 +1730,16 @@
                     this.raycaster.setFromCamera(this.mousePos, this.camera);
                     
                     const clickableObjects = [];
-                    this.turrets.forEach(t => clickableObjects.push(t.userData.hitBox || t));
-                    this.walls.forEach(w => clickableObjects.push(w.userData.hitBox || w));
+                    this.turrets.forEach(t => t.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
+                    this.walls.forEach(w => w.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
 
                     const intersects = this.raycaster.intersectObjects(clickableObjects, true);
                     if (intersects.length > 0) {
                         let topObj = intersects[0].object;
-                        while (topObj.parent && topObj.parent !== this.scene) {
+                        while (topObj && topObj.parent && topObj.parent !== this.scene) {
                             topObj = topObj.parent;
                         }
-                        if (topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) {
+                        if (topObj && topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) {
                             this.inspectStructure(topObj);
                         }
                     }
@@ -1777,6 +1777,7 @@
                         if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal')) continue;
 
                         touchHandled = true;
+                        this.gameplayTouchStart = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
                         const halfWidth = window.innerWidth / 2;
                         const isJoystickSide = Storage.data.swapTouchControls ? (touch.clientX <= halfWidth) : (touch.clientX > halfWidth);
 
@@ -1904,6 +1905,40 @@
                                 }
                             }
                             break;
+                        }
+                    } else if (!this.isPaused && !this.isGameOver) {
+                        for (let i = 0; i < e.changedTouches.length; i++) {
+                            const touch = e.changedTouches[i];
+                            if (this.gameplayTouchStart && touch.identifier === this.gameplayTouchStart.id) {
+                                const dx = Math.abs(touch.clientX - this.gameplayTouchStart.x);
+                                const dy = Math.abs(touch.clientY - this.gameplayTouchStart.y);
+                                const duration = Date.now() - this.gameplayTouchStart.time;
+
+                                if (dx < 18 && dy < 18 && duration < 320) {
+                                    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                                    if (!targetEl || !targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal, #inspect-modal, #placement-hud, #joystick-container')) {
+                                        this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                                        this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                                        this.raycaster.setFromCamera(this.mousePos, this.camera);
+
+                                        const clickableObjects = [];
+                                        this.turrets.forEach(t => t.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
+                                        this.walls.forEach(w => w.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
+
+                                        const intersects = this.raycaster.intersectObjects(clickableObjects, true);
+                                        if (intersects.length > 0) {
+                                            let topObj = intersects[0].object;
+                                            while (topObj && topObj.parent && topObj.parent !== this.scene) {
+                                                topObj = topObj.parent;
+                                            }
+                                            if (topObj && topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) {
+                                                this.inspectStructure(topObj);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -2478,7 +2513,7 @@
                 turretGroup.add(baseMesh);
 
                 // Invisible Touch HitBox genau in der Größe des Turmes für präzises Antippen
-                const hitBoxMat = new THREE.MeshBasicMaterial({ visible: false });
+                const hitBoxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
                 const hitBox = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 2.2, 8), hitBoxMat);
                 hitBox.position.y = 1.1;
                 turretGroup.add(hitBox);
@@ -2579,6 +2614,11 @@
                     glowBar.position.y = 2.4;
                     wallGroup.add(glowBar);
                 }
+
+                const hitBoxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
+                const hitBox = new THREE.Mesh(new THREE.BoxGeometry(wWidth + 0.4, 2.5, wDepth + 0.4), hitBoxMat);
+                hitBox.position.y = 1.25;
+                wallGroup.add(hitBox);
 
                 wallGroup.userData = {
                     isWall: true,
