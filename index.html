@@ -927,40 +927,47 @@
 
             playRadioChatter() {
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
-                try {
-                    // Resume context first so it plays on mobile/after user interaction
-                    if (this.ctx.state !== 'running') this.ctx.resume();
-                    const now = this.ctx.currentTime;
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(1800, now);
-                    osc.frequency.setValueAtTime(2400, now + 0.04);
-                    gain.gain.setValueAtTime(0.45, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.18);
-
-                    const bufferSize = this.ctx.sampleRate * 0.35;
-                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                    const output = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1) * 0.6;
-                    const noise = this.ctx.createBufferSource();
-                    noise.buffer = buffer;
-                    const filter = this.ctx.createBiquadFilter();
-                    filter.type = 'bandpass';
-                    filter.frequency.value = 2200;
-                    filter.Q.value = 2.5;
-                    const nGain = this.ctx.createGain();
-                    nGain.gain.setValueAtTime(0.55, now);
-                    nGain.gain.exponentialRampToValueAtTime(0.005, now + 0.35);
-                    noise.connect(filter);
-                    filter.connect(nGain);
-                    nGain.connect(this.ctx.destination);
-                    noise.start(now);
-                } catch(e) {}
+                const play = () => {
+                    try {
+                        const now = this.ctx.currentTime + 0.05;
+                        // Tone sweep
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(1600, now);
+                        osc.frequency.setValueAtTime(2600, now + 0.06);
+                        osc.frequency.setValueAtTime(1900, now + 0.15);
+                        gain.gain.setValueAtTime(0.7, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.3);
+                        // Bandpass noise burst
+                        const bufferSize = Math.floor(this.ctx.sampleRate * 0.45);
+                        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                        const output = buffer.getChannelData(0);
+                        for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1);
+                        const noise = this.ctx.createBufferSource();
+                        noise.buffer = buffer;
+                        const filter = this.ctx.createBiquadFilter();
+                        filter.type = 'bandpass';
+                        filter.frequency.value = 2000;
+                        filter.Q.value = 1.5;
+                        const nGain = this.ctx.createGain();
+                        nGain.gain.setValueAtTime(0.7, now);
+                        nGain.gain.exponentialRampToValueAtTime(0.005, now + 0.45);
+                        noise.connect(filter);
+                        filter.connect(nGain);
+                        nGain.connect(this.ctx.destination);
+                        noise.start(now);
+                    } catch(e) { console.warn('chatter err', e); }
+                };
+                if (this.ctx.state === 'running') {
+                    play();
+                } else {
+                    this.ctx.resume().then(play);
+                }
             }
 
             playRadioVoice(onCompleteCallback) {
@@ -2587,7 +2594,7 @@
                 burner.position.set(0, 0, -2.4);
                 jetGroup.add(burner);
 
-                jetGroup.position.set(targetX, 24, -65);
+                jetGroup.position.set(targetX, 24, -133);
                 jetGroup.rotation.y = 0;
 
                 this.scene.add(jetGroup);
@@ -2598,9 +2605,9 @@
                     speed: 75,
                     targetX: targetX,
                     droppedBombs: 0,
-                    maxBombs: 10,
-                    lastDropZ: -60,
-                    dropDelay: 0.75   // 0.75s after jet flyover sound before first bomb drops
+                    maxBombs: 16,
+                    lastDropZ: -200,
+                    dropDelay: 0.75
                 });
             }
 
