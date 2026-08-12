@@ -944,9 +944,8 @@
                 // 1. Confirmation Bleep / Squelch Sound
                 this.playRadioChatter();
 
-                // 2. Play radio.mp3 instantly (skipping silent lead-in offset)
+                // 2. Play radio.mp3 — seek to skip silent lead-in AFTER play() resolves
                 const radio = new Audio('radio.mp3');
-                try { radio.currentTime = 1.15; } catch(e) {}
                 radio.volume = 0.9;
 
                 let isCallbackDone = false;
@@ -957,23 +956,20 @@
                 };
 
                 radio.play().then(() => {
+                    // Skip silent intro immediately after browser starts playback
+                    try { radio.currentTime = 1.4; } catch(e) {}
+
                     const startTime = performance.now();
 
                     const fadeInterval = setInterval(() => {
                         const elapsed = (performance.now() - startTime) / 1000;
 
-                        if (elapsed < 2.0) {
-                            // Quick ramp up to 0.9 by second 2
-                            radio.volume = 0.65 + (elapsed / 2.0) * 0.25;
-                        } else if (elapsed <= 7.0) {
-                            // Hold full volume (seconds 2 to 7)
+                        if (elapsed <= 7.0) {
                             radio.volume = 0.9;
                         } else if (elapsed <= 9.0) {
-                            // Fast fade-out between second 7 and 9 (0.9 down to 0.0)
                             const fadeProgress = (elapsed - 7.0) / 2.0;
                             radio.volume = Math.max(0.0, 0.9 * (1.0 - fadeProgress));
                         } else {
-                            // From second 9: quiet & paused
                             radio.volume = 0.0;
                             radio.pause();
                             clearInterval(fadeInterval);
@@ -981,7 +977,7 @@
                         }
                     }, 50);
 
-                    // Trigger jet flyover callback at second 11.0 (9s radio + 2s pause)
+                    // Safety: trigger jet at 11s max
                     setTimeout(() => {
                         finishCallback();
                     }, 11000);
