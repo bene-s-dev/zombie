@@ -3591,12 +3591,15 @@
                             }
                         }
 
+                        const distToBaseCurr = Math.hypot(z.position.x - basePos.x, z.position.z - basePos.z);
+                        let distToBaseNext = distToBaseCurr;
+
                         if (chosenAngle !== null) {
                             z.rotation.y = chosenAngle;
                             const nextX = z.position.x + Math.sin(chosenAngle) * stepSize;
                             const nextZ = z.position.z + Math.cos(chosenAngle) * stepSize;
 
-                            const distToBaseNext = Math.hypot(nextX - basePos.x, nextZ - basePos.z);
+                            distToBaseNext = Math.hypot(nextX - basePos.x, nextZ - basePos.z);
                             if (distToBaseNext < BASE_RADIUS) {
                                 const dirX = (nextX - basePos.x) / (distToBaseNext || 1);
                                 const dirZ = (nextZ - basePos.z) / (distToBaseNext || 1);
