@@ -347,18 +347,6 @@
                         </div>
                     </button>
 
-                    <!-- Nuke Ultimate Button -->
-                    <button id="hud-nuke-btn" onclick="triggerNuke()" ontouchstart="triggerNuke(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-red-500/60 text-red-400 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center space-x-1.5 h-10 sm:h-11 pointer-events-auto animate-pulse" title="Atombomben-Abwurf [Q]">
-                        <div id="nuke-progress-fill" class="absolute top-0 left-0 bottom-0 bg-red-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
-                        <div id="nuke-icon" class="relative z-10 flex items-center pr-1 text-red-500 animate-spin">
-                            <i class="fa-solid fa-radiation text-red-500 text-xs sm:text-base"></i>
-                        </div>
-                        <div class="relative z-10 flex flex-col text-left">
-                            <span class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase leading-none">Atombombe</span>
-                            <span id="nuke-status-text" class="font-mono text-[10px] sm:text-xs font-bold text-red-400 leading-tight">BEREIT</span>
-                        </div>
-                    </button>
-
                     <div class="bg-transparent border border-amber-500/60 px-2.5 sm:px-3 rounded-lg sm:rounded-xl backdrop-blur-sm shadow-lg flex items-center space-x-1 h-10 sm:h-11">
                         <i class="fa-solid fa-coins text-amber-400 text-xs sm:text-base"></i>
                         <span id="hud-money" class="font-mono text-xs sm:text-base font-bold text-amber-400">$ 0</span>
@@ -2012,9 +2000,6 @@
                     if (e.code === 'Space') e.preventDefault();
                     if (e.code === 'KeyE') {
                         this.triggerAirstrike();
-                    }
-                    if (e.code === 'KeyQ') {
-                        this.triggerNuke();
                     }
                     if (e.code === 'KeyQ') {
                         this.triggerNuke();
@@ -5240,6 +5225,13 @@
         function triggerAirstrike() {
             if (gameInstance) {
                 gameInstance.triggerAirstrike();
+                gameInstance.saveGameSession();
+            }
+        }
+
+        function triggerNuke() {
+            if (gameInstance) {
+                gameInstance.triggerNuke();
                 gameInstance.saveGameSession();
             }
         }
