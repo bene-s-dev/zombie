@@ -1458,113 +1458,78 @@
                     if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
                     if (this.ctx) {
                         const now = this.ctx.currentTime;
-                        const duration = 4.0;
+                        const duration = 5.5;
+
+                        // 1. Initial Supersonic Shockwave Punch (Transient Burst)
+                        const punchOsc = this.ctx.createOscillator();
+                        const punchGain = this.ctx.createGain();
+                        punchOsc.type = 'triangle';
+                        punchOsc.frequency.setValueAtTime(150, now);
+                        punchOsc.frequency.exponentialRampToValueAtTime(25, now + 0.15);
+                        punchGain.gain.setValueAtTime(2.2, now);
+                        punchGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                        punchOsc.connect(punchGain);
+                        punchGain.connect(this.ctx.destination);
+                        punchOsc.start(now);
+                        punchOsc.stop(now + 0.15);
+
+                        // 2. Heavy Sub-Bass Earth-Shaker (60Hz -> 12Hz)
+                        const subOsc1 = this.ctx.createOscillator();
+                        const subOsc2 = this.ctx.createOscillator();
+                        const subGain = this.ctx.createGain();
+                        
+                        subOsc1.type = 'sine';
+                        subOsc2.type = 'sawtooth';
+                        subOsc1.frequency.setValueAtTime(65, now);
+                        subOsc1.frequency.exponentialRampToValueAtTime(12, now + duration);
+                        subOsc2.frequency.setValueAtTime(45, now);
+                        subOsc2.frequency.exponentialRampToValueAtTime(10, now + duration);
+
+                        const subFilter = this.ctx.createBiquadFilter();
+                        subFilter.type = 'lowpass';
+                        subFilter.frequency.setValueAtTime(220, now);
+
+                        subGain.gain.setValueAtTime(2.5, now);
+                        subGain.gain.linearRampToValueAtTime(1.8, now + 0.4);
+                        subGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                        subOsc1.connect(subFilter);
+                        subOsc2.connect(subFilter);
+                        subFilter.connect(subGain);
+                        subGain.connect(this.ctx.destination);
+
+                        subOsc1.start(now);
+                        subOsc2.start(now);
+                        subOsc1.stop(now + duration);
+                        subOsc2.stop(now + duration);
+
+                        // 3. Massive Blast Noise & Rolling Thunder Tail
                         const bufferSize = Math.floor(this.ctx.sampleRate * duration);
                         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                         const output = buffer.getChannelData(0);
-                        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+                        for (let i = 0; i < bufferSize; i++) {
+                            output[i] = Math.random() * 2 - 1;
+                        }
                         const noise = this.ctx.createBufferSource();
                         noise.buffer = buffer;
 
-                        const filter = this.ctx.createBiquadFilter();
-                        filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(600, now);
-                        filter.frequency.exponentialRampToValueAtTime(30, now + duration);
+                        const noiseFilter = this.ctx.createBiquadFilter();
+                        noiseFilter.type = 'lowpass';
+                        noiseFilter.frequency.setValueAtTime(2500, now);
+                        noiseFilter.frequency.exponentialRampToValueAtTime(35, now + duration);
+                        noiseFilter.Q.setValueAtTime(3.5, now);
 
-                        const osc = this.ctx.createOscillator();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(110, now);
-                        osc.frequency.exponentialRampToValueAtTime(18, now + duration);
+                        const noiseGain = this.ctx.createGain();
+                        noiseGain.gain.setValueAtTime(3.0, now);
+                        noiseGain.gain.linearRampToValueAtTime(1.5, now + 0.5);
+                        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-                        const gain = this.ctx.createGain();
-                        gain.gain.setValueAtTime(1.0, now);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-                        noise.connect(filter);
-                        osc.connect(filter);
-                        filter.connect(gain);
-                        gain.connect(this.ctx.destination);
+                        noise.connect(noiseFilter);
+                        noiseFilter.connect(noiseGain);
+                        noiseGain.connect(this.ctx.destination);
 
                         noise.start(now);
-                        osc.start(now);
                         noise.stop(now + duration);
-                        osc.stop(now + duration);
-                    }
-                } catch(e) {}
-            }
-
-            playSlowJetFlyover() {
-                if (!Storage.data.sfxEnabled) return;
-                if (!this.activeJetNodes) this.activeJetNodes = [];
-                try {
-                    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
-                    if (this.ctx) {
-                        const now = this.ctx.currentTime;
-                        const duration = 5.0;
-                        const bufferSize = Math.floor(this.ctx.sampleRate * duration);
-                        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                        const output = buffer.getChannelData(0);
-                        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-                        const jetNoise = this.ctx.createBufferSource();
-                        jetNoise.buffer = buffer;
-
-                        const filter = this.ctx.createBiquadFilter();
-                        filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(120, now);
-                        filter.frequency.exponentialRampToValueAtTime(650, now + 1.5);
-                        filter.frequency.exponentialRampToValueAtTime(80, now + duration);
-
-                        const gain = this.ctx.createGain();
-                        gain.gain.setValueAtTime(0.05, now);
-                        gain.gain.linearRampToValueAtTime(0.85, now + 1.5);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-                        jetNoise.connect(filter);
-                        filter.connect(gain);
-                        gain.connect(this.ctx.destination);
-                        jetNoise.start(now);
-                        this.activeJetNodes.push(jetNoise);
-                    }
-                } catch(e) {}
-            }
-
-            playHeavyAtomicExplosion() {
-                if (!Storage.data.sfxEnabled) return;
-                try {
-                    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
-                    if (this.ctx) {
-                        const now = this.ctx.currentTime;
-                        const duration = 4.0;
-                        const bufferSize = Math.floor(this.ctx.sampleRate * duration);
-                        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                        const output = buffer.getChannelData(0);
-                        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-                        const noise = this.ctx.createBufferSource();
-                        noise.buffer = buffer;
-
-                        const filter = this.ctx.createBiquadFilter();
-                        filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(600, now);
-                        filter.frequency.exponentialRampToValueAtTime(30, now + duration);
-
-                        const osc = this.ctx.createOscillator();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(110, now);
-                        osc.frequency.exponentialRampToValueAtTime(18, now + duration);
-
-                        const gain = this.ctx.createGain();
-                        gain.gain.setValueAtTime(1.0, now);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-                        noise.connect(filter);
-                        osc.connect(filter);
-                        filter.connect(gain);
-                        gain.connect(this.ctx.destination);
-
-                        noise.start(now);
-                        osc.start(now);
-                        noise.stop(now + duration);
-                        osc.stop(now + duration);
                     }
                 } catch(e) {}
             }
