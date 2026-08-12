@@ -835,31 +835,53 @@
                     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                     const output = buffer.getChannelData(0);
                     for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+                    // Primary shockwave
                     const noise = this.ctx.createBufferSource();
                     noise.buffer = buffer;
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(350, now);
-                    filter.frequency.exponentialRampToValueAtTime(40, now + 0.45);
+                    filter.frequency.setValueAtTime(650, now);
+                    filter.frequency.exponentialRampToValueAtTime(45, now + 0.45);
                     const noiseGain = this.ctx.createGain();
-                    noiseGain.gain.setValueAtTime(0.65, now);
+                    noiseGain.gain.setValueAtTime(0.7, now);
                     noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.45);
                     noise.connect(filter);
                     filter.connect(noiseGain);
                     noiseGain.connect(this.ctx.destination);
                     noise.start(now);
 
+                    // Sub-Bass Punch
                     const osc = this.ctx.createOscillator();
                     const oscGain = this.ctx.createGain();
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(90, now);
-                    osc.frequency.exponentialRampToValueAtTime(15, now + 0.35);
-                    oscGain.gain.setValueAtTime(0.7, now);
+                    osc.frequency.setValueAtTime(130, now);
+                    osc.frequency.exponentialRampToValueAtTime(20, now + 0.35);
+                    oscGain.gain.setValueAtTime(0.75, now);
                     oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
                     osc.connect(oscGain);
                     oscGain.connect(this.ctx.destination);
                     osc.start(now);
                     osc.stop(now + 0.35);
+
+                    // Distant Open-Field Echo / Reverb Taps
+                    [0.14, 0.28].forEach((delay, idx) => {
+                        const echoTime = now + delay;
+                        const echoNoise = this.ctx.createBufferSource();
+                        echoNoise.buffer = buffer;
+                        const echoFilter = this.ctx.createBiquadFilter();
+                        echoFilter.type = 'lowpass';
+                        echoFilter.frequency.setValueAtTime(320 / (idx + 1), echoTime);
+
+                        const echoGain = this.ctx.createGain();
+                        echoGain.gain.setValueAtTime(0.28 / (idx + 1), echoTime);
+                        echoGain.gain.exponentialRampToValueAtTime(0.005, echoTime + 0.28);
+
+                        echoNoise.connect(echoFilter);
+                        echoFilter.connect(echoGain);
+                        echoGain.connect(this.ctx.destination);
+                        echoNoise.start(echoTime);
+                    });
                 } catch(e) {}
             }
 
@@ -1058,7 +1080,7 @@
             }
 
             duckMusic() {
-                this.fadeMusicVolume(0.12, 450);
+                this.fadeMusicVolume(0.04, 450);
             }
 
             unduckMusic() {
@@ -2555,7 +2577,7 @@
 
                 // Double Line Corridor across the entire map (-60 to +60 Z-axis)
                 // Left Line (X - 3.8m) / Right Line (X + 3.8m) alternating drops!
-                if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 10)) {
+                if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 14)) {
                     strike.droppedBombs++;
                     strike.lastDropZ = strike.jetMesh.position.z;
 
@@ -2566,9 +2588,9 @@
                     const impactPos = new THREE.Vector3(dropX, 0, dropZ);
 
                     // Rocket Turret Style Blast: Shockwave, Sub-Bass Sound, Spark Burst, High Instant AoE Damage!
-                    this.createExplosion(impactPos, 6.0, 320);
+                    this.createExplosion(impactPos, 6.0, 360);
 
-                    // Napalm Persistent Burning Zone
+                    // Brief Orange Blast Circle
                     const fireMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
                     const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 4.8, 0.15, 12), fireMat);
                     fireZone.position.copy(impactPos);
@@ -2579,7 +2601,7 @@
                     this.napalmZones.push({
                         mesh: fireZone,
                         pos: impactPos,
-                        life: 5.5,
+                        life: 1.6,
                         damageTimer: 0
                     });
                 }
