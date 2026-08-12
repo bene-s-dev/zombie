@@ -1295,7 +1295,10 @@
                         if (promise !== undefined) {
                             promise.then(() => {
                                 setTimeout(() => {
-                                    try { atomicAudio.pause(); } catch(e) {}
+                                    try {
+                                        atomicAudio.pause();
+                                        atomicAudio.currentTime = 0;
+                                    } catch(e) {}
                                 }, 5000);
                             }).catch(() => {});
                         }
@@ -1931,6 +1934,7 @@
                 this.nukeCooldown = 0;
                 this.isNukeActive = false;
                 this.activeNukeStrike = null;
+                this.nukeSpawnBlockTimer = 0;
                 this.intelShown = { runner: false, shield: false, tank: false, boss: false };
 
                 this.touchJoystick = { active: false, touchId: null, startX: 0, startY: 0, vectorX: 0, vectorY: 0 };
@@ -2360,6 +2364,7 @@
                 // Do not block spawn when paused — the interval still ticks during pause,
                 // but we skip the actual spawn. zombiesLeftToSpawn is not decremented.
                 if (this.isPaused) return;
+                if (this.nukeSpawnBlockTimer > 0) return; // 3s post-nuke spawn grace period!
 
                 this.zombiesLeftToSpawn--;
 
@@ -3656,6 +3661,9 @@
                             this.scene.remove(strike.nukeBombMesh);
                             strike.nukeBombMesh = null;
 
+                            // 3 seconds post-nuke zombie spawn grace period!
+                            this.nukeSpawnBlockTimer = 3.0;
+
                             // Stop nuclear siren immediately on impact!
                             audio.stopNuclearSiren();
 
@@ -3826,6 +3834,9 @@
                 }
 
                 if (!this.isGameOver) {
+                    if (this.nukeSpawnBlockTimer > 0) {
+                        this.nukeSpawnBlockTimer = Math.max(0, this.nukeSpawnBlockTimer - dt);
+                    }
                     this.updateDrone(dt);
                     this.updateAirstrike(dt);
                     this.updateNuke(dt);
