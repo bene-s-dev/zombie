@@ -3467,11 +3467,29 @@
 
                     if (this.baseCoreCrystal) this.baseCoreCrystal.rotation.y += 0.02;
 
+                    // Re-build Spatial Grid Hash for O(1) Collision Detection
+                    this.grid.clear();
+                    for (let zi = 0; zi < this.zombies.length; zi++) {
+                        const z = this.zombies[zi];
+                        if (z.userData.hp <= 0) continue;
+                        const gx = Math.floor((z.position.x + 100) / 8);
+                        const gz = Math.floor((z.position.z + 100) / 8);
+                        const key = ((gx & 0xFF) << 8) | (gz & 0xFF);
+                        let bucket = this.grid.get(key);
+                        if (!bucket) {
+                            bucket = [];
+                            this.grid.set(key, bucket);
+                        }
+                        bucket.push(z);
+                    }
+
+                    // Bullet Update & Collision Loop with Spatial Grid Hashing
                     for (let i = this.bullets.length - 1; i >= 0; i--) {
                         const b = this.bullets[i];
                         if (!b || !b.userData || !b.userData.dir) {
                             this.scene.remove(b);
-                            this.bullets.splice(i, 1);
+                            const lastB = this.bullets.pop();
+                            if (i < this.bullets.length) this.bullets[i] = lastB;
                             continue;
                         }
                         b.position.addScaledVector(b.userData.dir, b.userData.speed * dt);
@@ -3479,7 +3497,8 @@
 
                         let bulletHit = false;
 
-                        for (let w of this.walls) {
+                        for (let wi = 0; wi < this.walls.length; wi++) {
+                            const w = this.walls[wi];
                             if (Math.hypot(b.position.x - w.position.x, b.position.z - w.position.z) < w.userData.radius) {
                                 bulletHit = true;
                                 this.createBloodSparks(b.position, 0x94a3b8);
@@ -3500,41 +3519,51 @@
                                     if (this.playerHp <= 0) this.triggerGameOver('player');
                                 }
                             } else {
-                                // Player/turret bullets hit zombies
-                                for (let j = this.zombies.length - 1; j >= 0; j--) {
-                                    const z = this.zombies[j];
-                                    const dx = b.position.x - z.position.x;
-                                    const dz = b.position.z - z.position.z;
-                                    const distXZ = Math.hypot(dx, dz);
+                                // Player/turret bullets hit zombies via Spatial Grid Hashing (Query 3x3 cells)
+                                const bx = Math.floor((b.position.x + 100) / 8);
+                                const bz = Math.floor((b.position.z + 100) / 8);
 
-                                    if (distXZ < 1.75 * z.userData.scale) {
-                                        bulletHit = true;
-                                        if (b.userData.isExplosive) {
-                                            this.createExplosion(b.position, b.userData.splashRadius, b.userData.damage);
-                                        } else {
-                                            let finalDamage = b.userData.damage;
+                                for (let dx = -1; dx <= 1 && !bulletHit; dx++) {
+                                    for (let dz = -1; dz <= 1 && !bulletHit; dz++) {
+                                        const key = (((bx + dx) & 0xFF) << 8) | ((bz + dz) & 0xFF);
+                                        const bucket = this.grid.get(key);
+                                        if (!bucket) continue;
 
-                                            if (b.userData.isTurretBullet) {
-                                                if (z.userData.isShield) {
-                                                    this.createBloodSparks(b.position, 0x94a3b8);
-                                                    finalDamage = 0;
-                                                } else if (z.userData.armorThreshold > 0 && finalDamage < z.userData.armorThreshold) {
-                                                    this.createBloodSparks(b.position, 0x38bdf8);
-                                                    finalDamage = 0;
+                                        for (let j = 0; j < bucket.length; j++) {
+                                            const z = bucket[j];
+                                            if (z.userData.hp <= 0) continue;
+                                            const distXZ = Math.hypot(b.position.x - z.position.x, b.position.z - z.position.z);
+
+                                            if (distXZ < 1.75 * z.userData.scale) {
+                                                bulletHit = true;
+                                                if (b.userData.isExplosive) {
+                                                    this.createExplosion(b.position, b.userData.splashRadius, b.userData.damage);
+                                                } else {
+                                                    let finalDamage = b.userData.damage;
+
+                                                    if (b.userData.isTurretBullet) {
+                                                        if (z.userData.isShield) {
+                                                            this.createBloodSparks(b.position, 0x94a3b8);
+                                                            finalDamage = 0;
+                                                        } else if (z.userData.armorThreshold > 0 && finalDamage < z.userData.armorThreshold) {
+                                                            this.createBloodSparks(b.position, 0x38bdf8);
+                                                            finalDamage = 0;
+                                                        }
+                                                    }
+
+                                                    if (finalDamage > 0) {
+                                                        z.userData.hp -= finalDamage;
+                                                        z.position.x += b.userData.dir.x * 0.3;
+                                                        z.position.z += b.userData.dir.z * 0.3;
+                                                        this.flashZombieHit(z);
+                                                        this.createBloodSparks(new THREE.Vector3(z.position.x, 1.2 * z.userData.scale, z.position.z), 0xef4444);
+                                                        audio.playZombieHit();
+                                                        if (z.userData.hp <= 0) this.killZombie(z);
+                                                    }
                                                 }
-                                            }
-
-                                            if (finalDamage > 0) {
-                                                z.userData.hp -= finalDamage;
-                                                z.position.x += b.userData.dir.x * 0.3;
-                                                z.position.z += b.userData.dir.z * 0.3;
-                                                this.flashZombieHit(z);
-                                                this.createBloodSparks(new THREE.Vector3(z.position.x, 1.2 * z.userData.scale, z.position.z), 0xef4444);
-                                                audio.playZombieHit();
-                                                if (z.userData.hp <= 0) this.killZombie(z);
+                                                break;
                                             }
                                         }
-                                        break;
                                     }
                                 }
                             }
@@ -3542,7 +3571,9 @@
 
                         if (bulletHit || b.userData.life <= 0) {
                             this.scene.remove(b);
-                            this.bullets.splice(i, 1);
+                            // Fast Swap-and-Pop O(1) removal
+                            const lastB = this.bullets.pop();
+                            if (i < this.bullets.length) this.bullets[i] = lastB;
                         }
                     }
 
@@ -3715,7 +3746,9 @@
                         p.userData.life -= dt;
                         if (p.userData.life <= 0) {
                             this.scene.remove(p);
-                            this.particles.splice(i, 1);
+                            // Swap-and-pop fast O(1) array removal
+                            const lastP = this.particles.pop();
+                            if (i < this.particles.length) this.particles[i] = lastP;
                         }
                     }
 
@@ -4124,6 +4157,8 @@
                 const ground = new THREE.Mesh(groundGeo, groundMat);
                 ground.rotation.x = -Math.PI / 2;
                 ground.receiveShadow = true;
+                ground.matrixAutoUpdate = false;
+                ground.updateMatrix();
                 this.scene.add(ground);
             }
 
