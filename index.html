@@ -1458,22 +1458,22 @@
                     if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
                     if (this.ctx) {
                         const now = this.ctx.currentTime;
-                        const duration = 5.5;
+                        const duration = 9.5; // Long 9.5-second atmospheric reverberation tail!
 
                         // 1. Initial Supersonic Shockwave Punch (Transient Burst)
                         const punchOsc = this.ctx.createOscillator();
                         const punchGain = this.ctx.createGain();
                         punchOsc.type = 'triangle';
-                        punchOsc.frequency.setValueAtTime(150, now);
-                        punchOsc.frequency.exponentialRampToValueAtTime(25, now + 0.15);
-                        punchGain.gain.setValueAtTime(2.2, now);
-                        punchGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                        punchOsc.frequency.setValueAtTime(180, now);
+                        punchOsc.frequency.exponentialRampToValueAtTime(20, now + 0.18);
+                        punchGain.gain.setValueAtTime(2.6, now);
+                        punchGain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
                         punchOsc.connect(punchGain);
                         punchGain.connect(this.ctx.destination);
                         punchOsc.start(now);
-                        punchOsc.stop(now + 0.15);
+                        punchOsc.stop(now + 0.18);
 
-                        // 2. Heavy Sub-Bass Earth-Shaker (60Hz -> 12Hz)
+                        // 2. Heavy Sub-Bass Earth-Shaker (65Hz -> 8Hz)
                         const subOsc1 = this.ctx.createOscillator();
                         const subOsc2 = this.ctx.createOscillator();
                         const subGain = this.ctx.createGain();
@@ -1481,16 +1481,16 @@
                         subOsc1.type = 'sine';
                         subOsc2.type = 'sawtooth';
                         subOsc1.frequency.setValueAtTime(65, now);
-                        subOsc1.frequency.exponentialRampToValueAtTime(12, now + duration);
+                        subOsc1.frequency.exponentialRampToValueAtTime(8, now + duration);
                         subOsc2.frequency.setValueAtTime(45, now);
-                        subOsc2.frequency.exponentialRampToValueAtTime(10, now + duration);
+                        subOsc2.frequency.exponentialRampToValueAtTime(6, now + duration);
 
                         const subFilter = this.ctx.createBiquadFilter();
                         subFilter.type = 'lowpass';
                         subFilter.frequency.setValueAtTime(220, now);
 
-                        subGain.gain.setValueAtTime(2.5, now);
-                        subGain.gain.linearRampToValueAtTime(1.8, now + 0.4);
+                        subGain.gain.setValueAtTime(2.8, now);
+                        subGain.gain.linearRampToValueAtTime(1.8, now + 0.5);
                         subGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
                         subOsc1.connect(subFilter);
@@ -1503,26 +1503,32 @@
                         subOsc1.stop(now + duration);
                         subOsc2.stop(now + duration);
 
-                        // 3. Massive Blast Noise & Rolling Thunder Tail
+                        // 3. Massive Blast Noise & 9.5s Pulsating Echoing Thunder Reverb Tail
                         const bufferSize = Math.floor(this.ctx.sampleRate * duration);
                         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                         const output = buffer.getChannelData(0);
+                        const sampleRate = this.ctx.sampleRate;
+
                         for (let i = 0; i < bufferSize; i++) {
-                            output[i] = Math.random() * 2 - 1;
+                            const t = i / sampleRate;
+                            // Add atmospheric echo ripples (distant rumble wave pulses)
+                            const echoMod = 1.0 + 0.35 * Math.sin(Math.PI * 2 * 1.8 * t) * Math.exp(-t * 0.4);
+                            const raw = (Math.random() * 2 - 1);
+                            output[i] = raw * echoMod;
                         }
                         const noise = this.ctx.createBufferSource();
                         noise.buffer = buffer;
 
                         const noiseFilter = this.ctx.createBiquadFilter();
                         noiseFilter.type = 'lowpass';
-                        noiseFilter.frequency.setValueAtTime(2500, now);
-                        noiseFilter.frequency.exponentialRampToValueAtTime(35, now + duration);
-                        noiseFilter.Q.setValueAtTime(3.5, now);
+                        noiseFilter.frequency.setValueAtTime(3200, now);
+                        noiseFilter.frequency.exponentialRampToValueAtTime(18, now + duration);
+                        noiseFilter.Q.setValueAtTime(4.0, now);
 
                         const noiseGain = this.ctx.createGain();
-                        noiseGain.gain.setValueAtTime(3.0, now);
-                        noiseGain.gain.linearRampToValueAtTime(1.5, now + 0.5);
-                        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                        noiseGain.gain.setValueAtTime(3.2, now);
+                        noiseGain.gain.linearRampToValueAtTime(1.6, now + 0.6);
+                        noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
                         noise.connect(noiseFilter);
                         noiseFilter.connect(noiseGain);
