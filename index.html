@@ -2777,23 +2777,38 @@
             }
 
             flashZombieHit(zombieGroup) {
+                // Use userData timer flag instead of setTimeout to avoid spawning
+                // dozens of concurrent JS timers per second under heavy fire
                 zombieGroup.traverse((child) => {
                     if (child.isMesh && child.material) {
                         if (!child.userData.origColor) {
                             child.userData.origColor = child.material.color.getHex();
                         }
                         child.material.color.setHex(0xffffff);
-                        setTimeout(() => {
-                            if (child.material) child.material.color.setHex(child.userData.origColor);
-                        }, 80);
+                        child.userData.flashTimer = 0.08; // seconds — decremented in animate()
                     }
                 });
             }
 
             createBloodSparks(pos, colorHex) {
-                const particleCount = 6;
-                const pMat = new THREE.MeshBasicMaterial({ color: colorHex });
-                const pGeo = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+                // Hard cap: never exceed 60 particles to prevent draw call explosion
+                const MAX_PARTICLES = 60;
+                if (this.particles.length >= MAX_PARTICLES) return;
+
+                const particleCount = Math.min(3, MAX_PARTICLES - this.particles.length);
+
+                // Reuse cached geometry & material per color to avoid per-hit allocations
+                if (!this._sparkGeoCache) this._sparkGeoCache = {};
+                if (!this._sparkMatCache) this._sparkMatCache = {};
+                if (!this._sparkGeoCache['box']) {
+                    this._sparkGeoCache['box'] = new THREE.BoxGeometry(0.18, 0.18, 0.18);
+                }
+                const colorKey = colorHex.toString(16);
+                if (!this._sparkMatCache[colorKey]) {
+                    this._sparkMatCache[colorKey] = new THREE.MeshBasicMaterial({ color: colorHex });
+                }
+                const pGeo = this._sparkGeoCache['box'];
+                const pMat = this._sparkMatCache[colorKey];
 
                 for (let i = 0; i < particleCount; i++) {
                     const p = new THREE.Mesh(pGeo, pMat);
@@ -2801,10 +2816,10 @@
                     p.userData = {
                         vel: new THREE.Vector3(
                             (Math.random() - 0.5) * 8,
-                            Math.random() * 6 + 2,
+                            Math.random() * 5 + 1.5,
                             (Math.random() - 0.5) * 8
                         ),
-                        life: 0.35
+                        life: 0.28
                     };
                     this.particles.push(p);
                     this.scene.add(p);
@@ -3602,7 +3617,7 @@
                         if (distToPlayer < 1.4) {
                             let pDmg = (0.3 * z.userData.dmgMult) * dt * 60;
                             this.playerHp = Math.max(0, this.playerHp - pDmg);
-                            this.syncHUD();
+                            this._needHudSync = true;
                             if (this.playerHp <= 0) this.triggerGameOver('player');
                         }
                     });
@@ -3610,12 +3625,37 @@
                     for (let i = this.particles.length - 1; i >= 0; i--) {
                         const p = this.particles[i];
                         p.position.addScaledVector(p.userData.vel, dt);
+                        p.userData.vel.y -= 12 * dt; // gravity
                         p.userData.life -= dt;
                         if (p.userData.life <= 0) {
                             this.scene.remove(p);
                             this.particles.splice(i, 1);
                         }
                     }
+
+                    // Process flashTimer flags set by flashZombieHit
+                    // This replaces per-hit setTimeout calls
+                    this.zombies.forEach(z => {
+                        z.traverse(child => {
+                            if (child.userData.flashTimer > 0) {
+                                child.userData.flashTimer -= dt;
+                                if (child.userData.flashTimer <= 0) {
+                                    child.userData.flashTimer = 0;
+                                    if (child.material && child.userData.origColor !== undefined) {
+                                        child.material.color.setHex(child.userData.origColor);
+                                    }
+                                }
+                            }
+                        });
+                    });
+                }
+
+                // Throttle DOM syncHUD to max 10x per second (every 100ms)
+                const now2 = performance.now();
+                if (this._needHudSync || (now2 - (this._lastHudSync || 0)) > 100) {
+                    this.syncHUD();
+                    this._lastHudSync = now2;
+                    this._needHudSync = false;
                 }
 
                 this.renderer.render(this.scene, this.camera);
@@ -3887,38 +3927,49 @@
                 this.scene.fog = new THREE.FogExp2(0x020617, 0.007);
 
                 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-                const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2.0);
+                // Mobile: lower DPR to reduce GPU fill rate significantly
+                const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.5);
 
                 this.renderer = new THREE.WebGLRenderer({ 
-                    antialias: true,
-                    precision: 'highp',
+                    antialias: !isMobile,  // Disable MSAA on mobile — huge GPU save
+                    precision: isMobile ? 'mediump' : 'highp',
                     powerPreference: 'high-performance'
                 });
                 this.renderer.setPixelRatio(dpr);
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.shadowMap.enabled = true;
-                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                // Shadows: disabled on mobile to eliminate shadow map render pass
+                this.renderer.shadowMap.enabled = !isMobile;
+                if (!isMobile) {
+                    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                }
                 this.container.appendChild(this.renderer.domElement);
 
                 const aspect = window.innerWidth / window.innerHeight;
-                this.camera = new THREE.PerspectiveCamera(isMobile ? 48 : 52, aspect, 0.1, 1000);
+                this.camera = new THREE.PerspectiveCamera(isMobile ? 48 : 52, aspect, 0.1, 600);
                 
-                const ambientLight = new THREE.AmbientLight(0x475569, 1.4);
+                const ambientLight = new THREE.AmbientLight(0x475569, isMobile ? 2.2 : 1.4);
                 this.scene.add(ambientLight);
 
-                const dirLight = new THREE.DirectionalLight(0xffedd5, 1.6);
+                const dirLight = new THREE.DirectionalLight(0xffedd5, isMobile ? 0.6 : 1.6);
                 dirLight.position.set(30, 50, 20);
-                dirLight.castShadow = true;
-                dirLight.shadow.mapSize.width = 1024;
-                dirLight.shadow.mapSize.height = 1024;
-                dirLight.shadow.camera.near = 0.5;
-                dirLight.shadow.camera.far = 150;
-                const d = 45;
-                dirLight.shadow.camera.left = -d;
-                dirLight.shadow.camera.right = d;
-                dirLight.shadow.camera.top = d;
-                dirLight.shadow.camera.bottom = -d;
+                dirLight.castShadow = !isMobile;
+                if (!isMobile) {
+                    dirLight.shadow.mapSize.width = 512;
+                    dirLight.shadow.mapSize.height = 512;
+                    dirLight.shadow.camera.near = 0.5;
+                    dirLight.shadow.camera.far = 120;
+                    const d = 40;
+                    dirLight.shadow.camera.left = -d;
+                    dirLight.shadow.camera.right = d;
+                    dirLight.shadow.camera.top = d;
+                    dirLight.shadow.camera.bottom = -d;
+                }
                 this.scene.add(dirLight);
+
+                // Shared particle geometry & material pool (avoid per-hit allocations)
+                this._sparkGeoCache = {};
+                this._sparkMatCache = {};
+                this._lastHudSync = 0;
 
                 this.raycaster = new THREE.Raycaster();
                 this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
