@@ -983,30 +983,9 @@
             playRadioChatter() {
                 if (!Storage.data.sfxEnabled) return;
                 try {
-                    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
-                    if (this.ctx) {
-                        const now = this.ctx.currentTime;
-                        const bufferSize = Math.floor(this.ctx.sampleRate * 0.18);
-                        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                        const output = buffer.getChannelData(0);
-                        for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1);
-                        const noise = this.ctx.createBufferSource();
-                        noise.buffer = buffer;
-                        const filter = this.ctx.createBiquadFilter();
-                        filter.type = 'bandpass';
-                        filter.frequency.setValueAtTime(2000, now);
-                        filter.Q.setValueAtTime(2.2, now);
-                        const nGain = this.ctx.createGain();
-                        nGain.gain.setValueAtTime(0.45, now);
-                        nGain.gain.exponentialRampToValueAtTime(0.005, now + 0.16);
-                        noise.connect(filter); filter.connect(nGain); nGain.connect(this.ctx.destination);
-                        noise.start(now);
-                        return;
-                    }
-                } catch(e) {}
-                try {
+                    // Fast HTML5 Audio WAV Blob — guaranteed playback on all browsers/contexts
                     const sampleRate = 22050;
-                    const dur = 0.18;
+                    const dur = 0.22;
                     const n = Math.floor(sampleRate * dur);
                     const ab = new ArrayBuffer(44 + n * 2);
                     const v = new DataView(ab);
@@ -1019,12 +998,14 @@
                     ws(36, 'data'); v.setUint32(40, n * 2, true);
                     for (let i = 0; i < n; i++) {
                         const t = i / sampleRate;
-                        const env = Math.exp(-t * 22);
-                        const noise = (Math.random() * 2 - 1) * 0.6 * env;
-                        v.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, noise)) * 32767), true);
+                        const env = Math.exp(-t * 16);
+                        // Bandpass-filtered static noise burst for realistic radio squelch
+                        const noise = (Math.random() * 2 - 1) * 0.7 * env;
+                        const tone = Math.sin(2 * Math.PI * 1800 * t) * 0.25 * env;
+                        v.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, noise + tone)) * 32767), true);
                     }
                     const url = URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
-                    const el = new Audio(url); el.volume = 0.8; el.play().catch(() => {});
+                    const el = new Audio(url); el.volume = 0.85; el.play().catch(() => {});
                     setTimeout(() => URL.revokeObjectURL(url), 1500);
                 } catch(e) {}
             }
@@ -1035,15 +1016,15 @@
                     return;
                 }
 
-                // 1. Immediate confirmation Bip on click
+                // 1. Immediate confirmation Bip on click (T = 0ms)
                 this.playConfirmBip();
 
-                // 2. Radio Squelch (Funkgeräusch) 120ms later
+                // 2. First Funkstörgeräusch / Squelch (T = 140ms)
                 setTimeout(() => {
                     this.playRadioChatter();
-                }, 120);
+                }, 140);
 
-                // 3. Radio Voice (radio.mp3) 260ms later
+                // 3. Radio Voice speech (radio.mp3) (T = 360ms)
                 setTimeout(() => {
                     const radio = new Audio('radio.mp3');
                     radio.volume = 0.95;
@@ -1055,26 +1036,27 @@
 
                         try { radio.pause(); } catch(e) {}
 
-                        // 4. Second Radio Squelch (Funkstörgeräusch) after speech finishes
+                        // 4. Second Funkstörgeräusch / Squelch right after speech finishes
                         this.playRadioChatter();
 
-                        // 5. Trigger Jet flyovers + bombs 450ms after 2nd squelch (clearly audible)
+                        // 5. Trigger Jet flyovers + bombs 400ms after 2nd squelch
                         setTimeout(() => {
                             if (onCompleteCallback) onCompleteCallback();
-                        }, 450);
+                        }, 400);
                     };
 
                     radio.play().then(() => {
-                        // Skip initial silence (1.2s + 1.5s = 2.7s) for instant speech start
+                        // Cut initial silence (currentTime = 2.7s)
                         try { radio.currentTime = 2.7; } catch(e) {}
 
                         const startTime = performance.now();
                         const fadeInterval = setInterval(() => {
                             const elapsed = (performance.now() - startTime) / 1000;
-                            if (elapsed <= 6.8) {
+                            // Sentence lasts ~3.2s from offset 2.7s
+                            if (elapsed <= 3.2) {
                                 radio.volume = 0.95;
-                            } else if (elapsed <= 8.2) {
-                                const fadeProgress = (elapsed - 6.8) / 1.4;
+                            } else if (elapsed <= 3.9) {
+                                const fadeProgress = (elapsed - 3.2) / 0.7;
                                 radio.volume = Math.max(0.0, 0.95 * (1.0 - fadeProgress));
                             } else {
                                 radio.volume = 0.0;
@@ -1083,12 +1065,12 @@
                             }
                         }, 50);
 
-                        setTimeout(() => finishCallback(), 8500);
+                        setTimeout(() => finishCallback(), 4200);
                     }).catch(e => {
                         console.log('radio.mp3 play blocked/error', e);
                         finishCallback();
                     });
-                }, 260);
+                }, 360);
             }
 
             playJetFlyover() {
