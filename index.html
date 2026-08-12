@@ -268,7 +268,10 @@
 
                 <div class="flex items-center space-x-1.5 sm:space-x-2">
                     <button id="hud-airstrike-btn" onclick="triggerAirstrike()" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto animate-pulse" title="Orbitaler Napalm-Luftschlag [E]">
-                        <i id="airstrike-icon" class="fa-solid fa-plane-jet text-amber-400 text-xs sm:text-base animate-bounce"></i>
+                        <div id="airstrike-icon" class="flex items-center space-x-0.5 text-amber-400 animate-bounce">
+                            <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm"></i>
+                            <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm -ml-1"></i>
+                        </div>
                         <div class="flex flex-col text-left">
                             <span class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase leading-none">Luftschlag</span>
                             <span id="airstrike-status-text" class="font-mono text-[10px] sm:text-xs font-bold text-amber-400 leading-tight">[E] BEREIT</span>
@@ -940,9 +943,10 @@
                 // 1. Confirmation Bleep / Squelch Sound
                 this.playRadioChatter();
 
-                // 2. Play radio.mp3 instantly with zero delay
+                // 2. Play radio.mp3 instantly (skipping silent lead-in offset)
                 const radio = new Audio('radio.mp3');
-                radio.volume = 0.65;
+                try { radio.currentTime = 1.15; } catch(e) {}
+                radio.volume = 0.9;
 
                 let isCallbackDone = false;
                 const finishCallback = () => {
@@ -2457,48 +2461,63 @@
             }
 
             triggerAirstrike() {
-                if (this.isPaused || this.isGameOver || this.airstrikeCooldown > 0 || this.activeAirstrike) return;
+                if (this.isPaused || this.isGameOver || this.airstrikeCooldown > 0 || (this.activeAirstrikes && this.activeAirstrikes.length > 0)) return;
 
                 this.airstrikeCooldown = 45.0;
 
-                // 1. Play Real Radio Speech, and ONLY start jet flyover AFTER speech completes!
+                // 1. Play Radio Voice Speech (starts instantly without silent offset delay)
                 audio.playRadioVoice(() => {
                     if (this.isGameOver) return;
 
-                    audio.playJetFlyover();
-
-                    const jetGroup = new THREE.Group();
-                    const jetMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
-                    const wingMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 });
-
-                    const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.8, 4.5, 8), jetMat);
-                    fuselage.rotation.x = Math.PI / 2;
-                    jetGroup.add(fuselage);
-
-                    const wings = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.1, 1.2), wingMat);
-                    wings.position.set(0, 0, -0.5);
-                    jetGroup.add(wings);
-
-                    const burnerMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-                    const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.1, 0.8, 8), burnerMat);
-                    burner.rotation.x = Math.PI / 2;
-                    burner.position.set(0, 0, -2.4);
-                    jetGroup.add(burner);
-
                     const playerX = this.playerGroup.position.x;
-                    jetGroup.position.set(playerX, 24, -65);
-                    jetGroup.rotation.y = 0;
+                    this.activeAirstrikes = [];
 
-                    this.scene.add(jetGroup);
+                    // Jet 1 (Lead Fighter - Left Line X - 3.2m)
+                    this.spawnJetStrike(playerX - 3.2);
 
-                    this.activeAirstrike = {
-                        jetMesh: jetGroup,
-                        speed: 75,
-                        playerX: playerX,
-                        droppedBombs: 0,
-                        maxBombs: 12,
-                        lastDropZ: -60
-                    };
+                    // Jet 2 (Wingman Fighter - Right Line X + 3.2m, 0.7s delay, NO RADIO!)
+                    setTimeout(() => {
+                        if (!this.isGameOver) {
+                            this.spawnJetStrike(playerX + 3.2);
+                        }
+                    }, 700);
+                });
+            }
+
+            spawnJetStrike(targetX) {
+                audio.playJetFlyover();
+
+                const jetGroup = new THREE.Group();
+                const jetMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
+                const wingMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 });
+
+                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.8, 4.5, 8), jetMat);
+                fuselage.rotation.x = Math.PI / 2;
+                jetGroup.add(fuselage);
+
+                const wings = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.1, 1.2), wingMat);
+                wings.position.set(0, 0, -0.5);
+                jetGroup.add(wings);
+
+                const burnerMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+                const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.1, 0.8, 8), burnerMat);
+                burner.rotation.x = Math.PI / 2;
+                burner.position.set(0, 0, -2.4);
+                jetGroup.add(burner);
+
+                jetGroup.position.set(targetX, 24, -65);
+                jetGroup.rotation.y = 0;
+
+                this.scene.add(jetGroup);
+
+                if (!this.activeAirstrikes) this.activeAirstrikes = [];
+                this.activeAirstrikes.push({
+                    jetMesh: jetGroup,
+                    speed: 75,
+                    targetX: targetX,
+                    droppedBombs: 0,
+                    maxBombs: 8,
+                    lastDropZ: -60
                 });
             }
 
@@ -2511,11 +2530,11 @@
 
                     if (this.airstrikeCooldown > 0) {
                         if (statusText) statusText.innerText = `${Math.ceil(this.airstrikeCooldown)}s`;
-                        if (btnIcon) btnIcon.className = "fa-solid fa-plane-slash text-slate-500 text-xs sm:text-base";
+                        if (btnIcon) btnIcon.className = "flex items-center space-x-0.5 text-slate-500 opacity-60";
                         if (btn) btn.className = "bg-slate-900/60 border border-slate-800 text-slate-500 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl opacity-60 cursor-not-allowed flex items-center space-x-1.5 min-h-[40px] pointer-events-auto";
                     } else {
                         if (statusText) statusText.innerText = "[E] BEREIT!";
-                        if (btnIcon) btnIcon.className = "fa-solid fa-plane-jet text-amber-400 text-xs sm:text-base animate-bounce";
+                        if (btnIcon) btnIcon.className = "flex items-center space-x-0.5 text-amber-400 animate-bounce";
                         if (btn) btn.className = "bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto animate-pulse";
                     }
                 }
@@ -2544,45 +2563,41 @@
                     }
                 }
 
-                if (!this.activeAirstrike) return;
+                if (this.activeAirstrikes && this.activeAirstrikes.length > 0) {
+                    for (let k = this.activeAirstrikes.length - 1; k >= 0; k--) {
+                        const strike = this.activeAirstrikes[k];
+                        strike.jetMesh.position.z += strike.speed * dt;
 
-                const strike = this.activeAirstrike;
-                strike.jetMesh.position.z += strike.speed * dt;
+                        if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 9.5)) {
+                            strike.droppedBombs++;
+                            strike.lastDropZ = strike.jetMesh.position.z;
 
-                // Double Line Corridor across the entire map (-60 to +60 Z-axis)
-                // Left Line (X - 3.8m) / Right Line (X + 3.8m) alternating drops!
-                if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 9.5)) {
-                    strike.droppedBombs++;
-                    strike.lastDropZ = strike.jetMesh.position.z;
+                            const dropX = THREE.MathUtils.clamp(strike.targetX + (Math.random() - 0.5) * 1.0, -72, 72);
+                            const dropZ = strike.jetMesh.position.z;
+                            const impactPos = new THREE.Vector3(dropX, 0, dropZ);
 
-                    const isLeft = (strike.droppedBombs % 2 === 1);
-                    const offsetX = isLeft ? -3.8 : 3.8;
-                    const dropX = THREE.MathUtils.clamp(strike.playerX + offsetX + (Math.random() - 0.5) * 1.2, -72, 72);
-                    const dropZ = strike.jetMesh.position.z;
-                    const impactPos = new THREE.Vector3(dropX, 0, dropZ);
+                            this.createExplosion(impactPos, 6.0, 360);
 
-                    // Rocket Turret Style Blast: Shockwave, Sub-Bass Sound, Spark Burst, High Instant AoE Damage!
-                    this.createExplosion(impactPos, 6.0, 360);
+                            const fireMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
+                            const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 4.8, 0.15, 12), fireMat);
+                            fireZone.position.copy(impactPos);
+                            fireZone.position.y = 0.1;
+                            this.scene.add(fireZone);
 
-                    // Brief Orange Blast Circle
-                    const fireMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
-                    const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 4.8, 0.15, 12), fireMat);
-                    fireZone.position.copy(impactPos);
-                    fireZone.position.y = 0.1;
-                    this.scene.add(fireZone);
+                            if (!this.napalmZones) this.napalmZones = [];
+                            this.napalmZones.push({
+                                mesh: fireZone,
+                                pos: impactPos,
+                                life: 1.6,
+                                damageTimer: 0
+                            });
+                        }
 
-                    if (!this.napalmZones) this.napalmZones = [];
-                    this.napalmZones.push({
-                        mesh: fireZone,
-                        pos: impactPos,
-                        life: 1.6,
-                        damageTimer: 0
-                    });
-                }
-
-                if (strike.jetMesh.position.z > 80) {
-                    this.scene.remove(strike.jetMesh);
-                    this.activeAirstrike = null;
+                        if (strike.jetMesh.position.z > 80) {
+                            this.scene.remove(strike.jetMesh);
+                            this.activeAirstrikes.splice(k, 1);
+                        }
+                    }
                 }
             }
 
