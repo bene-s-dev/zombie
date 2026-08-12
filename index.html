@@ -2771,31 +2771,58 @@
 
                     const isFiring = !isShopOpen && (this.keys['Space'] || this.isTouchFiring);
 
-                    // Smart Aim Assist: Lock onto nearest zombie when firing or moving
+                    // Smart Aim Assist: Lock onto nearest zombie when firing, break lock if out of range
                     if (isFiring && this.zombies.length > 0) {
-                        let nearestZombie = null;
-                        let minDist = 24.0;
-                        this.zombies.forEach(z => {
-                            const dist = this.playerGroup.position.distanceTo(z.position);
-                            if (dist < minDist) {
-                                minDist = dist;
-                                nearestZombie = z;
+                        const AIM_LOCK_RANGE = 24.0;   // lock-on max distance
+                        const AIM_BREAK_RANGE = 30.0;  // auto-break lock if zombie drifts further
+
+                        // Check if locked target is still valid & within break range
+                        if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0) {
+                            const lockedDist = this.playerGroup.position.distanceTo(this.lockedAimTarget.position);
+                            if (lockedDist > AIM_BREAK_RANGE) {
+                                this.lockedAimTarget = null; // break lock — zombie too far
                             }
-                        });
-                        if (nearestZombie) {
+                        } else {
+                            this.lockedAimTarget = null;
+                        }
+
+                        // If no lock, find new nearest within lock range
+                        if (!this.lockedAimTarget) {
+                            let nearestZombie = null;
+                            let minDist = AIM_LOCK_RANGE;
+                            this.zombies.forEach(z => {
+                                const dist = this.playerGroup.position.distanceTo(z.position);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    nearestZombie = z;
+                                }
+                            });
+                            this.lockedAimTarget = nearestZombie;
+                        }
+
+                        if (this.lockedAimTarget) {
                             const targetAimAngle = Math.atan2(
-                                nearestZombie.position.x - this.playerGroup.position.x,
-                                nearestZombie.position.z - this.playerGroup.position.z
+                                this.lockedAimTarget.position.x - this.playerGroup.position.x,
+                                this.lockedAimTarget.position.z - this.playerGroup.position.z
                             );
                             let diff = targetAimAngle - this.playerGroup.rotation.y;
                             diff = Math.atan2(Math.sin(diff), Math.cos(diff));
                             this.playerGroup.rotation.y += diff * 18.0 * dt;
+                        } else if (moveX !== 0 || moveZ !== 0) {
+                            // No valid target in range — rotate toward movement direction
+                            const targetAngle = Math.atan2(moveX, moveZ);
+                            let diff = targetAngle - this.playerGroup.rotation.y;
+                            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                            this.playerGroup.rotation.y += diff * 12.0 * dt;
                         }
-                    } else if (moveX !== 0 || moveZ !== 0) {
-                        const targetAngle = Math.atan2(moveX, moveZ);
-                        let diff = targetAngle - this.playerGroup.rotation.y;
-                        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                        this.playerGroup.rotation.y += diff * 12.0 * dt;
+                    } else {
+                        this.lockedAimTarget = null;
+                        if (moveX !== 0 || moveZ !== 0) {
+                            const targetAngle = Math.atan2(moveX, moveZ);
+                            let diff = targetAngle - this.playerGroup.rotation.y;
+                            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                            this.playerGroup.rotation.y += diff * 12.0 * dt;
+                        }
                     }
 
                     if (moveX !== 0 || moveZ !== 0) {
