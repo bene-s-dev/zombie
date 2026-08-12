@@ -1317,7 +1317,7 @@
             combat_drone: { name: 'Begleit-Kampfdrohne', level: 0, maxLevel: 5, costBase: 750, desc: 'Schaltet eine schwebende 3D-Drohne frei, die über dir fliegt und automatisch Zombies beschießt!' },
             player_speed: { name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 150, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
             player_hp: { name: 'Kampfweste & Max HP', level: 0, maxLevel: 5, costBase: 200, desc: 'Erhöht maximale Spieler-Gesundheit um +30' },
-            scavenger: { name: 'Plünderer-Bonus', level: 0, maxLevel: 5, costBase: 250, desc: 'Erhöht erbeutetes Geld pro Zombie um +25%' },
+            scavenger: { name: 'Plünderer-Bonus', level: 0, maxLevel: 100, costBase: 150, desc: 'Erhöht erbeutetes Geld pro Zombie um +10% pro Stufe' },
             crit_chance: { name: 'Kritische Treffer', level: 0, maxLevel: 5, costBase: 300, desc: 'Gewährt +10% Chance auf doppeltem Waffenschaden' },
             base_hp: { name: 'Basis-Panzerung', level: 0, maxLevel: 5, costBase: 250, desc: 'Erhöht maximale Basis-Gesundheit um +250 HP' },
             base_shield: { name: 'Plasma-Schildgenerator', level: 0, maxLevel: 5, costBase: 400, desc: 'Erzeugt einen Schild, der eingehenden Schaden absorbiert' },
@@ -2593,7 +2593,8 @@
             killZombie(z) {
                 const idx = this.zombies.indexOf(z);
                 if (idx !== -1) {
-                    const scavengerMult = 1 + (this.upgrades.scavenger * 0.25);
+                    const scavengerLvl = this.upgrades.scavenger || 0;
+                    const scavengerMult = 1 + (scavengerLvl * 0.10);
                     this.money += Math.round(z.userData.reward * scavengerMult);
                     this.totalKills++;
                     this.scene.remove(z);
@@ -4213,8 +4214,13 @@
 
                 Object.entries(UPGRADES).forEach(([key, upg]) => {
                     const currentLvl = gameInstance.upgrades[key] || 0;
-                    const cost = Math.round(upg.costBase * Math.pow(1.6, currentLvl));
+                    const cost = getUpgradeCost(key, currentLvl);
                     const isMax = currentLvl >= upg.maxLevel;
+
+                    let descText = upg.desc;
+                    if (key === 'scavenger') {
+                        descText = `Erhöht erbeutetes Geld pro Zombie um +10% pro Stufe (Bonus: +${currentLvl * 10}%)`;
+                    }
 
                     const card = document.createElement('div');
                     card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
@@ -4224,7 +4230,7 @@
                                 <span>${upg.name}</span>
                                 <span class="bg-slate-800 text-amber-400 font-mono text-[10px] px-2 py-0.5 rounded-full">Lvl ${currentLvl}/${upg.maxLevel}</span>
                             </div>
-                            <div class="text-xs text-slate-400 mt-1">${upg.desc}</div>
+                            <div class="text-xs text-slate-400 mt-1">${descText}</div>
                         </div>
                         <button onclick="buyUpgrade('${key}')" ${isMax ? 'disabled' : ''} class="px-4 py-2 ${isMax ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white'} rounded-lg text-xs font-bold min-h-[36px]">
                             ${isMax ? 'MAX' : '$' + cost}
@@ -4569,11 +4575,20 @@
             showPurchaseToast(`${WEAPONS[id].name} ausgerüstet`);
         }
 
+        function getUpgradeCost(key, currentLvl) {
+            const upg = UPGRADES[key];
+            if (!upg) return 0;
+            if (key === 'scavenger') {
+                return Math.round(150 * Math.pow(1.08, currentLvl));
+            }
+            return Math.round(upg.costBase * Math.pow(1.6, currentLvl));
+        }
+
         function buyUpgrade(key) {
             if (!gameInstance) return;
             const upg = UPGRADES[key];
             const currentLvl = gameInstance.upgrades[key] || 0;
-            const cost = Math.round(upg.costBase * Math.pow(1.6, currentLvl));
+            const cost = getUpgradeCost(key, currentLvl);
 
             if (gameInstance.money >= cost && currentLvl < upg.maxLevel) {
                 gameInstance.money -= cost;
