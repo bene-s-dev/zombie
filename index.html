@@ -2036,11 +2036,12 @@
                 });
             }
 
-            createExplosion(pos, radius, damage) {
+            createExplosion(pos, radius, damage, visualRadius = null) {
                 audio.playExplosion();
 
+                const visRad = visualRadius !== null ? visualRadius : radius;
                 const expMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.9 });
-                const expMesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.85, 16, 16), expMat);
+                const expMesh = new THREE.Mesh(new THREE.SphereGeometry(visRad * 0.85, 16, 16), expMat);
                 expMesh.position.copy(pos);
                 this.scene.add(expMesh);
 
@@ -2828,8 +2829,8 @@
                             const dropZ = strike.jetMesh.position.z;
                             const impactPos = new THREE.Vector3(dropX, 0, dropZ);
 
-                            // INSTANT KILL EXPLOSION with 17.5m wide killzone radius!
-                            this.createExplosion(impactPos, 17.5, 99999);
+                            // INSTANT KILL EXPLOSION with 17.5m wide killzone radius, visual size stays original (6.5)!
+                            this.createExplosion(impactPos, 17.5, 99999, 6.5);
 
                             const fireMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
                             const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(5.0, 5.0, 0.15, 12), fireMat);
