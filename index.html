@@ -1297,7 +1297,7 @@
                     }
                     this.currentAtomicAudio = a;
 
-                    const maxVol = 0.28;
+                    const maxVol = 0.10;
                     a.pause();
                     a.currentTime = 0;
                     a.volume = maxVol;
@@ -3753,9 +3753,9 @@
                                     flashOverlay.style.transition = 'none';
                                     flashOverlay.style.opacity = '1.0';
                                     setTimeout(() => {
-                                        flashOverlay.style.transition = 'opacity 1.8s ease-out';
+                                        flashOverlay.style.transition = 'opacity 2.8s ease-out';
                                         flashOverlay.style.opacity = '0';
-                                    }, 350);
+                                    }, 650);
                                 }
 
                                 for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
