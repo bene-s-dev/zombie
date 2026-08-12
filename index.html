@@ -928,20 +928,22 @@
             playRadioChatter() {
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
                 try {
+                    // Resume context first so it plays on mobile/after user interaction
+                    if (this.ctx.state !== 'running') this.ctx.resume();
                     const now = this.ctx.currentTime;
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(1800, now);
                     osc.frequency.setValueAtTime(2400, now + 0.04);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    gain.gain.setValueAtTime(0.45, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.12);
+                    osc.stop(now + 0.18);
 
-                    const bufferSize = this.ctx.sampleRate * 0.18;
+                    const bufferSize = this.ctx.sampleRate * 0.35;
                     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                     const output = buffer.getChannelData(0);
                     for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1) * 0.6;
@@ -952,8 +954,8 @@
                     filter.frequency.value = 2200;
                     filter.Q.value = 2.5;
                     const nGain = this.ctx.createGain();
-                    nGain.gain.setValueAtTime(0.18, now);
-                    nGain.gain.exponentialRampToValueAtTime(0.005, now + 0.18);
+                    nGain.gain.setValueAtTime(0.55, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.005, now + 0.35);
                     noise.connect(filter);
                     filter.connect(nGain);
                     nGain.connect(this.ctx.destination);
@@ -2671,6 +2673,10 @@
                         // Count down initial drop delay (0.75s after jet flyover sound)
                         if (strike.dropDelay > 0) {
                             strike.dropDelay -= dt;
+                            if (strike.dropDelay <= 0) {
+                                // Delay just expired — reset lastDropZ so first bomb fires right away
+                                strike.lastDropZ = strike.jetMesh.position.z - 9.5;
+                            }
                         }
 
                         if (strike.dropDelay <= 0 && strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 9.5)) {
@@ -2696,7 +2702,7 @@
                             this.napalmZones.push({
                                 mesh: fireZone,
                                 pos: impactPos,
-                                life: 0.5,
+                                life: 1.2,
                                 damageTimer: 0
                             });
                         }
