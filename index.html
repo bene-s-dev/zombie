@@ -180,7 +180,7 @@
 
         <!-- ================= START SCREEN / MAIN MENU OVERLAY ================= -->
         <div id="main-menu" class="absolute inset-0 z-50 flex flex-col justify-between p-3 sm:p-6 bg-slate-950/90 backdrop-blur-md transition-opacity duration-500 overflow-y-auto">
-            <div class="flex justify-between items-center w-full max-w-4xl mx-auto">
+            <div class="flex justify-between items-center w-full max-w-6xl sm:max-w-7xl mx-auto">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center">
                         <i class="fa-solid fa-biohazard text-red-500 text-xl animate-pulse"></i>
@@ -193,7 +193,7 @@
                 </div>
             </div>
 
-            <div class="max-w-4xl mx-auto w-full my-auto py-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div class="max-w-6xl sm:max-w-7xl mx-auto w-full my-auto py-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
                 <!-- LINKER BEREICH: Einstellungen & Start -->
                 <div class="flex flex-col justify-between space-y-4 text-center md:text-left bg-slate-900/40 border border-slate-900/60 p-5 rounded-2xl backdrop-blur-sm">
                     <div class="space-y-2">
@@ -280,16 +280,18 @@
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between">
             <div class="flex justify-between items-start w-full max-w-5xl mx-auto p-1.5 sm:p-3 pointer-events-auto">
-                <!-- Top-Left Wave Container: flex-row-reverse anchors fixed elements (Timer/Zombies) on right, expanding text grows to left -->
-                <div id="hud-wave-container" class="flex flex-row-reverse items-center space-x-reverse space-x-1.5 sm:space-x-3 py-0.5 drop-shadow-md">
-                    <div id="hud-timer" class="text-[10px] sm:text-xs text-slate-300 font-mono">Zeit: 00:00</div>
-                    <span class="text-slate-600 text-xs font-bold">|</span>
-                    <div id="hud-zombies-left" class="font-teko text-sm sm:text-xl font-bold text-white leading-none">0 ZOMBIES</div>
-                    <span class="text-slate-600 text-xs font-bold">|</span>
-                    <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1 text-right">
-                        <i class="fa-solid fa-skull"></i>
-                        <span>WELLE 1</span>
+                <!-- Top-Left Wave Container: Fixed width containers prevent fields from jumping when text updates -->
+                <div id="hud-wave-container" class="flex items-center space-x-1.5 sm:space-x-3 py-0.5 drop-shadow-md">
+                    <div id="hud-wave-title-wrap" class="min-w-[120px] sm:min-w-[160px] flex items-center justify-start">
+                        <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1">
+                            <i class="fa-solid fa-skull"></i>
+                            <span>WELLE 1</span>
+                        </div>
                     </div>
+                    <span class="text-slate-600 text-xs font-bold">|</span>
+                    <div id="hud-zombies-left" class="w-24 sm:w-32 font-teko text-sm sm:text-xl font-bold text-white leading-none text-center truncate">0 UNTOTE</div>
+                    <span class="text-slate-600 text-xs font-bold">|</span>
+                    <div id="hud-timer" class="w-20 sm:w-24 text-[10px] sm:text-xs text-slate-300 font-mono text-center truncate">Zeit: 00:00</div>
                 </div>
 
                 <!-- Top-Right Controls: Transparent background, uniform height h-10 sm:h-11, fixed-size x2 speed button stacked under Pause button -->
@@ -362,8 +364,8 @@
 
         <!-- ================= PAUSE & SETTINGS MODAL ================= -->
         <div id="pause-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md">
-            <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-2xl space-y-3 sm:space-y-4 max-h-[92vh] overflow-y-auto">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
+            <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl sm:max-w-4xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <div class="flex items-center space-x-2.5">
                         <i class="fa-solid fa-pause text-amber-400 text-xl sm:text-2xl"></i>
                         <h2 class="font-teko text-2xl sm:text-3xl font-bold text-white tracking-wider uppercase">SPIEL PAUSIERT</h2>
@@ -371,11 +373,13 @@
                     <button onclick="togglePauseModal()" class="text-slate-400 hover:text-white p-1.5 text-xl"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div class="grid grid-cols-1 [@media(orientation:landscape)_and_(max-height:500px)]:grid-cols-2 gap-3">
-                    <!-- Left column (Landscape): Camera settings -->
-                    <div class="space-y-2">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kamera-Einstellungen</h3>
-                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- LEFT COLUMN: Kamera-Einstellungen & Spielstand Speichern -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kamera & Speicherstand</h3>
+                        
+                        <!-- Camera settings box -->
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
                             <div class="flex items-center space-x-3 text-xs text-slate-300">
                                 <label class="w-14 font-semibold">Zoom</label>
                                 <input type="range" id="cam-zoom" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-5">
@@ -384,59 +388,61 @@
                                 <label class="w-14 font-semibold">Winkel</label>
                                 <input type="range" id="cam-angle" min="0" max="1" step="0.1" value="0.5" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-5">
                             </div>
-                            <div id="cam-preview-container" class="w-full h-20 bg-black rounded border border-slate-700 overflow-hidden relative"></div>
-                        </div>
-                    </div>
-
-                    <!-- Right column (Landscape): Controls, Audio & Actions -->
-                    <div class="space-y-2 flex flex-col justify-between">
-                        <div class="space-y-2">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Steuerung & Audio</h3>
-                            <div class="mobile-only bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
-                                <div>
-                                    <div class="text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-1.5"></i> Touch-Layout</div>
-                                    <div id="pause-touch-swap-label" class="text-[10px] text-slate-400">Joystick rechts / Feuer links</div>
-                                </div>
-                                <button onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
-                                    Tauschen
-                                </button>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2">
-                                <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                                    <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-1.5"></i> Musik</span>
-                                    <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-4 h-4 accent-red-600 rounded">
-                                </label>
-                                <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                                    <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-1.5"></i> SFX</span>
-                                    <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-4 h-4 accent-red-600 rounded">
-                                </label>
-                            </div>
-
-                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center space-x-2">
-                                <div class="overflow-hidden">
-                                    <div class="text-xs font-bold text-slate-200 flex items-center">
-                                        <i class="fa-solid fa-floppy-disk text-emerald-400 mr-1.5"></i>
-                                        <span>Spielstand</span>
-                                    </div>
-                                    <div id="pause-save-status-text" class="text-[10px] text-slate-400 truncate">Zuletzt: --:--:--</div>
-                                </div>
-                                <button onclick="manualSaveInPauseMenu()" id="pause-save-now-btn" class="px-3 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 active:bg-emerald-600 text-emerald-400 font-bold text-xs rounded-lg border border-emerald-500/40 flex items-center space-x-1.5 transition">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                                    <span id="pause-save-now-btn-text">JETZT SPEICHERN</span>
-                                </button>
-                            </div>
+                            <div id="cam-preview-container" class="w-full h-24 bg-black rounded border border-slate-700 overflow-hidden relative"></div>
                         </div>
 
-                        <div class="flex space-x-2 pt-2">
-                            <button onclick="togglePauseModal()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold rounded-xl text-xs sm:text-sm transition">
-                                WEITER
-                            </button>
-                            <button onclick="returnToMainMenu()" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs transition">
-                                Hauptmenü
+                        <!-- Save options box directly under Camera Settings -->
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center space-x-2">
+                            <div class="overflow-hidden">
+                                <div class="text-xs font-bold text-slate-200 flex items-center">
+                                    <i class="fa-solid fa-floppy-disk text-emerald-400 mr-1.5"></i>
+                                    <span>Spielstand</span>
+                                </div>
+                                <div id="pause-save-status-text" class="text-[10px] text-slate-400 truncate">Zuletzt: --:--:--</div>
+                            </div>
+                            <button onclick="manualSaveInPauseMenu()" id="pause-save-now-btn" class="px-3 py-2 bg-emerald-600/30 hover:bg-emerald-600/50 active:bg-emerald-600 text-emerald-400 font-bold text-xs rounded-lg border border-emerald-500/40 flex items-center space-x-1.5 transition">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span id="pause-save-now-btn-text">JETZT SPEICHERN</span>
                             </button>
                         </div>
                     </div>
+
+                    <!-- RIGHT COLUMN: Steuerung & Audio -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Steuerung & Audio</h3>
+                        <div class="mobile-only bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                            <div>
+                                <div class="text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-1.5"></i> Touch-Layout</div>
+                                <div id="pause-touch-swap-label" class="text-[10px] text-slate-400">Joystick rechts / Feuer links</div>
+                            </div>
+                            <button onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
+                                Tauschen
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-1.5"></i> Musik</span>
+                                <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-1.5"></i> SFX</span>
+                                <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER ACTIONS: HAUPTMENÜ & WEITER / SPIEL FORTSETZEN -->
+                <div class="flex items-center space-x-3 pt-3 border-t border-slate-800">
+                    <button onclick="returnToMainMenu()" class="px-4 sm:px-5 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs sm:text-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-house"></i>
+                        <span>Hauptmenü</span>
+                    </button>
+                    <button onclick="togglePauseModal()" class="flex-1 py-3 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl tracking-wider font-bold rounded-xl shadow-xl active:scale-98 transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-play text-lg"></i>
+                        <span>WEITER / SPIEL FORTSETZEN</span>
+                    </button>
                 </div>
             </div>
         </div>
