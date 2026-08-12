@@ -1726,6 +1726,14 @@
                                 this.fireTouchId = touch.identifier;
                                 this.isTouchFiring = true;
 
+                                this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                                this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                                this.raycaster.setFromCamera(this.mousePos, this.camera);
+                                const intersects = new THREE.Vector3();
+                                if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                                    this.pointerWorldPos.copy(intersects);
+                                }
+
                                 const fireFeedback = document.getElementById('fire-touch-feedback');
                                 if (fireFeedback) {
                                     fireFeedback.style.left = `${touch.clientX}px`;
@@ -1776,6 +1784,14 @@
                         }
 
                         if (touch.identifier === this.fireTouchId) {
+                            this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                            this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                            this.raycaster.setFromCamera(this.mousePos, this.camera);
+                            const intersects = new THREE.Vector3();
+                            if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                                this.pointerWorldPos.copy(intersects);
+                            }
+
                             const fireFeedback = document.getElementById('fire-touch-feedback');
                             if (fireFeedback) {
                                 fireFeedback.style.left = `${touch.clientX}px`;
