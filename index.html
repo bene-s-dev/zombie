@@ -1709,6 +1709,7 @@
                     if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal, #inspect-modal, #placement-hud')) return;
 
                     if (this.isPlacementMode) {
+                        if (this.placementJustStarted) return;
                         this.mousePos.x = (clientX / window.innerWidth) * 2 - 1;
                         this.mousePos.y = -(clientY / window.innerHeight) * 2 + 1;
                         this.raycaster.setFromCamera(this.mousePos, this.camera);
@@ -1871,6 +1872,7 @@
 
                 const onTouchEnd = (e) => {
                     if (this.isPlacementMode) {
+                        if (this.placementJustStarted) return;
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
                             const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -2307,7 +2309,7 @@
                 this.isPaused = true;
                 this.placementJustStarted = true;
                 this.placementRotation = 0;
-                setTimeout(() => { this.placementJustStarted = false; }, 250);
+                setTimeout(() => { this.placementJustStarted = false; }, 400);
 
                 this.pendingPlacement = { kind, specId, cost: spec.cost, spec };
 
