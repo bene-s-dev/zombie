@@ -1310,27 +1310,46 @@
                     if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
                     if (this.ctx) {
                         const now = this.ctx.currentTime;
-                        const osc = this.ctx.createOscillator();
+                        
+                        // Dual oscillator for authentic mechanical air-raid siren (root + fifth interval)
+                        const osc1 = this.ctx.createOscillator();
+                        const osc2 = this.ctx.createOscillator();
                         const gain = this.ctx.createGain();
+                        const filter = this.ctx.createBiquadFilter();
 
-                        osc.type = 'sawtooth';
-                        osc.frequency.setValueAtTime(320, now);
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(600, now);
 
-                        let timeOffset = 0;
-                        for (let cycle = 0; cycle < 10; cycle++) {
-                            osc.frequency.linearRampToValueAtTime(750, now + timeOffset + 1.2);
-                            osc.frequency.linearRampToValueAtTime(320, now + timeOffset + 2.4);
-                            timeOffset += 2.4;
+                        osc1.type = 'sawtooth';
+                        osc2.type = 'triangle';
+
+                        // Deep heavy pitch glide: 130Hz -> 280Hz -> 140Hz -> 280Hz over 3.8s cycles
+                        osc1.frequency.setValueAtTime(130, now);
+                        osc2.frequency.setValueAtTime(195, now);
+
+                        let t = 0;
+                        for (let cycle = 0; cycle < 8; cycle++) {
+                            osc1.frequency.linearRampToValueAtTime(280, now + t + 2.0);
+                            osc1.frequency.linearRampToValueAtTime(140, now + t + 4.0);
+
+                            osc2.frequency.linearRampToValueAtTime(420, now + t + 2.0);
+                            osc2.frequency.linearRampToValueAtTime(210, now + t + 4.0);
+                            t += 4.0;
                         }
 
                         gain.gain.setValueAtTime(0.01, now);
-                        gain.gain.linearRampToValueAtTime(0.28, now + 0.5);
+                        gain.gain.linearRampToValueAtTime(0.35, now + 0.6);
 
-                        osc.connect(gain);
+                        osc1.connect(filter);
+                        osc2.connect(filter);
+                        filter.connect(gain);
                         gain.connect(this.ctx.destination);
-                        osc.start(now);
 
-                        this._nukeSirenOsc = osc;
+                        osc1.start(now);
+                        osc2.start(now);
+
+                        this._nukeSirenOsc = osc1;
+                        this._nukeSirenOsc2 = osc2;
                         this._nukeSirenGain = gain;
                     }
                 } catch(e) {}
@@ -1344,11 +1363,14 @@
                         this._nukeSirenGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
                         setTimeout(() => {
                             try { if (this._nukeSirenOsc) this._nukeSirenOsc.stop(); } catch(e) {}
+                            try { if (this._nukeSirenOsc2) this._nukeSirenOsc2.stop(); } catch(e) {}
                             this._nukeSirenOsc = null;
+                            this._nukeSirenOsc2 = null;
                             this._nukeSirenGain = null;
                         }, 350);
                     } catch(e) {
                         this._nukeSirenOsc = null;
+                        this._nukeSirenOsc2 = null;
                         this._nukeSirenGain = null;
                     }
                 }
@@ -1361,7 +1383,7 @@
                     if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
                     if (this.ctx) {
                         const now = this.ctx.currentTime;
-                        const duration = 5.0;
+                        const duration = 4.5;
                         const bufferSize = Math.floor(this.ctx.sampleRate * duration);
                         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                         const output = buffer.getChannelData(0);
@@ -1371,13 +1393,13 @@
 
                         const filter = this.ctx.createBiquadFilter();
                         filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(120, now);
-                        filter.frequency.exponentialRampToValueAtTime(650, now + 1.5);
-                        filter.frequency.exponentialRampToValueAtTime(80, now + duration);
+                        filter.frequency.setValueAtTime(250, now);
+                        filter.frequency.exponentialRampToValueAtTime(1400, now + 1.2);
+                        filter.frequency.exponentialRampToValueAtTime(120, now + duration);
 
                         const gain = this.ctx.createGain();
-                        gain.gain.setValueAtTime(0.05, now);
-                        gain.gain.linearRampToValueAtTime(0.85, now + 1.5);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.linearRampToValueAtTime(1.8, now + 1.2);
                         gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
                         jetNoise.connect(filter);
@@ -3540,30 +3562,24 @@
                 this.nukeCooldown = 90.0;
                 this.isNukeActive = true;
 
-                // 1. Play radio voice confirmation sound (same as airstrike!)
-                audio.playRadioVoice(() => {
+                audio.playConfirmBip();
+
+                // 1. Play atomic.mp3 immediately from 0 to 5 seconds
+                audio.playAtomicSound();
+
+                // 2. Play continuous heavy long-drawn air-raid siren
+                audio.startNuclearSiren();
+
+                // 3. Right after 5 seconds of atomic.mp3, launch Jet immediately
+                setTimeout(() => {
                     if (this.isGameOver) {
+                        audio.stopNuclearSiren();
                         this.isNukeActive = false;
                         return;
                     }
-
-                    // 2. Play atomic.mp3 strictly up to 5 seconds
-                    audio.playAtomicSound();
-
-                    // 3. Start long-drawn nuclear siren wailing until impact
-                    audio.startNuclearSiren();
-
-                    // 4. After 5 seconds of atomic.mp3, launch jet & drop
-                    setTimeout(() => {
-                        if (this.isGameOver) {
-                            audio.stopNuclearSiren();
-                            this.isNukeActive = false;
-                            return;
-                        }
-                        audio.playSlowJetFlyover();
-                        this.spawnNukeJet();
-                    }, 5000);
-                });
+                    audio.playSlowJetFlyover();
+                    this.spawnNukeJet();
+                }, 5000);
             }
 
             spawnNukeJet() {
@@ -3571,20 +3587,20 @@
                 const jetMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.95, roughness: 0.1 });
                 const wingMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
 
-                const wings = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.15, 2.8), wingMat);
+                const wings = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.2, 3.2), wingMat);
                 wings.rotation.y = Math.PI / 8;
                 jetGroup.add(wings);
 
-                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.1, 6.0, 8), jetMat);
+                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.3, 7.0, 8), jetMat);
                 fuselage.rotation.x = Math.PI / 2;
                 jetGroup.add(fuselage);
 
-                jetGroup.position.set(0, 32, -220);
+                jetGroup.position.set(0, 36, -200);
                 this.scene.add(jetGroup);
 
                 this.activeNukeStrike = {
                     jetMesh: jetGroup,
-                    speed: 35,
+                    speed: 65,
                     bombDropped: false,
                     nukeBombMesh: null
                 };
@@ -3622,19 +3638,19 @@
                     const strike = this.activeNukeStrike;
                     strike.jetMesh.position.z += strike.speed * dt;
 
-                    if (!strike.bombDropped && strike.jetMesh.position.z >= -10) {
+                    if (!strike.bombDropped && strike.jetMesh.position.z >= -20) {
                         strike.bombDropped = true;
 
                         const nukeMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-                        const bombMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.2, 2.5, 8), nukeMat);
+                        const bombMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.25, 2.8, 8), nukeMat);
                         bombMesh.rotation.x = Math.PI / 2;
-                        bombMesh.position.set(0, 28, 0);
+                        bombMesh.position.set(0, 32, 0);
                         this.scene.add(bombMesh);
                         strike.nukeBombMesh = bombMesh;
                     }
 
                     if (strike.nukeBombMesh) {
-                        strike.nukeBombMesh.position.y -= 25 * dt;
+                        strike.nukeBombMesh.position.y -= 45 * dt;
 
                         if (strike.nukeBombMesh.position.y <= 0.5) {
                             this.scene.remove(strike.nukeBombMesh);
@@ -3643,24 +3659,7 @@
                             // Stop nuclear siren immediately on impact!
                             audio.stopNuclearSiren();
 
-                            // 1. Brief Mushroom Cloud Visual (pilz kurz)
-                            const expMat = new THREE.MeshBasicMaterial({ color: 0xffedd5, transparent: true, opacity: 0.95 });
-                            const expMesh = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), expMat);
-                            expMesh.position.set(0, 4, 0);
-                            this.scene.add(expMesh);
-
-                            let expScale = 1.0;
-                            const expInterval = setInterval(() => {
-                                expScale += 3.5;
-                                expMesh.scale.set(expScale, expScale, expScale);
-                                expMat.opacity -= 0.05;
-                                if (expMat.opacity <= 0) {
-                                    clearInterval(expInterval);
-                                    this.scene.remove(expMesh);
-                                }
-                            }, 30);
-
-                            // 2. Fullscreen White Flash (dann weiß)
+                            // Fullscreen White Flash Overlay (opacity-100 -> fadeout over 1.8s)
                             const flashOverlay = document.getElementById('nuke-flash-overlay');
                             if (flashOverlay) {
                                 flashOverlay.style.transition = 'none';
@@ -3671,10 +3670,10 @@
                                 }, 350);
                             }
 
-                            // 3. Play Epic Heavy Atomic Explosion
+                            // Play Epic Heavy Atomic Explosion
                             audio.playHeavyAtomicExplosion();
 
-                            // 4. Instant Full Map Wipe
+                            // Instant Full Map Wipe
                             for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
                                 const z = this.zombies[zi];
                                 z.userData.hp = -9999;
