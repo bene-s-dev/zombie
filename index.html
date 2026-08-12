@@ -1627,6 +1627,12 @@
                 this.walls = [];
                 this.particles = [];
 
+                // Cache once — avoids window/navigator query every frame
+                this.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                // Pre-allocated angle offsets array — never reallocated
+                this._angleOffsets = [0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5, 2.0, -2.0];
+                this._angleOffsetsMob = [0, 0.6, -0.6, 1.2, -1.2]; // fewer on mobile
+
                 this.keys = {};
                 this.mousePos = new THREE.Vector2();
                 this.pointerWorldPos = new THREE.Vector3();
@@ -3249,9 +3255,8 @@
 
                 const now = performance.now();
 
-                // 30fps cap on mobile to halve GPU work
-                const isMob = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-                const frameMinMs = isMob ? 33 : 16;
+                // 30fps cap on mobile — halves GPU work
+                const frameMinMs = this.isMobile ? 33 : 16;
                 if (now - (this.lastFrameTime || 0) < frameMinMs) return;
 
                 const dt = Math.min((now - (this.lastFrameTime || now)) / 1000, 0.1) * (this.gameSpeed || 1);
@@ -3481,11 +3486,21 @@
                     }
 
                     const BASE_RADIUS = 8.5;
+                    const BASE_RADIUS_SQ = BASE_RADIUS * BASE_RADIUS;
                     const basePos = this.baseGroup.position;
+                    const playerPos = this.playerGroup.position;
+                    const isMob = this.isMobile;
+                    // Use fewer angle offsets on mobile (5 vs 9) to halve zombie AI cost
+                    const angleOffsets = isMob ? this._angleOffsetsMob : this._angleOffsets;
 
-                    this.zombies.forEach(z => {
-                        const distToPlayer = z.position.distanceTo(this.playerGroup.position);
-                        const target = distToPlayer < 18 ? this.playerGroup.position : basePos;
+                    for (let zi = 0; zi < this.zombies.length; zi++) {
+                        const z = this.zombies[zi];
+                        // Use squared distance to avoid sqrt — cheaper for target selection
+                        const dxP = z.position.x - playerPos.x;
+                        const dzP = z.position.z - playerPos.z;
+                        const distToPlayerSq = dxP * dxP + dzP * dzP;
+                        const distToPlayer = Math.sqrt(distToPlayerSq);
+                        const target = distToPlayer < 18 ? playerPos : basePos;
 
                         const directAngle = Math.atan2(target.x - z.position.x, target.z - z.position.z);
                         const stepSize = z.userData.speed * (dt * 60);
@@ -3494,18 +3509,17 @@
                         let chosenAngle = null;
                         let hitWallTarget = null;
 
-                        const angleOffsets = [0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5, 2.0, -2.0];
-
-                        for (let offset of angleOffsets) {
-                            const testAngle = directAngle + offset;
+                        for (let ai = 0; ai < angleOffsets.length; ai++) {
+                            const testAngle = directAngle + angleOffsets[ai];
                             const testX = z.position.x + Math.sin(testAngle) * stepSize;
                             const testZ = z.position.z + Math.cos(testAngle) * stepSize;
 
                             let blocked = false;
-                            for (let w of this.walls) {
+                            for (let wi = 0; wi < this.walls.length; wi++) {
+                                const w = this.walls[wi];
                                 if (checkWallCollision(testX, testZ, zRadius, w)) {
                                     blocked = true;
-                                    if (offset === 0) hitWallTarget = w;
+                                    if (ai === 0) hitWallTarget = w;
                                     break;
                                 }
                             }
@@ -3561,9 +3575,8 @@
                             }
                         }
 
-                        // Walk bob: use dt-scaled counter, skip on mobile when >25 zombies
-                        const skipAnim = isMob && this.zombies.length > 25;
-                        if (!skipAnim) {
+                        // Walk bob: skip on mobile when >25 zombies
+                        if (!isMob || this.zombies.length <= 25) {
                             z.userData.walkCycle += 0.15;
                             z.rotation.z = Math.sin(z.userData.walkCycle) * 0.08;
                         }
@@ -3629,7 +3642,7 @@
                             this._needHudSync = true;
                             if (this.playerHp <= 0) this.triggerGameOver('player');
                         }
-                    });
+                    } // end zombie for-loop
 
                     for (let i = this.particles.length - 1; i >= 0; i--) {
                         const p = this.particles[i];
