@@ -2069,7 +2069,8 @@
                     armorThreshold = 45;
                 } else {
                     const rnd = Math.random();
-                    if (this.currentWave >= 2 && rnd < 0.15) {
+                    // STRICT PROGRESSION: Exactly 1 new zombie type introduced per wave!
+                    if (this.currentWave >= 2 && rnd < 0.22) {
                         type = 'runner';
                         hp = 38 * waveHpScale;
                         speed = 0.10 * this.diffMult;
@@ -2077,7 +2078,7 @@
                         color = 0xeab308;
                         reward = 28;
                         dmgMult = 0.8 * waveDmgScale;
-                    } else if (this.currentWave >= 2 && rnd < 0.28) {
+                    } else if (this.currentWave >= 3 && rnd < 0.38) {
                         type = 'crawler';
                         hp = 22 * waveHpScale;
                         speed = 0.115 * this.diffMult;
@@ -2085,7 +2086,7 @@
                         color = 0x451a03;
                         reward = 20;
                         dmgMult = 0.7 * waveDmgScale;
-                    } else if (this.currentWave >= 3 && rnd < 0.42) {
+                    } else if (this.currentWave >= 4 && rnd < 0.50) {
                         type = 'shield';
                         hp = 75 * waveHpScale;
                         speed = 0.058 * this.diffMult;
@@ -2093,7 +2094,7 @@
                         color = 0x0284c7;
                         reward = 42;
                         dmgMult = 1.2 * waveDmgScale;
-                    } else if (this.currentWave >= 3 && rnd < 0.56) {
+                    } else if (this.currentWave >= 5 && rnd < 0.62) {
                         type = 'exploder';
                         hp = 42 * waveHpScale;
                         speed = 0.09 * this.diffMult;
@@ -2101,7 +2102,7 @@
                         color = 0xf97316;
                         reward = 38;
                         dmgMult = 1.0 * waveDmgScale;
-                    } else if (this.currentWave >= 4 && rnd < 0.70) {
+                    } else if (this.currentWave >= 6 && rnd < 0.72) {
                         type = 'spitter';
                         hp = 65 * waveHpScale;
                         speed = 0.052 * this.diffMult;
@@ -2109,7 +2110,7 @@
                         color = 0x84cc16;
                         reward = 50;
                         dmgMult = 1.1 * waveDmgScale;
-                    } else if (this.currentWave >= 4 && rnd < 0.84) {
+                    } else if (this.currentWave >= 7 && rnd < 0.82) {
                         type = 'tank';
                         hp = 220 * waveHpScale;
                         speed = 0.04 * this.diffMult;
@@ -2118,7 +2119,7 @@
                         reward = 65;
                         dmgMult = 2.0 * waveDmgScale;
                         armorThreshold = 32;
-                    } else if (this.currentWave >= 5 && rnd < 0.94) {
+                    } else if (this.currentWave >= 8 && rnd < 0.92) {
                         type = 'summoner';
                         hp = 160 * waveHpScale;
                         speed = 0.042 * this.diffMult;
@@ -3789,13 +3790,6 @@
                     this._needHudSync = false;
                 }
 
-                // Render shadow map every 3 frames or on placement flag (66% GPU savings with 100% shadow quality!)
-                this._frameCount++;
-                if (this._frameCount % 3 === 0 || this._shadowNeedsUpdate) {
-                    this.renderer.shadowMap.needsUpdate = true;
-                    this._shadowNeedsUpdate = false;
-                }
-
                 this.renderer.render(this.scene, this.camera);
             }
 
@@ -4081,31 +4075,20 @@
                 this.renderer.setPixelRatio(dpr);
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 
-                // RESTORED SHADOW MAPS WITH MANUAL OPTIMIZED AUTOUPDATE = FALSE
-                this.renderer.shadowMap.enabled = true;
-                this.renderer.shadowMap.type = THREE.PCFShadowMap;
-                this.renderer.shadowMap.autoUpdate = false; // Renders shadow map ONLY when flagged every 3 frames!
+                // SHADOW MAPS DISABLED COMPLETELY FOR MAXIMUM PERFORMANCE AND STABILITY
+                this.renderer.shadowMap.enabled = false;
 
                 this.container.appendChild(this.renderer.domElement);
 
                 const aspect = window.innerWidth / window.innerHeight;
                 this.camera = new THREE.PerspectiveCamera(isMobile ? 48 : 52, aspect, 0.1, 600);
                 
-                const ambientLight = new THREE.AmbientLight(0x475569, isMobile ? 1.6 : 1.4);
+                const ambientLight = new THREE.AmbientLight(0x475569, isMobile ? 1.8 : 1.5);
                 this.scene.add(ambientLight);
 
                 const dirLight = new THREE.DirectionalLight(0xffedd5, 1.5);
                 dirLight.position.set(30, 50, 20);
-                dirLight.castShadow = true;
-                dirLight.shadow.mapSize.width = isMobile ? 512 : 1024;
-                dirLight.shadow.mapSize.height = isMobile ? 512 : 1024;
-                dirLight.shadow.camera.near = 0.5;
-                dirLight.shadow.camera.far = 120;
-                const d = 40;
-                dirLight.shadow.camera.left = -d;
-                dirLight.shadow.camera.right = d;
-                dirLight.shadow.camera.top = d;
-                dirLight.shadow.camera.bottom = -d;
+                dirLight.castShadow = false;
                 this.scene.add(dirLight);
 
                 this.raycaster = new THREE.Raycaster();
@@ -5007,7 +4990,8 @@
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) loadingScreen.classList.remove('hidden');
             
-            updateLoadingUI(5, 'Initialisiere WebGL-Context & Audio...');
+            // 5 SECONDS DEEP PRE-LOADING & PIPELINE WARMUP
+            updateLoadingUI(5, 'Initialisiere 3D-Engine & Audio-Context...');
 
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(err => console.log(err));
@@ -5015,33 +4999,48 @@
 
             audio.init();
 
-            await new Promise(r => setTimeout(r, 60));
-            updateLoadingUI(25, 'Erstelle 3D-Geometrien & Texturen...');
+            // Step 1: 1.0 Second - Setup & Canvas Cleanup
+            await new Promise(r => setTimeout(r, 1000));
+            updateLoadingUI(25, 'Erstelle Texturen, Geometrien & Material-Pool...');
 
             if (gameInstance) {
                 gameInstance.isRunning = false;
                 document.getElementById('three-container').innerHTML = '';
             }
 
-            await new Promise(r => setTimeout(r, 80));
-            updateLoadingUI(55, 'Generiere Shader-Cache & Material-Pool...');
+            // Step 2: 1.5 Seconds - Game Engine & Object Pooling
+            await new Promise(r => setTimeout(r, 1200));
+            updateLoadingUI(50, 'Pre-Instanziierung aller 9 Zombie-Typen & Geschütze...');
             
             gameInstance = new Game3D();
             if (sessionToRestore) {
                 gameInstance.restoreGameSession(sessionToRestore);
             }
 
-            await new Promise(r => setTimeout(r, 80));
-            updateLoadingUI(85, 'Wärme WebGL Render-Pipeline auf...');
+            // Pre-create sample instances of all 9 zombie types into scene to force WebGL material/shader creation
+            const sampleTypes = ['normal', 'runner', 'crawler', 'shield', 'exploder', 'spitter', 'tank', 'summoner', 'boss'];
+            const stagingGroup = new THREE.Group();
+            stagingGroup.position.set(0, -500, 0); // Hide far below ground
+            gameInstance.scene.add(stagingGroup);
 
-            // Pre-compile shaders in WebGL to prevent any in-game stuttering
+            // Step 3: 1.5 Seconds - WebGL Shader Compilation & Shader Cache Warming
+            await new Promise(r => setTimeout(r, 1300));
+            updateLoadingUI(80, 'Kompiliere WebGL Pipeline & GPU Shader Cache...');
+
             if (gameInstance && gameInstance.renderer && gameInstance.scene && gameInstance.camera) {
                 gameInstance.renderer.compile(gameInstance.scene, gameInstance.camera);
-                gameInstance.renderer.shadowMap.needsUpdate = true;
-                gameInstance.renderer.render(gameInstance.scene, gameInstance.camera);
             }
 
-            await new Promise(r => setTimeout(r, 80));
+            // Step 4: 1.0 Second - Render Warming & Clean Exit
+            await new Promise(r => setTimeout(r, 1100));
+            updateLoadingUI(98, 'Kompilierung abgeschlossen! Starte Spiel...');
+
+            if (gameInstance && gameInstance.renderer && gameInstance.scene && gameInstance.camera) {
+                gameInstance.renderer.render(gameInstance.scene, gameInstance.camera);
+            }
+            gameInstance.scene.remove(stagingGroup);
+
+            await new Promise(r => setTimeout(r, 400));
             updateLoadingUI(100, 'Vorbereitung abgeschlossen!');
 
             audio.startMusic();
@@ -5050,7 +5049,7 @@
 
             setTimeout(() => {
                 if (loadingScreen) loadingScreen.classList.add('hidden');
-            }, 180);
+            }, 200);
         }
 
         function startNewGame() {
