@@ -3659,29 +3659,59 @@
                             // Stop nuclear siren immediately on impact!
                             audio.stopNuclearSiren();
 
-                            // Fullscreen White Flash Overlay (opacity-100 -> fadeout over 1.8s)
-                            const flashOverlay = document.getElementById('nuke-flash-overlay');
-                            if (flashOverlay) {
-                                flashOverlay.style.transition = 'none';
-                                flashOverlay.style.opacity = '1.0';
-                                setTimeout(() => {
-                                    flashOverlay.style.transition = 'opacity 1.8s ease-out';
-                                    flashOverlay.style.opacity = '0';
-                                }, 350);
-                            }
-
-                            // Play Epic Heavy Atomic Explosion
+                            // Play Heavy Atomic Explosion Sound on impact
                             audio.playHeavyAtomicExplosion();
 
-                            // Instant Full Map Wipe
-                            for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
-                                const z = this.zombies[zi];
-                                z.userData.hp = -9999;
-                                this.createBloodSparks(z.position, 0xef4444);
-                                this.killZombie(z);
-                            }
+                            // 1. GIGANTIC MUSHROOM / FIREBALL EXPLOSION (Riesige Explosion!)
+                            const expMat = new THREE.MeshBasicMaterial({ color: 0xff7700, transparent: true, opacity: 0.95 });
+                            const expMesh = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), expMat);
+                            expMesh.position.set(0, 5, 0);
+                            this.scene.add(expMesh);
 
-                            this.isNukeActive = false;
+                            // Shockwave Ring
+                            const ringMat = new THREE.MeshBasicMaterial({ color: 0xffedd5, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+                            const ringMesh = new THREE.Mesh(new THREE.RingGeometry(2, 6, 32), ringMat);
+                            ringMesh.rotation.x = -Math.PI / 2;
+                            ringMesh.position.set(0, 0.2, 0);
+                            this.scene.add(ringMesh);
+
+                            let expScale = 1.0;
+                            const expInterval = setInterval(() => {
+                                expScale += 3.2;
+                                expMesh.scale.set(expScale, expScale * 1.3, expScale);
+                                ringMesh.scale.set(expScale * 1.5, expScale * 1.5, 1);
+                                expMat.opacity -= 0.035;
+                                ringMat.opacity -= 0.04;
+                                if (expMat.opacity <= 0) {
+                                    clearInterval(expInterval);
+                                    this.scene.remove(expMesh);
+                                    this.scene.remove(ringMesh);
+                                }
+                            }, 25);
+
+                            // 2. AFTER THE GIGANTIC EXPLOSION (450ms later) -> FULLSCREEN WHITE FLASH (erst danach weiß!)
+                            setTimeout(() => {
+                                if (this.isGameOver) return;
+
+                                const flashOverlay = document.getElementById('nuke-flash-overlay');
+                                if (flashOverlay) {
+                                    flashOverlay.style.transition = 'none';
+                                    flashOverlay.style.opacity = '1.0';
+                                    setTimeout(() => {
+                                        flashOverlay.style.transition = 'opacity 1.8s ease-out';
+                                        flashOverlay.style.opacity = '0';
+                                    }, 350);
+                                }
+
+                                for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                                    const z = this.zombies[zi];
+                                    z.userData.hp = -9999;
+                                    this.createBloodSparks(z.position, 0xef4444);
+                                    this.killZombie(z);
+                                }
+
+                                this.isNukeActive = false;
+                            }, 450);
                         }
                     }
 
