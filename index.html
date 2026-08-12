@@ -412,6 +412,20 @@
                                     <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-4 h-4 accent-red-600 rounded">
                                 </label>
                             </div>
+
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center space-x-2">
+                                <div class="overflow-hidden">
+                                    <div class="text-xs font-bold text-slate-200 flex items-center">
+                                        <i class="fa-solid fa-floppy-disk text-emerald-400 mr-1.5"></i>
+                                        <span>Spielstand</span>
+                                    </div>
+                                    <div id="pause-save-status-text" class="text-[10px] text-slate-400 truncate">Zuletzt: --:--:--</div>
+                                </div>
+                                <button onclick="manualSaveInPauseMenu()" id="pause-save-now-btn" class="px-3 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 active:bg-emerald-600 text-emerald-400 font-bold text-xs rounded-lg border border-emerald-500/40 flex items-center space-x-1.5 transition">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span id="pause-save-now-btn-text">JETZT SPEICHERN</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="flex space-x-2 pt-2">
@@ -3322,7 +3336,9 @@
                             x: w.position.x,
                             z: w.position.z,
                             rotY: w.rotation.y
-                        }))
+                        })),
+                        savedAtFormatted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                        savedAtTime: Date.now()
                     };
                     Storage.saveSession(sessionData);
                     if (typeof updateMainMenuResumeButton === 'function') updateMainMenuResumeButton();
@@ -4139,6 +4155,36 @@
 
         let isPauseModalOpen = false;
 
+        function updatePauseSaveStatus() {
+            const statusText = document.getElementById('pause-save-status-text');
+            if (!statusText) return;
+            const session = Storage.loadSession();
+            if (session && session.savedAtFormatted) {
+                statusText.innerText = `Zuletzt: ${session.savedAtFormatted}`;
+            } else if (session && session.savedAtTime) {
+                const timeStr = new Date(session.savedAtTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                statusText.innerText = `Zuletzt: ${timeStr}`;
+            } else {
+                statusText.innerText = "Noch nicht gespeichert";
+            }
+        }
+
+        function manualSaveInPauseMenu() {
+            if (!gameInstance || gameInstance.isGameOver) return;
+            gameInstance.saveGameSession();
+            updatePauseSaveStatus();
+
+            const btnText = document.getElementById('pause-save-now-btn-text');
+            const btn = document.getElementById('pause-save-now-btn');
+            if (btnText) btnText.innerText = "GESPEICHERT!";
+            if (btn) btn.className = "px-3 py-1.5 bg-emerald-500 text-slate-950 font-bold text-xs rounded-lg border border-emerald-400 flex items-center space-x-1.5 transition scale-105";
+
+            setTimeout(() => {
+                if (btnText) btnText.innerText = "JETZT SPEICHERN";
+                if (btn) btn.className = "px-3 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 active:bg-emerald-600 text-emerald-400 font-bold text-xs rounded-lg border border-emerald-500/40 flex items-center space-x-1.5 transition";
+            }, 1500);
+        }
+
         function togglePauseModal() {
             if (!gameInstance || gameInstance.isGameOver) return;
             isPauseModalOpen = !isPauseModalOpen;
@@ -4147,6 +4193,7 @@
             const modal = document.getElementById('pause-modal');
             if (isPauseModalOpen) {
                 gameInstance.saveGameSession();
+                updatePauseSaveStatus();
                 document.getElementById('pause-toggle-music').checked = Storage.data.musicEnabled;
                 document.getElementById('pause-toggle-sfx').checked = Storage.data.sfxEnabled;
                 updateTouchSwapUI();
