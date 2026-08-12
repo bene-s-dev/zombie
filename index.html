@@ -2549,11 +2549,12 @@
                 const strike = this.activeAirstrike;
                 strike.jetMesh.position.z += strike.speed * dt;
 
-                // Double Line Corridor across the entire map (-60 to +60 Z-axis)
-                // Left Line (X - 3.8m) / Right Line (X + 3.8m) alternating drops!
-                if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 14)) {
+                strike.dropTimer = (strike.dropTimer || 0) + dt;
+
+                // Time-based bomb drop sequence (every 0.36s / 360ms rhythm!)
+                if (strike.droppedBombs < strike.maxBombs && strike.dropTimer >= 0.36 && strike.jetMesh.position.z >= -60) {
+                    strike.dropTimer = 0;
                     strike.droppedBombs++;
-                    strike.lastDropZ = strike.jetMesh.position.z;
 
                     const isLeft = (strike.droppedBombs % 2 === 1);
                     const offsetX = isLeft ? -3.8 : 3.8;
