@@ -915,12 +915,59 @@
             }
 
             playRadioVoice(onCompleteCallback) {
-                if (Storage.data.sfxEnabled) {
-                    this.playRadioChatter();
-                }
-                setTimeout(() => {
+                if (!Storage.data.sfxEnabled) {
                     if (onCompleteCallback) onCompleteCallback();
-                }, 450);
+                    return;
+                }
+
+                // 1. Confirmation Bleep / Squelch Sound
+                this.playRadioChatter();
+
+                // 2. Play radio.mp3 with specified volume envelope
+                const radio = new Audio('radio.mp3');
+                radio.volume = 0.0;
+
+                let isCallbackDone = false;
+                const finishCallback = () => {
+                    if (isCallbackDone) return;
+                    isCallbackDone = true;
+                    if (onCompleteCallback) onCompleteCallback();
+                };
+
+                radio.play().then(() => {
+                    const startTime = performance.now();
+
+                    const fadeInterval = setInterval(() => {
+                        const elapsed = (performance.now() - startTime) / 1000;
+
+                        if (elapsed < 3.0) {
+                            // Fade-in up to second 3 (0.0 to 0.9)
+                            radio.volume = Math.min(0.9, (elapsed / 3.0) * 0.9);
+                        } else if (elapsed <= 6.0) {
+                            // Hold full volume (seconds 3 to 6)
+                            radio.volume = 0.9;
+                        } else if (elapsed <= 8.0) {
+                            // Fast fade-out between second 6 and 8 (0.9 down to 0.0)
+                            const fadeProgress = (elapsed - 6.0) / 2.0;
+                            radio.volume = Math.max(0.0, 0.9 * (1.0 - fadeProgress));
+                        } else {
+                            // From second 8: quiet & paused
+                            radio.volume = 0.0;
+                            radio.pause();
+                            clearInterval(fadeInterval);
+                            finishCallback();
+                        }
+                    }, 50);
+
+                    // Trigger jet flyover callback at second 10.0 (8s radio + 2s pause)
+                    setTimeout(() => {
+                        finishCallback();
+                    }, 10000);
+
+                }).catch(e => {
+                    console.log("radio.mp3 play blocked", e);
+                    finishCallback();
+                });
             }
 
             playJetFlyover() {
@@ -960,8 +1007,9 @@
                     this.bgMusic.loop = true;
                     this.bgMusic.volume = 0.45;
                 }
-                this.bgMusic.play().catch(e => console.log("Music playback:", e));
+                this.bgMusic.play().catch(e => console.log("Music playback error", e));
             }
+
             stopMusic() {
                 if (this.bgMusic) {
                     this.bgMusic.pause();
