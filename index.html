@@ -1317,7 +1317,7 @@
             combat_drone: { name: 'Begleit-Kampfdrohne', level: 0, maxLevel: 5, costBase: 750, desc: 'Schaltet eine schwebende 3D-Drohne frei, die über dir fliegt und automatisch Zombies beschießt!' },
             player_speed: { name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 150, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
             player_hp: { name: 'Kampfweste & Max HP', level: 0, maxLevel: 5, costBase: 200, desc: 'Erhöht maximale Spieler-Gesundheit um +30' },
-            scavenger: { name: 'Plünderer-Bonus', level: 0, maxLevel: 100, costBase: 150, desc: 'Erhöht erbeutetes Geld pro Zombie um +10% pro Stufe' },
+            scavenger: { name: 'Plünderer-Bonus', level: 0, maxLevel: 100, costBase: 150, desc: 'Erhöht erbeutetes Geld pro Zombie um 5% multiplikativ pro Stufe' },
             crit_chance: { name: 'Kritische Treffer', level: 0, maxLevel: 5, costBase: 300, desc: 'Gewährt +10% Chance auf doppeltem Waffenschaden' },
             base_hp: { name: 'Basis-Panzerung', level: 0, maxLevel: 5, costBase: 250, desc: 'Erhöht maximale Basis-Gesundheit um +250 HP' },
             base_shield: { name: 'Plasma-Schildgenerator', level: 0, maxLevel: 5, costBase: 400, desc: 'Erzeugt einen Schild, der eingehenden Schaden absorbiert' },
@@ -2594,7 +2594,7 @@
                 const idx = this.zombies.indexOf(z);
                 if (idx !== -1) {
                     const scavengerLvl = this.upgrades.scavenger || 0;
-                    const scavengerMult = 1 + (scavengerLvl * 0.10);
+                    const scavengerMult = Math.pow(1.05, scavengerLvl);
                     this.money += Math.round(z.userData.reward * scavengerMult);
                     this.totalKills++;
                     this.scene.remove(z);
@@ -4219,7 +4219,8 @@
 
                     let descText = upg.desc;
                     if (key === 'scavenger') {
-                        descText = `Erhöht erbeutetes Geld pro Zombie um +10% pro Stufe (Bonus: +${currentLvl * 10}%)`;
+                        const totalBonusPct = Math.round((Math.pow(1.05, currentLvl) - 1) * 100);
+                        descText = `Erhöht erbeutetes Geld pro Zombie um 5% multiplikativ pro Stufe (Bonus: +${totalBonusPct}%)`;
                     }
 
                     const card = document.createElement('div');
