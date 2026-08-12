@@ -1286,38 +1286,41 @@
 
             playAtomicSound() {
                 if (!Storage.data.sfxEnabled) return;
-                const atomicAudio = document.getElementById('audio-atomic');
-                if (atomicAudio) {
-                    try {
-                        if (this._atomicTimer) clearTimeout(this._atomicTimer);
-                        atomicAudio.ontimeupdate = null;
-                        atomicAudio.pause();
-                        atomicAudio.loop = false;
-                        atomicAudio.currentTime = 0;
-                        atomicAudio.volume = 0.95;
+                try {
+                    if (this.currentAtomicAudio) {
+                        try {
+                            this.currentAtomicAudio.pause();
+                            this.currentAtomicAudio.currentTime = 0;
+                        } catch(e) {}
+                    }
 
-                        atomicAudio.ontimeupdate = () => {
-                            if (atomicAudio.currentTime >= 5.0) {
-                                atomicAudio.pause();
-                                atomicAudio.currentTime = 0;
-                                atomicAudio.ontimeupdate = null;
-                            }
-                        };
+                    const audioEl = new Audio('atomic.mp3');
+                    audioEl.volume = 1.0;
+                    this.currentAtomicAudio = audioEl;
 
-                        const promise = atomicAudio.play();
-                        if (promise !== undefined) {
-                            promise.then(() => {
-                                this._atomicTimer = setTimeout(() => {
-                                    try {
-                                        atomicAudio.pause();
-                                        atomicAudio.currentTime = 0;
-                                        atomicAudio.ontimeupdate = null;
-                                    } catch(e) {}
-                                }, 5000);
-                            }).catch(() => {});
+                    audioEl.ontimeupdate = () => {
+                        if (audioEl.currentTime >= 5.0) {
+                            try {
+                                audioEl.pause();
+                                audioEl.currentTime = 0;
+                            } catch(e) {}
+                            audioEl.ontimeupdate = null;
                         }
-                    } catch(e) {}
-                }
+                    };
+
+                    const playPromise = audioEl.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            setTimeout(() => {
+                                try {
+                                    audioEl.pause();
+                                    audioEl.currentTime = 0;
+                                } catch(e) {}
+                                audioEl.ontimeupdate = null;
+                            }, 5000);
+                        }).catch(err => console.warn("atomic.mp3 playback error", err));
+                    }
+                } catch(e) { console.error("atomic.mp3 error", e); }
             }
 
             startNuclearSiren() {
@@ -1328,28 +1331,28 @@
                     if (this.ctx) {
                         const now = this.ctx.currentTime;
                         
-                        // Single low-frequency deep mechanical siren (NO high frequency pitch)
+                        // Single low-frequency deep mechanical siren (very slow long-drawn 6s glide)
                         const osc = this.ctx.createOscillator();
                         const gain = this.ctx.createGain();
                         const filter = this.ctx.createBiquadFilter();
 
                         filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(400, now);
+                        filter.frequency.setValueAtTime(350, now);
 
                         osc.type = 'sawtooth';
 
-                        // Deep heavy pitch glide: 110Hz -> 240Hz -> 120Hz -> 240Hz over 4.0s cycles
-                        osc.frequency.setValueAtTime(110, now);
+                        // Very slow heavy pitch glide: 90Hz -> 200Hz -> 90Hz over 6.0s cycles
+                        osc.frequency.setValueAtTime(90, now);
 
                         let t = 0;
                         for (let cycle = 0; cycle < 8; cycle++) {
-                            osc.frequency.linearRampToValueAtTime(240, now + t + 2.0);
-                            osc.frequency.linearRampToValueAtTime(120, now + t + 4.0);
-                            t += 4.0;
+                            osc.frequency.linearRampToValueAtTime(200, now + t + 3.0);
+                            osc.frequency.linearRampToValueAtTime(90, now + t + 6.0);
+                            t += 6.0;
                         }
 
                         gain.gain.setValueAtTime(0.01, now);
-                        gain.gain.linearRampToValueAtTime(0.38, now + 0.6);
+                        gain.gain.linearRampToValueAtTime(0.40, now + 0.8);
 
                         osc.connect(filter);
                         filter.connect(gain);
@@ -1364,12 +1367,10 @@
             }
 
             stopNuclearSiren() {
-                const atomicAudio = document.getElementById('audio-atomic');
-                if (atomicAudio) {
+                if (this.currentAtomicAudio) {
                     try {
-                        atomicAudio.pause();
-                        atomicAudio.currentTime = 0;
-                        atomicAudio.ontimeupdate = null;
+                        this.currentAtomicAudio.pause();
+                        this.currentAtomicAudio.currentTime = 0;
                     } catch(e) {}
                 }
 
@@ -3524,6 +3525,7 @@
                 this.isNukeActive = true;
 
                 audio.playConfirmBip();
+                audio.startMusic();
 
                 // 1. Play atomic.mp3 immediately from 0 to 5 seconds
                 audio.playAtomicSound();
