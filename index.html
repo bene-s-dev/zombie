@@ -83,6 +83,15 @@
                 grid-template-columns: 1fr 1fr !important;
             }
         }
+
+        /* Airstrike BEREIT Blink-Animation */
+        @keyframes airstrike-ready {
+            0%, 100% { color: #f59e0b; opacity: 1; }
+            50% { color: #fb923c; opacity: 0.6; }
+        }
+        .airstrike-ready-blink {
+            animation: airstrike-ready 0.7s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col justify-center items-center bg-slate-950 overflow-hidden">
@@ -276,7 +285,7 @@
                 <div class="flex items-center space-x-1.5 sm:space-x-2">
                     <button id="hud-airstrike-btn" onclick="triggerAirstrike()" class="relative overflow-hidden bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto animate-pulse" title="Orbitaler Doppel-Luftschlag [E]">
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
-                        <div id="airstrike-icon" class="relative z-10 flex items-center pr-1 text-amber-400 animate-bounce">
+                        <div id="airstrike-icon" class="relative z-10 flex items-center pr-1 text-amber-400 airstrike-ready-blink">
                             <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm"></i>
                             <i class="fa-solid fa-plane-up text-amber-400 text-[10px] sm:text-xs -ml-2.5 opacity-90"></i>
                         </div>
@@ -961,8 +970,9 @@
                 // 1. Confirmation Bleep / Squelch Sound
                 this.playRadioChatter();
 
-                // 2. Play radio.mp3 — seek to skip silent lead-in AFTER play() resolves
-                const radio = new Audio('radio.mp3');
+                // 2. Play radio.mp3 — preload + seek on canplaythrough for instant speech
+                const radio = new Audio();
+                radio.preload = 'auto';
                 radio.volume = 0.9;
 
                 let isCallbackDone = false;
@@ -972,37 +982,40 @@
                     if (onCompleteCallback) onCompleteCallback();
                 };
 
-                radio.play().then(() => {
-                    // Skip silent intro immediately after browser starts playback
-                    try { radio.currentTime = 1.4; } catch(e) {}
+                const startPlayback = () => {
+                    try { radio.currentTime = 1.6; } catch(e) {}
+                    radio.play().then(() => {
 
-                    const startTime = performance.now();
-
-                    const fadeInterval = setInterval(() => {
-                        const elapsed = (performance.now() - startTime) / 1000;
-
-                        if (elapsed <= 7.0) {
-                            radio.volume = 0.9;
-                        } else if (elapsed <= 9.0) {
-                            const fadeProgress = (elapsed - 7.0) / 2.0;
-                            radio.volume = Math.max(0.0, 0.9 * (1.0 - fadeProgress));
-                        } else {
-                            radio.volume = 0.0;
-                            radio.pause();
-                            clearInterval(fadeInterval);
-                            finishCallback();
-                        }
-                    }, 50);
-
-                    // Safety: trigger jet at 11s max
-                    setTimeout(() => {
+                        const startTime = performance.now();
+                        const fadeInterval = setInterval(() => {
+                            const elapsed = (performance.now() - startTime) / 1000;
+                            if (elapsed <= 7.0) {
+                                radio.volume = 0.9;
+                            } else if (elapsed <= 9.0) {
+                                const fadeProgress = (elapsed - 7.0) / 2.0;
+                                radio.volume = Math.max(0.0, 0.9 * (1.0 - fadeProgress));
+                            } else {
+                                radio.volume = 0.0;
+                                radio.pause();
+                                clearInterval(fadeInterval);
+                                finishCallback();
+                            }
+                        }, 50);
+                        setTimeout(() => finishCallback(), 11000);
+                    }).catch(e => {
+                        console.log('radio.mp3 play blocked', e);
                         finishCallback();
-                    }, 11000);
+                    });
+                };
 
-                }).catch(e => {
-                    console.log("radio.mp3 play blocked", e);
-                    finishCallback();
-                });
+                radio.addEventListener('canplaythrough', startPlayback, { once: true });
+                radio.addEventListener('error', () => finishCallback());
+                radio.src = 'radio.mp3';
+                radio.load();
+                // Fallback: if canplaythrough fires late, force start after 500ms
+                setTimeout(() => {
+                    if (!isCallbackDone && radio.paused) startPlayback();
+                }, 500);
             }
 
             playJetFlyover() {
@@ -2599,8 +2612,8 @@
                         if (btn) btn.className = "relative overflow-hidden bg-slate-900/60 border border-slate-800 text-slate-500 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center space-x-1.5 min-h-[40px] pointer-events-auto";
                     } else {
                         if (statusText) statusText.innerText = "[E] BEREIT!";
-                        if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-1 text-amber-400 animate-bounce";
-                        if (btn) btn.className = "relative overflow-hidden bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto animate-pulse";
+                        if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-1 text-amber-400 airstrike-ready-blink";
+                        if (btn) btn.className = "relative overflow-hidden bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto";
                     }
                 } else {
                     const progressFill = document.getElementById('airstrike-progress-fill');
