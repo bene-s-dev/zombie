@@ -280,9 +280,9 @@
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between">
             <div class="flex justify-between items-start w-full max-w-5xl mx-auto p-1.5 sm:p-3 pointer-events-auto">
-                <!-- Top-Left Wave Container: Time on left (compact w-auto), Zombies in middle, Wave on right, no dividers -->
+                <!-- Top-Left Wave Container: Time on left (compact w-auto without 'Zeit:' prefix), Zombies in middle, Wave on right -->
                 <div id="hud-wave-container" class="flex items-center space-x-2 sm:space-x-3.5 py-0.5 drop-shadow-md">
-                    <div id="hud-timer" class="w-auto font-mono text-[10px] sm:text-xs text-slate-300 whitespace-nowrap">Zeit: 00:00</div>
+                    <div id="hud-timer" class="w-auto font-mono text-[10px] sm:text-xs text-slate-300 whitespace-nowrap">00:00</div>
                     <div id="hud-zombies-left" class="w-24 sm:w-32 font-teko text-sm sm:text-xl font-bold text-white leading-none text-center truncate">0 UNTOTE</div>
                     <div id="hud-wave-title-wrap" class="min-w-[110px] sm:min-w-[150px] flex items-center justify-start">
                         <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1">
@@ -3296,7 +3296,7 @@
 
                 const m = Math.floor(this.gameSeconds / 60).toString().padStart(2, '0');
                 const s = (this.gameSeconds % 60).toString().padStart(2, '0');
-                document.getElementById('hud-timer').innerText = `Zeit: ${m}:${s}`;
+                document.getElementById('hud-timer').innerText = `${m}:${s}`;
 
                 const wLvl = this.weaponLevels[this.currentWeapon.id] || 1;
                 const weaponDmg = Math.round(this.currentWeapon.damage * (1 + (wLvl - 1) * 0.35));
@@ -4261,6 +4261,28 @@
             updateMusicDucking();
         }
 
+        function showPurchaseToast(msg) {
+            audio.playCoin();
+
+            let toast = document.getElementById('shop-purchase-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'shop-purchase-toast';
+                toast.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-slate-950 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-1.5 transition-all duration-300 transform -translate-y-4 opacity-0 pointer-events-none';
+                document.body.appendChild(toast);
+            }
+
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-base"></i> <span>${msg}</span>`;
+            toast.classList.remove('-translate-y-4', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (window.shopToastTimeout) clearTimeout(window.shopToastTimeout);
+            window.shopToastTimeout = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-4', 'opacity-0');
+            }, 1600);
+        }
+
         function buyWeapon(id) {
             if (!gameInstance) return;
             const w = WEAPONS[id];
@@ -4271,6 +4293,7 @@
                 gameInstance.syncHUD();
                 renderShopCatalog();
                 gameInstance.saveGameSession();
+                showPurchaseToast(`${w.name} gekauf & ausgerüstet!`);
             }
         }
 
@@ -4286,6 +4309,7 @@
                 gameInstance.syncHUD();
                 renderShopCatalog();
                 gameInstance.saveGameSession();
+                showPurchaseToast(`${w.name} auf Level ${lvl + 1} verbessert!`);
             }
         }
 
@@ -4294,6 +4318,7 @@
             gameInstance.currentWeapon = WEAPONS[id];
             gameInstance.syncHUD();
             renderShopCatalog();
+            showPurchaseToast(`${WEAPONS[id].name} ausgerüstet`);
         }
 
         function buyUpgrade(key) {
@@ -4325,6 +4350,7 @@
                 gameInstance.syncHUD();
                 renderShopCatalog();
                 gameInstance.saveGameSession();
+                showPurchaseToast(`${upg.name} auf Level ${currentLvl + 1} verbessert!`);
             }
         }
 
@@ -4335,6 +4361,8 @@
                 gameInstance.baseHp = Math.min(gameInstance.maxBaseHp, gameInstance.baseHp + 250);
                 gameInstance.syncHUD();
                 gameInstance.saveGameSession();
+                renderShopCatalog();
+                showPurchaseToast("Basis repariert! (+250 HP)");
             }
         }
 
@@ -4345,6 +4373,8 @@
                 gameInstance.playerHp = gameInstance.maxPlayerHp;
                 gameInstance.syncHUD();
                 gameInstance.saveGameSession();
+                renderShopCatalog();
+                showPurchaseToast("Spieler geheilt! (Max HP)");
             }
         }
 
