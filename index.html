@@ -1284,15 +1284,9 @@
                 } catch(e) {}
             }
 
-            playAtomicSound(onComplete) {
-                if (!Storage.data.sfxEnabled) {
-                    if (onComplete) onComplete();
-                    return;
-                }
-
+            playAtomicSound() {
+                if (!Storage.data.sfxEnabled) return;
                 const atomicAudio = document.getElementById('audio-atomic');
-                let playedAudio = false;
-
                 if (atomicAudio) {
                     try {
                         atomicAudio.currentTime = 0;
@@ -1300,42 +1294,63 @@
                         const promise = atomicAudio.play();
                         if (promise !== undefined) {
                             promise.then(() => {
-                                playedAudio = true;
                                 setTimeout(() => {
                                     try { atomicAudio.pause(); } catch(e) {}
-                                    if (onComplete) onComplete();
                                 }, 5000);
-                            }).catch(() => {
-                                playedAudio = false;
-                            });
+                            }).catch(() => {});
                         }
-                    } catch(e) { playedAudio = false; }
+                    } catch(e) {}
                 }
+            }
 
-                if (!playedAudio) {
+            startNuclearSiren() {
+                if (!Storage.data.sfxEnabled) return;
+                this.stopNuclearSiren();
+                try {
+                    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
                     if (this.ctx) {
-                        try {
-                            if (this.ctx.state !== 'running') this.ctx.resume();
-                            const now = this.ctx.currentTime;
-                            const osc = this.ctx.createOscillator();
-                            const gain = this.ctx.createGain();
-                            osc.type = 'sawtooth';
-                            osc.frequency.setValueAtTime(350, now);
-                            osc.frequency.linearRampToValueAtTime(750, now + 2.5);
-                            osc.frequency.linearRampToValueAtTime(350, now + 5.0);
+                        const now = this.ctx.currentTime;
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
 
-                            gain.gain.setValueAtTime(0.25, now);
-                            gain.gain.linearRampToValueAtTime(0.001, now + 5.0);
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(320, now);
 
-                            osc.connect(gain);
-                            gain.connect(this.ctx.destination);
-                            osc.start(now);
-                            osc.stop(now + 5.0);
-                        } catch(e) {}
+                        let timeOffset = 0;
+                        for (let cycle = 0; cycle < 10; cycle++) {
+                            osc.frequency.linearRampToValueAtTime(750, now + timeOffset + 1.2);
+                            osc.frequency.linearRampToValueAtTime(320, now + timeOffset + 2.4);
+                            timeOffset += 2.4;
+                        }
+
+                        gain.gain.setValueAtTime(0.01, now);
+                        gain.gain.linearRampToValueAtTime(0.28, now + 0.5);
+
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now);
+
+                        this._nukeSirenOsc = osc;
+                        this._nukeSirenGain = gain;
                     }
-                    setTimeout(() => {
-                        if (onComplete) onComplete();
-                    }, 5000);
+                } catch(e) {}
+            }
+
+            stopNuclearSiren() {
+                if (this._nukeSirenGain && this.ctx) {
+                    try {
+                        const now = this.ctx.currentTime;
+                        this._nukeSirenGain.gain.setValueAtTime(this._nukeSirenGain.gain.value, now);
+                        this._nukeSirenGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                        setTimeout(() => {
+                            try { if (this._nukeSirenOsc) this._nukeSirenOsc.stop(); } catch(e) {}
+                            this._nukeSirenOsc = null;
+                            this._nukeSirenGain = null;
+                        }, 350);
+                    } catch(e) {
+                        this._nukeSirenOsc = null;
+                        this._nukeSirenGain = null;
+                    }
                 }
             }
 
@@ -3525,14 +3540,29 @@
                 this.nukeCooldown = 90.0;
                 this.isNukeActive = true;
 
-                audio.playAtomicSound(() => {
+                // 1. Play radio voice confirmation sound (same as airstrike!)
+                audio.playRadioVoice(() => {
                     if (this.isGameOver) {
                         this.isNukeActive = false;
                         return;
                     }
 
-                    audio.playSlowJetFlyover();
-                    this.spawnNukeJet();
+                    // 2. Play atomic.mp3 strictly up to 5 seconds
+                    audio.playAtomicSound();
+
+                    // 3. Start long-drawn nuclear siren wailing until impact
+                    audio.startNuclearSiren();
+
+                    // 4. After 5 seconds of atomic.mp3, launch jet & drop
+                    setTimeout(() => {
+                        if (this.isGameOver) {
+                            audio.stopNuclearSiren();
+                            this.isNukeActive = false;
+                            return;
+                        }
+                        audio.playSlowJetFlyover();
+                        this.spawnNukeJet();
+                    }, 5000);
                 });
             }
 
@@ -3610,47 +3640,49 @@
                             this.scene.remove(strike.nukeBombMesh);
                             strike.nukeBombMesh = null;
 
-                            // Short pause before impact explosion & flash
-                            setTimeout(() => {
-                                if (this.isGameOver) return;
+                            // Stop nuclear siren immediately on impact!
+                            audio.stopNuclearSiren();
 
-                                audio.playHeavyAtomicExplosion();
+                            // 1. Brief Mushroom Cloud Visual (pilz kurz)
+                            const expMat = new THREE.MeshBasicMaterial({ color: 0xffedd5, transparent: true, opacity: 0.95 });
+                            const expMesh = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), expMat);
+                            expMesh.position.set(0, 4, 0);
+                            this.scene.add(expMesh);
 
-                                const flashOverlay = document.getElementById('nuke-flash-overlay');
-                                if (flashOverlay) {
-                                    flashOverlay.style.transition = 'none';
-                                    flashOverlay.style.opacity = '1.0';
-                                    setTimeout(() => {
-                                        flashOverlay.style.transition = 'opacity 1.8s ease-out';
-                                        flashOverlay.style.opacity = '0';
-                                    }, 400);
+                            let expScale = 1.0;
+                            const expInterval = setInterval(() => {
+                                expScale += 3.5;
+                                expMesh.scale.set(expScale, expScale, expScale);
+                                expMat.opacity -= 0.05;
+                                if (expMat.opacity <= 0) {
+                                    clearInterval(expInterval);
+                                    this.scene.remove(expMesh);
                                 }
+                            }, 30);
 
-                                const expMat = new THREE.MeshBasicMaterial({ color: 0xffedd5, transparent: true, opacity: 0.95 });
-                                const expMesh = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), expMat);
-                                expMesh.position.set(0, 4, 0);
-                                this.scene.add(expMesh);
+                            // 2. Fullscreen White Flash (dann weiß)
+                            const flashOverlay = document.getElementById('nuke-flash-overlay');
+                            if (flashOverlay) {
+                                flashOverlay.style.transition = 'none';
+                                flashOverlay.style.opacity = '1.0';
+                                setTimeout(() => {
+                                    flashOverlay.style.transition = 'opacity 1.8s ease-out';
+                                    flashOverlay.style.opacity = '0';
+                                }, 350);
+                            }
 
-                                let expScale = 1.0;
-                                const expInterval = setInterval(() => {
-                                    expScale += 2.5;
-                                    expMesh.scale.set(expScale, expScale, expScale);
-                                    expMat.opacity -= 0.03;
-                                    if (expMat.opacity <= 0) {
-                                        clearInterval(expInterval);
-                                        this.scene.remove(expMesh);
-                                    }
-                                }, 40);
+                            // 3. Play Epic Heavy Atomic Explosion
+                            audio.playHeavyAtomicExplosion();
 
-                                for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
-                                    const z = this.zombies[zi];
-                                    z.userData.hp = -9999;
-                                    this.createBloodSparks(z.position, 0xef4444);
-                                    this.killZombie(z);
-                                }
+                            // 4. Instant Full Map Wipe
+                            for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                                const z = this.zombies[zi];
+                                z.userData.hp = -9999;
+                                this.createBloodSparks(z.position, 0xef4444);
+                                this.killZombie(z);
+                            }
 
-                                this.isNukeActive = false;
-                            }, 400);
+                            this.isNukeActive = false;
                         }
                     }
 
