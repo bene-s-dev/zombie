@@ -129,14 +129,10 @@
 
         <!-- ================= PLACEMENT / BUILD MODE OVERLAY ================= -->
         <div id="placement-hud" class="hidden absolute top-3 left-1/2 transform -translate-x-1/2 z-50 bg-slate-950/90 border border-amber-500/60 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-2xl flex items-center space-x-2 pointer-events-auto text-xs">
-            <div class="flex items-center space-x-1 pr-1 border-r border-slate-800">
+            <div class="flex items-center space-x-1">
                 <i class="fa-solid fa-hammer text-amber-400"></i>
                 <span class="font-teko text-base font-bold text-amber-400 tracking-wider">BAU: <span id="placement-item-name" class="text-white">TURM</span></span>
             </div>
-            <button onclick="confirmPlacement()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1 shadow-md shadow-emerald-950/40">
-                <i class="fa-solid fa-check"></i>
-                <span id="placement-cost-text">Platzieren ($150)</span>
-            </button>
             <button onclick="rotatePlacement()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
                 <i class="fa-solid fa-rotate-right"></i>
                 <span>Drehen</span>
@@ -2414,8 +2410,6 @@
                 this.updateGhostPosition(initX, initZ);
 
                 document.getElementById('placement-item-name').innerText = spec.name;
-                const costEl = document.getElementById('placement-cost-text');
-                if (costEl) costEl.innerText = `Platzieren ($${spec.cost})`;
                 document.getElementById('placement-hud').classList.remove('hidden');
                 toggleShop(false);
             }
