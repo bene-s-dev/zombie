@@ -927,46 +927,42 @@
 
             playRadioChatter() {
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
-                const play = () => {
+                const ctx = this.ctx;
+                const doPlay = () => {
                     try {
-                        const now = this.ctx.currentTime + 0.05;
-                        // Tone sweep
-                        const osc = this.ctx.createOscillator();
-                        const gain = this.ctx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(1600, now);
-                        osc.frequency.setValueAtTime(2600, now + 0.06);
-                        osc.frequency.setValueAtTime(1900, now + 0.15);
-                        gain.gain.setValueAtTime(0.7, now);
-                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                        osc.connect(gain);
-                        gain.connect(this.ctx.destination);
-                        osc.start(now);
-                        osc.stop(now + 0.3);
-                        // Bandpass noise burst
-                        const bufferSize = Math.floor(this.ctx.sampleRate * 0.45);
-                        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                        const output = buffer.getChannelData(0);
-                        for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1);
-                        const noise = this.ctx.createBufferSource();
-                        noise.buffer = buffer;
-                        const filter = this.ctx.createBiquadFilter();
-                        filter.type = 'bandpass';
-                        filter.frequency.value = 2000;
-                        filter.Q.value = 1.5;
-                        const nGain = this.ctx.createGain();
-                        nGain.gain.setValueAtTime(0.7, now);
-                        nGain.gain.exponentialRampToValueAtTime(0.005, now + 0.45);
-                        noise.connect(filter);
-                        filter.connect(nGain);
-                        nGain.connect(this.ctx.destination);
-                        noise.start(now);
-                    } catch(e) { console.warn('chatter err', e); }
+                        const t = ctx.currentTime + 0.02;
+                        // Pitch-swept oscillator (radio squelch tone)
+                        const osc = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(900, t);
+                        osc.frequency.exponentialRampToValueAtTime(3200, t + 0.08);
+                        osc.frequency.exponentialRampToValueAtTime(800, t + 0.38);
+                        g.gain.setValueAtTime(0.9, t);
+                        g.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
+                        osc.connect(g);
+                        g.connect(ctx.destination);
+                        osc.start(t);
+                        osc.stop(t + 0.42);
+                        // White noise burst
+                        const size = Math.floor(ctx.sampleRate * 0.42);
+                        const buf = ctx.createBuffer(1, size, ctx.sampleRate);
+                        const data = buf.getChannelData(0);
+                        for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+                        const src = ctx.createBufferSource();
+                        src.buffer = buf;
+                        const ng = ctx.createGain();
+                        ng.gain.setValueAtTime(0.8, t);
+                        ng.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
+                        src.connect(ng);
+                        ng.connect(ctx.destination);
+                        src.start(t);
+                    } catch(e) { console.warn('chatter err:', e); }
                 };
-                if (this.ctx.state === 'running') {
-                    play();
+                if (ctx.state === 'running') {
+                    doPlay();
                 } else {
-                    this.ctx.resume().then(play);
+                    ctx.resume().then(doPlay).catch(e => console.warn('ctx resume fail', e));
                 }
             }
 
@@ -2592,7 +2588,7 @@
                 burner.position.set(0, 0, -2.4);
                 jetGroup.add(burner);
 
-                jetGroup.position.set(targetX, 24, -133);
+                jetGroup.position.set(targetX, 24, -188);
                 jetGroup.rotation.y = 0;
 
                 this.scene.add(jetGroup);
@@ -2604,8 +2600,8 @@
                     targetX: targetX,
                     droppedBombs: 0,
                     maxBombs: 16,
-                    lastDropZ: -200,
-                    dropDelay: 0.75
+                    lastDropZ: -300,
+                    dropDelay: 1.5
                 });
             }
 
