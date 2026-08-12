@@ -5608,10 +5608,10 @@
             }
 
             const startTime = performance.now();
-            const totalDurationMs = 5000; // Exact 5 seconds smooth continuous loading
+            const totalDurationMs = 3000; // Exact 3 seconds smooth continuous loading
 
             let isFinished = false;
-            let currentStatus = 'Initialisiere 3D-Engine & Audio-Context...';
+            let currentStatus = 'Initialisiere 3D-Engine & Materialien...';
 
             // Continuous 60fps Smooth Progress Animation Loop
             function animLoop() {
@@ -5619,16 +5619,13 @@
                 const elapsed = performance.now() - startTime;
                 const progress = Math.min(100, (elapsed / totalDurationMs) * 100);
 
-                if (progress < 20) {
-                    currentStatus = 'Initialisiere 3D-Engine & Audio-Context...';
-                } else if (progress < 45) {
-                    currentStatus = 'Erstelle Texturen, Geometrien & Material-Pool...';
-                } else if (progress < 75) {
-                    currentStatus = 'Pre-Instanziierung aller 9 Zombie-Typen & Geschütze...';
-                } else if (progress < 95) {
-                    currentStatus = 'Kompiliere WebGL Pipeline & GPU Shader Cache...';
+                // STRICTLY 3 STATUS SENTENCES DURING LOADING
+                if (progress < 35) {
+                    currentStatus = 'Initialisiere 3D-Engine & Materialien...';
+                } else if (progress < 70) {
+                    currentStatus = 'Pre-Instanziierung aller 9 Zombie-Typen...';
                 } else {
-                    currentStatus = 'Vorbereitung abgeschlossen!';
+                    currentStatus = 'Kompiliere WebGL-Pipeline & Starte...';
                 }
 
                 updateLoadingUI(progress, currentStatus);
@@ -5639,44 +5636,36 @@
             }
             requestAnimationFrame(animLoop);
 
-            // Phase 1: Audio Init
+            // Phase 1: Audio Init & Cleanup
             audio.init();
-            await new Promise(r => setTimeout(r, 600));
-
-            // Phase 2: Cleanup previous game if any
             if (gameInstance) {
                 gameInstance.isRunning = false;
                 document.getElementById('three-container').innerHTML = '';
             }
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 400));
 
-            // Phase 3: Create Game Instance & Restore Session
+            // Phase 2: Create Game Instance & Restore Session
             gameInstance = new Game3D();
             if (sessionToRestore) {
                 gameInstance.restoreGameSession(sessionToRestore);
             }
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, 500));
 
-            // Phase 4: Pre-instantiate all zombie models in staging group
+            // Phase 3: Pre-instantiate all zombie models in staging group
             const sampleTypes = ['normal', 'runner', 'crawler', 'shield', 'exploder', 'spitter', 'tank', 'summoner', 'boss'];
             const stagingGroup = new THREE.Group();
             stagingGroup.position.set(0, -500, 0);
             gameInstance.scene.add(stagingGroup);
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, 500));
 
-            // Phase 5: WebGL Shader Compilation
+            // Phase 4: WebGL Shader Compilation & Warmup
             if (gameInstance && gameInstance.renderer && gameInstance.scene && gameInstance.camera) {
                 gameInstance.renderer.compile(gameInstance.scene, gameInstance.camera);
-            }
-            await new Promise(r => setTimeout(r, 800));
-
-            // Phase 6: Render Warmup & Clean Staging
-            if (gameInstance && gameInstance.renderer && gameInstance.scene && gameInstance.camera) {
                 gameInstance.renderer.render(gameInstance.scene, gameInstance.camera);
             }
             gameInstance.scene.remove(stagingGroup);
 
-            // Wait until full 5000ms animation finishes
+            // Wait until full 3000ms animation finishes
             const remainingTime = Math.max(0, totalDurationMs - (performance.now() - startTime));
             await new Promise(r => setTimeout(r, remainingTime));
 
@@ -5689,7 +5678,7 @@
 
             setTimeout(() => {
                 if (loadingScreen) loadingScreen.classList.add('hidden');
-            }, 200);
+            }, 180);
         }
 
         function startNewGame() {
