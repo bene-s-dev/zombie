@@ -268,9 +268,9 @@
 
                 <div class="flex items-center space-x-1.5 sm:space-x-2">
                     <button id="hud-airstrike-btn" onclick="triggerAirstrike()" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto animate-pulse" title="Orbitaler Napalm-Luftschlag [E]">
-                        <div id="airstrike-icon" class="flex items-center space-x-0.5 text-amber-400 animate-bounce">
+                        <div id="airstrike-icon" class="relative flex items-center pr-1 text-amber-400 animate-bounce">
                             <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm"></i>
-                            <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm -ml-1"></i>
+                            <i class="fa-solid fa-plane-up text-amber-400 text-[10px] sm:text-xs -ml-2.5 opacity-90"></i>
                         </div>
                         <div class="flex flex-col text-left">
                             <span class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase leading-none">Luftschlag</span>
@@ -2472,15 +2472,15 @@
                     const playerX = this.playerGroup.position.x;
                     this.activeAirstrikes = [];
 
-                    // Jet 1 (Lead Fighter - Left Line X - 3.2m)
-                    this.spawnJetStrike(playerX - 3.2);
+                    // Flight 1: Jet 1 (Lead Fighter)
+                    this.spawnJetStrike(playerX);
 
-                    // Jet 2 (Wingman Fighter - Right Line X + 3.2m, 0.7s delay, NO RADIO!)
+                    // Flight 2: Jet 2 (Wingman Fighter, 1.2s later with Jet sound, NO RADIO!)
                     setTimeout(() => {
                         if (!this.isGameOver) {
-                            this.spawnJetStrike(playerX + 3.2);
+                            this.spawnJetStrike(playerX);
                         }
-                    }, 700);
+                    }, 1200);
                 });
             }
 
@@ -2516,7 +2516,7 @@
                     speed: 75,
                     targetX: targetX,
                     droppedBombs: 0,
-                    maxBombs: 8,
+                    maxBombs: 10,
                     lastDropZ: -60
                 });
             }
@@ -2530,11 +2530,11 @@
 
                     if (this.airstrikeCooldown > 0) {
                         if (statusText) statusText.innerText = `${Math.ceil(this.airstrikeCooldown)}s`;
-                        if (btnIcon) btnIcon.className = "flex items-center space-x-0.5 text-slate-500 opacity-60";
+                        if (btnIcon) btnIcon.className = "relative flex items-center pr-1 text-slate-500 opacity-60";
                         if (btn) btn.className = "bg-slate-900/60 border border-slate-800 text-slate-500 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl opacity-60 cursor-not-allowed flex items-center space-x-1.5 min-h-[40px] pointer-events-auto";
                     } else {
                         if (statusText) statusText.innerText = "[E] BEREIT!";
-                        if (btnIcon) btnIcon.className = "flex items-center space-x-0.5 text-amber-400 animate-bounce";
+                        if (btnIcon) btnIcon.className = "relative flex items-center pr-1 text-amber-400 animate-bounce";
                         if (btn) btn.className = "bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto animate-pulse";
                     }
                 }
@@ -2545,13 +2545,13 @@
                         zone.life -= dt;
                         zone.damageTimer = (zone.damageTimer || 0) + dt;
 
-                        if (zone.damageTimer >= 0.4) {
+                        if (zone.damageTimer >= 0.2) {
                             zone.damageTimer = 0;
                             this.zombies.forEach(z => {
-                                if (z.position.distanceTo(zone.pos) < 5.2) {
-                                    z.userData.hp -= 80;
+                                if (z.position.distanceTo(zone.pos) < 6.0) {
+                                    z.userData.hp = -9999;
                                     this.flashZombieHit(z);
-                                    if (z.userData.hp <= 0) this.killZombie(z);
+                                    this.killZombie(z);
                                 }
                             });
                         }
@@ -2572,14 +2572,17 @@
                             strike.droppedBombs++;
                             strike.lastDropZ = strike.jetMesh.position.z;
 
-                            const dropX = THREE.MathUtils.clamp(strike.targetX + (Math.random() - 0.5) * 1.0, -72, 72);
+                            const isLeft = (strike.droppedBombs % 2 === 1);
+                            const offsetX = isLeft ? -4.0 : 4.0;
+                            const dropX = THREE.MathUtils.clamp(strike.targetX + offsetX + (Math.random() - 0.5) * 1.0, -72, 72);
                             const dropZ = strike.jetMesh.position.z;
                             const impactPos = new THREE.Vector3(dropX, 0, dropZ);
 
-                            this.createExplosion(impactPos, 6.0, 360);
+                            // INSTANT KILL EXPLOSION (99,999 Dmg kills bosses, tanks & all zombies instantly!)
+                            this.createExplosion(impactPos, 6.5, 99999);
 
                             const fireMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
-                            const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 4.8, 0.15, 12), fireMat);
+                            const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(5.0, 5.0, 0.15, 12), fireMat);
                             fireZone.position.copy(impactPos);
                             fireZone.position.y = 0.1;
                             this.scene.add(fireZone);
