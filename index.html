@@ -1328,45 +1328,36 @@
                     if (this.ctx) {
                         const now = this.ctx.currentTime;
                         
-                        // Dual oscillator for authentic mechanical air-raid siren (root + fifth interval)
-                        const osc1 = this.ctx.createOscillator();
-                        const osc2 = this.ctx.createOscillator();
+                        // Single low-frequency deep mechanical siren (NO high frequency pitch)
+                        const osc = this.ctx.createOscillator();
                         const gain = this.ctx.createGain();
                         const filter = this.ctx.createBiquadFilter();
 
                         filter.type = 'lowpass';
-                        filter.frequency.setValueAtTime(600, now);
+                        filter.frequency.setValueAtTime(400, now);
 
-                        osc1.type = 'sawtooth';
-                        osc2.type = 'triangle';
+                        osc.type = 'sawtooth';
 
-                        // Deep heavy pitch glide: 130Hz -> 280Hz -> 140Hz -> 280Hz over 3.8s cycles
-                        osc1.frequency.setValueAtTime(130, now);
-                        osc2.frequency.setValueAtTime(195, now);
+                        // Deep heavy pitch glide: 110Hz -> 240Hz -> 120Hz -> 240Hz over 4.0s cycles
+                        osc.frequency.setValueAtTime(110, now);
 
                         let t = 0;
                         for (let cycle = 0; cycle < 8; cycle++) {
-                            osc1.frequency.linearRampToValueAtTime(280, now + t + 2.0);
-                            osc1.frequency.linearRampToValueAtTime(140, now + t + 4.0);
-
-                            osc2.frequency.linearRampToValueAtTime(420, now + t + 2.0);
-                            osc2.frequency.linearRampToValueAtTime(210, now + t + 4.0);
+                            osc.frequency.linearRampToValueAtTime(240, now + t + 2.0);
+                            osc.frequency.linearRampToValueAtTime(120, now + t + 4.0);
                             t += 4.0;
                         }
 
                         gain.gain.setValueAtTime(0.01, now);
-                        gain.gain.linearRampToValueAtTime(0.35, now + 0.6);
+                        gain.gain.linearRampToValueAtTime(0.38, now + 0.6);
 
-                        osc1.connect(filter);
-                        osc2.connect(filter);
+                        osc.connect(filter);
                         filter.connect(gain);
                         gain.connect(this.ctx.destination);
 
-                        osc1.start(now);
-                        osc2.start(now);
+                        osc.start(now);
 
-                        this._nukeSirenOsc = osc1;
-                        this._nukeSirenOsc2 = osc2;
+                        this._nukeSirenOsc = osc;
                         this._nukeSirenGain = gain;
                     }
                 } catch(e) {}
@@ -1389,14 +1380,11 @@
                         this._nukeSirenGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
                         setTimeout(() => {
                             try { if (this._nukeSirenOsc) this._nukeSirenOsc.stop(); } catch(e) {}
-                            try { if (this._nukeSirenOsc2) this._nukeSirenOsc2.stop(); } catch(e) {}
                             this._nukeSirenOsc = null;
-                            this._nukeSirenOsc2 = null;
                             this._nukeSirenGain = null;
                         }, 350);
                     } catch(e) {
                         this._nukeSirenOsc = null;
-                        this._nukeSirenOsc2 = null;
                         this._nukeSirenGain = null;
                     }
                 }
