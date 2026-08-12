@@ -967,25 +967,32 @@
                     return;
                 }
 
-                // 1. Confirmation Bleep / Squelch Sound
+                // 1. First Störfunk/Squelch — clearly audible before speech
                 this.playRadioChatter();
 
                 // 2. Play radio.mp3 — preload + seek on canplaythrough for instant speech
+                //    Small gap (220ms) so the chatter bleep is heard before speech starts
                 const radio = new Audio();
                 radio.preload = 'auto';
                 radio.volume = 0.9;
 
                 let isCallbackDone = false;
+                let speechStarted = false;
                 const finishCallback = () => {
                     if (isCallbackDone) return;
                     isCallbackDone = true;
-                    if (onCompleteCallback) onCompleteCallback();
+                    // 3. Second Störfunk/Squelch after speech ends, then jet arrives
+                    this.playRadioChatter();
+                    setTimeout(() => {
+                        if (onCompleteCallback) onCompleteCallback();
+                    }, 280);
                 };
 
                 const startPlayback = () => {
+                    if (speechStarted) return;
+                    speechStarted = true;
                     try { radio.currentTime = 1.6; } catch(e) {}
                     radio.play().then(() => {
-
                         const startTime = performance.now();
                         const fadeInterval = setInterval(() => {
                             const elapsed = (performance.now() - startTime) / 1000;
@@ -1008,14 +1015,17 @@
                     });
                 };
 
-                radio.addEventListener('canplaythrough', startPlayback, { once: true });
+                radio.addEventListener('canplaythrough', () => {
+                    // Wait 220ms after chatter so bleep is heard, then start speech
+                    setTimeout(startPlayback, 220);
+                }, { once: true });
                 radio.addEventListener('error', () => finishCallback());
                 radio.src = 'radio.mp3';
                 radio.load();
-                // Fallback: if canplaythrough fires late, force start after 500ms
+                // Fallback: force start after 700ms
                 setTimeout(() => {
-                    if (!isCallbackDone && radio.paused) startPlayback();
-                }, 500);
+                    if (!speechStarted) startPlayback();
+                }, 700);
             }
 
             playJetFlyover() {
@@ -2587,7 +2597,8 @@
                     targetX: targetX,
                     droppedBombs: 0,
                     maxBombs: 10,
-                    lastDropZ: -60
+                    lastDropZ: -60,
+                    dropDelay: 0.75   // 0.75s after jet flyover sound before first bomb drops
                 });
             }
 
@@ -2657,7 +2668,12 @@
                         const strike = this.activeAirstrikes[k];
                         strike.jetMesh.position.z += strike.speed * dt;
 
-                        if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 9.5)) {
+                        // Count down initial drop delay (0.75s after jet flyover sound)
+                        if (strike.dropDelay > 0) {
+                            strike.dropDelay -= dt;
+                        }
+
+                        if (strike.dropDelay <= 0 && strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 9.5)) {
                             strike.droppedBombs++;
                             strike.lastDropZ = strike.jetMesh.position.z;
 
