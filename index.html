@@ -205,10 +205,19 @@
                         </p>
                     </div>
 
-                    <button onclick="startGame()" class="w-full py-4 sm:py-5 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-3xl sm:text-4xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3 my-auto">
-                        <i class="fa-solid fa-play text-2xl"></i>
-                        <span>JETZT SPIELEN</span>
-                    </button>
+                    <div class="space-y-2.5 my-auto">
+                        <!-- SPIEL FORTSETZEN Button (Visible when save session exists) -->
+                        <button id="resume-game-btn" onclick="resumeGame()" class="hidden w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-emerald-950/40 active:scale-95 transition transform flex items-center justify-center space-x-3">
+                            <i class="fa-solid fa-rotate-left text-xl sm:text-2xl"></i>
+                            <span id="resume-game-btn-text">SPIEL FORTSETZEN</span>
+                        </button>
+
+                        <!-- NEUES SPIEL Button -->
+                        <button onclick="startNewGame()" class="w-full py-3.5 sm:py-4 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3">
+                            <i class="fa-solid fa-play text-xl sm:text-2xl"></i>
+                            <span>NEUES SPIEL</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- RECHTER BEREICH: Highscore Board -->
@@ -559,6 +568,7 @@
     <script>
         const Storage = {
             KEY: 'zombie_siege_3d_profile_v1',
+            SESSION_KEY: 'zombie_siege_3d_saved_session_v1',
             data: {
                 highScoreSeconds: 0,
                 difficulty: 'medium',
@@ -585,6 +595,22 @@
                 try {
                     localStorage.setItem(this.KEY, JSON.stringify(this.data));
                 } catch(e) { console.error("Could not save profile", e); }
+            },
+            saveSession(sessionData) {
+                try {
+                    localStorage.setItem(this.SESSION_KEY, JSON.stringify(sessionData));
+                } catch(e) { console.error("Could not save game session", e); }
+            },
+            loadSession() {
+                try {
+                    const saved = localStorage.getItem(this.SESSION_KEY);
+                    return saved ? JSON.parse(saved) : null;
+                } catch(e) { return null; }
+            },
+            clearSession() {
+                try {
+                    localStorage.removeItem(this.SESSION_KEY);
+                } catch(e) {}
             }
         };
 
@@ -2247,6 +2273,7 @@
 
                 this.turrets.push(turretGroup);
                 this.scene.add(turretGroup);
+                return turretGroup;
             }
 
             buildWallAt(wallTypeId, x, z, rot = 0) {
@@ -2297,6 +2324,7 @@
 
                 this.walls.push(wallGroup);
                 this.scene.add(wallGroup);
+                return wallGroup;
             }
 
             inspectStructure(structureGroup) {
@@ -3215,6 +3243,10 @@
                     updateHighscoreUI();
                 }
 
+                if (this.gameSeconds % 5 === 0) {
+                    this.saveGameSession();
+                }
+
                 this.syncHUD();
             }
 
@@ -3250,6 +3282,122 @@
                 document.getElementById('hud-weapon-stats').innerText = `Dmg: ${weaponDmg} | Cadence: ${this.currentWeapon.firerate}ms`;
             }
 
+            saveGameSession() {
+                if (!this.isRunning || this.isGameOver) return;
+                try {
+                    const sessionData = {
+                        money: this.money,
+                        playerHp: this.playerHp,
+                        maxPlayerHp: this.maxPlayerHp,
+                        baseHp: this.baseHp,
+                        maxBaseHp: this.maxBaseHp,
+                        baseShield: this.baseShield,
+                        maxBaseShield: this.maxBaseShield,
+                        currentWave: this.currentWave,
+                        zombiesLeftToSpawn: this.zombiesLeftToSpawn,
+                        gameSeconds: this.gameSeconds,
+                        totalKills: this.totalKills,
+                        unlockedWeapons: this.unlockedWeapons,
+                        weaponLevels: this.weaponLevels,
+                        currentWeapon: this.currentWeapon ? this.currentWeapon.id : 'pistol',
+                        upgrades: this.upgrades,
+                        intelShown: this.intelShown,
+                        playerPosition: { x: this.playerGroup.position.x, z: this.playerGroup.position.z },
+                        turrets: this.turrets.map(t => ({
+                            typeId: t.userData.typeId,
+                            level: t.userData.level || 1,
+                            totalInvested: t.userData.totalInvested || 0,
+                            hp: t.userData.hp,
+                            maxHp: t.userData.maxHp,
+                            x: t.position.x,
+                            z: t.position.z,
+                            rot: t.rotation.y
+                        })),
+                        walls: this.walls.map(w => ({
+                            typeId: w.userData.typeId,
+                            level: w.userData.level || 1,
+                            totalInvested: w.userData.totalInvested || 0,
+                            hp: w.userData.hp,
+                            maxHp: w.userData.maxHp,
+                            x: w.position.x,
+                            z: w.position.z,
+                            rotY: w.rotation.y
+                        }))
+                    };
+                    Storage.saveSession(sessionData);
+                    if (typeof updateMainMenuResumeButton === 'function') updateMainMenuResumeButton();
+                } catch(e) { console.warn("Failed to save session", e); }
+            }
+
+            restoreGameSession(data) {
+                if (!data) return;
+                try {
+                    this.money = data.money !== undefined ? data.money : 450;
+                    this.playerHp = data.playerHp !== undefined ? data.playerHp : 200;
+                    this.maxPlayerHp = data.maxPlayerHp || 200;
+                    this.baseHp = data.baseHp !== undefined ? data.baseHp : 1000;
+                    this.maxBaseHp = data.maxBaseHp || 1000;
+                    this.baseShield = data.baseShield || 0;
+                    this.maxBaseShield = data.maxBaseShield || 0;
+                    this.currentWave = data.currentWave || 1;
+                    this.zombiesLeftToSpawn = data.zombiesLeftToSpawn !== undefined ? data.zombiesLeftToSpawn : 12;
+                    this.gameSeconds = data.gameSeconds || 0;
+                    this.totalKills = data.totalKills || 0;
+                    this.unlockedWeapons = data.unlockedWeapons || ['pistol'];
+                    this.weaponLevels = data.weaponLevels || { pistol: 1 };
+                    if (data.currentWeapon && WEAPONS[data.currentWeapon]) {
+                        this.currentWeapon = WEAPONS[data.currentWeapon];
+                    }
+                    if (data.upgrades) this.upgrades = { ...this.upgrades, ...data.upgrades };
+                    if (data.intelShown) this.intelShown = { ...this.intelShown, ...data.intelShown };
+
+                    if (data.playerPosition && this.playerGroup) {
+                        this.playerGroup.position.set(data.playerPosition.x, 0, data.playerPosition.z);
+                    }
+
+                    // Restore Turrets
+                    if (data.turrets && Array.isArray(data.turrets)) {
+                        data.turrets.forEach(tData => {
+                            const spec = TURRET_TYPES[tData.typeId];
+                            if (spec) {
+                                const turret = this.buildTurretAt(tData.typeId, tData.x, tData.z, tData.rot || 0);
+                                if (turret) {
+                                    turret.userData.level = tData.level || 1;
+                                    turret.userData.totalInvested = tData.totalInvested || spec.cost;
+                                    turret.userData.hp = tData.hp !== undefined ? tData.hp : spec.hp;
+                                    turret.userData.maxHp = tData.maxHp || spec.maxHp;
+                                }
+                            }
+                        });
+                    }
+
+                    // Restore Walls
+                    if (data.walls && Array.isArray(data.walls)) {
+                        data.walls.forEach(wData => {
+                            const spec = WALL_TYPES[wData.typeId];
+                            if (spec) {
+                                const wall = this.buildWallAt(wData.typeId, wData.x, wData.z, wData.rotY || 0);
+                                if (wall) {
+                                    wall.userData.level = wData.level || 1;
+                                    wall.userData.totalInvested = wData.totalInvested || spec.cost;
+                                    wall.userData.hp = wData.hp !== undefined ? wData.hp : spec.hp;
+                                    wall.userData.maxHp = wData.maxHp || spec.maxHp;
+                                }
+                            }
+                        });
+                    }
+
+                    // Restore Drone mesh if combat_drone > 0
+                    if (this.upgrades.combat_drone > 0 && !this.droneGroup) {
+                        this.createDroneMesh();
+                    }
+
+                    this.syncHUD();
+                } catch(e) {
+                    console.error("Failed to restore game session", e);
+                }
+            }
+
             nextWave() {
                 if (this.isWaveTransitioning) return;
                 this.isWaveTransitioning = true;
@@ -3267,6 +3415,7 @@
                     this.isWaveTransitioning = false;
                     this.updateSpawnInterval();
                     this.syncHUD();
+                    this.saveGameSession();
                 }, 2200);
             }
 
@@ -3277,6 +3426,9 @@
                 clearInterval(this.secondTimer);
                 clearInterval(this.spawnTimer);
                 clearInterval(this.turretTimer);
+
+                Storage.clearSession();
+                if (typeof updateMainMenuResumeButton === 'function') updateMainMenuResumeButton();
 
                 audio.stopMusic();
                 audio.stopJetFlyover();
@@ -3979,7 +4131,10 @@
         }
 
         function triggerAirstrike() {
-            if (gameInstance) gameInstance.triggerAirstrike();
+            if (gameInstance) {
+                gameInstance.triggerAirstrike();
+                gameInstance.saveGameSession();
+            }
         }
 
         let isPauseModalOpen = false;
@@ -3991,6 +4146,7 @@
 
             const modal = document.getElementById('pause-modal');
             if (isPauseModalOpen) {
+                gameInstance.saveGameSession();
                 document.getElementById('pause-toggle-music').checked = Storage.data.musicEnabled;
                 document.getElementById('pause-toggle-sfx').checked = Storage.data.sfxEnabled;
                 updateTouchSwapUI();
@@ -4021,6 +4177,7 @@
             if (isShopOpen) toggleShop();
 
             if (gameInstance) {
+                if (!gameInstance.isGameOver) gameInstance.saveGameSession();
                 gameInstance.isRunning = false;
                 clearInterval(gameInstance.secondTimer);
                 clearInterval(gameInstance.spawnTimer);
@@ -4030,6 +4187,7 @@
 
             document.getElementById('game-hud').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('opacity-0', 'pointer-events-none');
+            updateMainMenuResumeButton();
         }
 
         function toggleShop(explicitState) {
@@ -4037,6 +4195,7 @@
             const shopModal = document.getElementById('shop-modal');
             if (gameInstance) {
                 gameInstance.isPaused = isShopOpen || isPauseModalOpen;
+                if (isShopOpen) gameInstance.saveGameSession();
             }
             if (isShopOpen) {
                 renderShopCatalog();
@@ -4056,6 +4215,7 @@
                 gameInstance.currentWeapon = w;
                 gameInstance.syncHUD();
                 renderShopCatalog();
+                gameInstance.saveGameSession();
             }
         }
 
@@ -4070,6 +4230,7 @@
                 gameInstance.weaponLevels[id] = lvl + 1;
                 gameInstance.syncHUD();
                 renderShopCatalog();
+                gameInstance.saveGameSession();
             }
         }
 
@@ -4108,6 +4269,7 @@
 
                 gameInstance.syncHUD();
                 renderShopCatalog();
+                gameInstance.saveGameSession();
             }
         }
 
@@ -4117,6 +4279,7 @@
                 gameInstance.money -= 120;
                 gameInstance.baseHp = Math.min(gameInstance.maxBaseHp, gameInstance.baseHp + 250);
                 gameInstance.syncHUD();
+                gameInstance.saveGameSession();
             }
         }
 
@@ -4126,10 +4289,62 @@
                 gameInstance.money -= 80;
                 gameInstance.playerHp = gameInstance.maxPlayerHp;
                 gameInstance.syncHUD();
+                gameInstance.saveGameSession();
             }
         }
 
+        function updateMainMenuResumeButton() {
+            const btn = document.getElementById('resume-game-btn');
+            const textEl = document.getElementById('resume-game-btn-text');
+            if (!btn || !textEl) return;
+
+            const session = Storage.loadSession();
+            if (session && session.currentWave && session.baseHp > 0 && session.playerHp > 0) {
+                const m = Math.floor((session.gameSeconds || 0) / 60).toString().padStart(2, '0');
+                const s = ((session.gameSeconds || 0) % 60).toString().padStart(2, '0');
+                textEl.innerText = `SPIEL FORTSETZEN (WELLE ${session.currentWave} • ${m}:${s})`;
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+
+        function startNewGame() {
+            Storage.clearSession();
+            updateMainMenuResumeButton();
+            startGame();
+        }
+
+        function resumeGame() {
+            const session = Storage.loadSession();
+            if (!session) {
+                startNewGame();
+                return;
+            }
+
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            }
+
+            audio.init();
+            audio.startMusic();
+
+            document.getElementById('main-menu').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('game-hud').classList.remove('hidden');
+
+            if (gameInstance) {
+                gameInstance.isRunning = false;
+                document.getElementById('three-container').innerHTML = '';
+            }
+
+            gameInstance = new Game3D();
+            gameInstance.restoreGameSession(session);
+        }
+
         function startGame() {
+            Storage.clearSession();
+            updateMainMenuResumeButton();
+
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(err => console.log(err));
             }
@@ -4150,8 +4365,10 @@
 
         function restartGame() {
             document.getElementById('game-over-modal').classList.add('hidden');
-            startGame();
+            startNewGame();
         }
+
+        updateMainMenuResumeButton();
     </script>
 </body>
 </html>
