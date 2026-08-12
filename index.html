@@ -356,8 +356,9 @@
             <!-- Bottom HUD -->
             <div class="w-full flex justify-between items-end p-2 sm:p-4 pointer-events-none">
                 <div class="bg-slate-950/85 border border-slate-800 p-2 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[100px] sm:min-w-[140px] pointer-events-auto">
-                    <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1">
-                        <span class="text-slate-300"><i class="fa-solid fa-user-shield text-emerald-400 mr-1"></i> SPIELER</span>
+                    <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1 items-center">
+                        <span class="text-slate-300 flex items-center"><i class="fa-solid fa-user-shield text-emerald-400 mr-1"></i> SPIELER</span>
+                        <div id="hud-player-lives-hearts" class="flex items-center space-x-0.5 text-xs text-red-500 mr-1"></div>
                         <span id="hud-player-hp-text" class="text-emerald-400 font-mono">200/200</span>
                     </div>
                     <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -1625,6 +1626,8 @@
                 this.money = 450;
                 this.playerHp = 200;
                 this.maxPlayerHp = 200;
+                this.playerLives = 3;
+                this.isInvulnerable = false;
                 this.baseHp = 1000;
                 this.maxBaseHp = 1000;
                 this.baseShield = 0;
@@ -3517,7 +3520,7 @@
                                     this.flashZombieHit(this.playerGroup);
                                     this.createBloodSparks(b.position, 0x84cc16);
                                     this.syncHUD();
-                                    if (this.playerHp <= 0) this.triggerGameOver('player');
+                                    if (this.playerHp <= 0) this.handlePlayerDeath();
                                 }
                             } else {
                                 // Player/turret bullets hit zombies via Spatial Grid Hashing (Query 3x3 cells)
@@ -3741,11 +3744,11 @@
                             }
                         }
 
-                        if (distToPlayer < 1.4) {
+                        if (distToPlayer < 1.4 && !this.isInvulnerable) {
                             let pDmg = (0.3 * z.userData.dmgMult) * dt * 60;
                             this.playerHp = Math.max(0, this.playerHp - pDmg);
                             this._needHudSync = true;
-                            if (this.playerHp <= 0) this.triggerGameOver('player');
+                            if (this.playerHp <= 0) this.handlePlayerDeath();
                         }
                     } // end zombie for-loop
 
@@ -3820,9 +3823,71 @@
                 this.syncHUD();
             }
 
+            handlePlayerDeath() {
+                if (this.isInvulnerable) return;
+
+                if (this.playerLives > 1) {
+                    this.playerLives--;
+                    this.playerHp = this.maxPlayerHp;
+                    this.isInvulnerable = true;
+
+                    const playerPos = this.playerGroup.position;
+
+                    // 1. Shockwave Blast: Kill all zombies around player in a 14-meter radius!
+                    this.createExplosion(playerPos, 14.0, 99999, 14.0, true);
+
+                    for (let i = this.zombies.length - 1; i >= 0; i--) {
+                        const z = this.zombies[i];
+                        const distToP = Math.hypot(z.position.x - playerPos.x, z.position.z - playerPos.z);
+                        if (distToP < 14.0) {
+                            this.createBloodSparks(z.position, 0xef4444);
+                            this.killZombie(z);
+                        }
+                    }
+
+                    // 2. Invulnerability Blinking Feedback (1.2 seconds)
+                    let flashes = 0;
+                    const invulnInterval = setInterval(() => {
+                        flashes++;
+                        if (this.playerGroup) {
+                            this.playerGroup.visible = !this.playerGroup.visible;
+                        }
+                        if (flashes >= 10) {
+                            clearInterval(invulnInterval);
+                            if (this.playerGroup) this.playerGroup.visible = true;
+                            this.isInvulnerable = false;
+                        }
+                    }, 120);
+
+                    if (typeof audio !== 'undefined' && audio.playHeavyBomb) {
+                        audio.playHeavyBomb();
+                    }
+                    this.syncHUD();
+                } else {
+                    this.playerLives = 0;
+                    this.syncHUD();
+                    this.triggerGameOver('player');
+                }
+            }
+
             syncHUD() {
                 document.getElementById('hud-player-hp-text').innerText = `${Math.ceil(this.playerHp)}/${this.maxPlayerHp}`;
                 document.getElementById('hud-player-hp-bar').style.width = `${(this.playerHp / this.maxPlayerHp) * 100}%`;
+
+                // Render Player Hearts (3 Lives)
+                const heartsContainer = document.getElementById('hud-player-lives-hearts');
+                if (heartsContainer) {
+                    let heartsHtml = '';
+                    const lives = this.playerLives !== undefined ? this.playerLives : 3;
+                    for (let i = 0; i < 3; i++) {
+                        if (i < lives) {
+                            heartsHtml += '<i class="fa-solid fa-heart text-red-500"></i>';
+                        } else {
+                            heartsHtml += '<i class="fa-solid fa-heart text-slate-700 opacity-40"></i>';
+                        }
+                    }
+                    heartsContainer.innerHTML = heartsHtml;
+                }
 
                 document.getElementById('hud-base-hp-text').innerText = `${Math.ceil(this.baseHp)}/${this.maxBaseHp}`;
                 document.getElementById('hud-base-hp-bar').style.width = `${(this.baseHp / this.maxBaseHp) * 100}%`;
@@ -3859,6 +3924,7 @@
                         money: this.money,
                         playerHp: this.playerHp,
                         maxPlayerHp: this.maxPlayerHp,
+                        playerLives: this.playerLives,
                         baseHp: this.baseHp,
                         maxBaseHp: this.maxBaseHp,
                         baseShield: this.baseShield,
@@ -3907,6 +3973,7 @@
                     this.money = data.money !== undefined ? data.money : 450;
                     this.playerHp = data.playerHp !== undefined ? data.playerHp : 200;
                     this.maxPlayerHp = data.maxPlayerHp || 200;
+                    this.playerLives = data.playerLives !== undefined ? data.playerLives : 3;
                     this.baseHp = data.baseHp !== undefined ? data.baseHp : 1000;
                     this.maxBaseHp = data.maxBaseHp || 1000;
                     this.baseShield = data.baseShield || 0;
