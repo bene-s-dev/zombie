@@ -76,6 +76,13 @@
         button {
             touch-action: manipulation;
         }
+
+        /* Game-Over Querformat Layout */
+        @media (orientation: landscape) and (max-height: 500px) {
+            #game-over-modal .go-grid {
+                grid-template-columns: 1fr 1fr !important;
+            }
+        }
     </style>
 </head>
 <body class="h-full flex flex-col justify-center items-center bg-slate-950 overflow-hidden">
@@ -446,50 +453,60 @@
         </div>
 
         <!-- ================= GAME OVER / VICTORY OVERLAY ================= -->
-        <div id="game-over-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-lg overflow-y-auto">
-            <div class="bg-slate-900 border border-red-900/50 w-full max-w-xs sm:max-w-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center space-y-3 sm:space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
-                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-red-950/80 border border-red-600/50 rounded-full flex items-center justify-center mx-auto">
-                    <i class="fa-solid fa-skull text-2xl sm:text-3xl text-red-500 animate-bounce"></i>
-                </div>
-                <div>
-                    <h2 id="go-title" class="font-teko text-3xl sm:text-5xl font-bold text-red-500 tracking-wider leading-none">BASIS ZERSTÖRT</h2>
-                    <p id="go-desc" class="text-slate-400 text-xs sm:text-sm mt-1">Die Untoten haben die Stellung überrannt.</p>
+        <div id="game-over-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-lg">
+            <div class="bg-slate-900 border border-red-900/50 w-full max-w-lg rounded-2xl p-3 sm:p-6 shadow-2xl">
+
+                <!-- Header: icon + title always side by side -->
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="w-10 h-10 sm:w-14 sm:h-14 bg-red-950/80 border border-red-600/50 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-skull text-xl sm:text-3xl text-red-500 animate-bounce"></i>
+                    </div>
+                    <div class="text-left">
+                        <h2 id="go-title" class="font-teko text-3xl sm:text-5xl font-bold text-red-500 tracking-wider leading-none">BASIS ZERSTÖRT</h2>
+                        <p id="go-desc" class="text-slate-400 text-[10px] sm:text-sm">Die Untoten haben die Stellung überrannt.</p>
+                    </div>
                 </div>
 
-                <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-                    <div class="flex justify-between text-slate-400">
-                        <span>Überlebte Zeit:</span>
-                        <strong id="go-time" class="text-white font-mono">00:00</strong>
+                <!-- Landscape 2-column grid, portrait single column -->
+                <div class="go-grid grid grid-cols-1 [@media(orientation:landscape)_and_(max-height:500px)]:grid-cols-2 gap-2 sm:gap-4">
+
+                    <!-- Left: Stats + Highscore entry -->
+                    <div class="space-y-2">
+                        <div class="bg-slate-950 p-2.5 sm:p-4 rounded-xl border border-slate-800 space-y-1 sm:space-y-2 text-xs sm:text-sm">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Überlebte Zeit:</span>
+                                <strong id="go-time" class="text-white font-mono">00:00</strong>
+                            </div>
+                            <div class="flex justify-between text-slate-400">
+                                <span>Erreichte Welle:</span>
+                                <strong id="go-wave" class="text-amber-400 font-mono">Welle 1</strong>
+                            </div>
+                            <div class="flex justify-between text-slate-400">
+                                <span>Zombies eliminiert:</span>
+                                <strong id="go-kills" class="text-emerald-400 font-mono">0</strong>
+                            </div>
+                        </div>
+                        <div id="highscore-entry" class="hidden bg-slate-950 p-2.5 sm:p-4 rounded-xl border border-amber-500/40 space-y-2 text-left">
+                            <div class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
+                                <i class="fa-solid fa-trophy mr-1.5 animate-pulse"></i>
+                                <span>Neuer Highscore!</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <input type="text" id="hs-player-name" maxlength="12" placeholder="Dein Name" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-bold uppercase tracking-wider">
+                                <button onclick="submitHighscore()" class="bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition active:scale-95">Speichern</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex justify-between text-slate-400">
-                        <span>Erreichte Welle:</span>
-                        <strong id="go-wave" class="text-amber-400 font-mono">Welle 1</strong>
-                    </div>
-                    <div class="flex justify-between text-slate-400">
-                        <span>Zombies eliminiert:</span>
-                        <strong id="go-kills" class="text-emerald-400 font-mono">0</strong>
-                    </div>
-                </div>
-                <!-- Name Entry for Highscore -->
-                <div id="highscore-entry" class="hidden bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-amber-500/40 space-y-2 text-left">
-                    <div class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
-                        <i class="fa-solid fa-trophy mr-1.5 animate-pulse"></i>
-                        <span>Neuer Highscore!</span>
-                    </div>
-                    <p class="text-[10px] text-slate-400 leading-relaxed">
-                        Du hast einen Platz in der Bestenliste erreicht! Trage deinen Namen ein:
-                    </p>
-                    <div class="flex space-x-2">
-                        <input type="text" id="hs-player-name" maxlength="12" placeholder="Dein Name" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-bold uppercase tracking-wider">
-                        <button onclick="submitHighscore()" class="bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition active:scale-95">
-                            Speichern
+
+                    <!-- Right: Retry button (fills height on landscape) -->
+                    <div class="flex items-stretch">
+                        <button onclick="restartGame()" class="w-full py-3 sm:py-4 bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 active:from-red-700 text-white font-teko text-2xl sm:text-2xl font-bold rounded-xl transition shadow-lg shadow-red-950/50 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>ERNEUT VERSUCHEN</span>
                         </button>
                     </div>
-                </div>
 
-                <button onclick="restartGame()" class="w-full py-3 sm:py-3.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-teko text-xl sm:text-2xl font-bold rounded-xl transition shadow-lg shadow-red-950/50">
-                    ERNEUT VERSUCHEN
-                </button>
+                </div>
             </div>
         </div>
 
