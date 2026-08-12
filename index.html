@@ -1299,7 +1299,7 @@
 
                     a.pause();
                     a.currentTime = 0;
-                    a.volume = 1.0;
+                    a.volume = 0.45;
                     a.loop = false;
 
                     a.ontimeupdate = () => {
@@ -1326,7 +1326,7 @@
                         }).catch(err => {
                             console.warn("DOM audio-atomic blocked, trying fallback Audio()", err);
                             const fallback = new Audio('atomic.mp3');
-                            fallback.volume = 1.0;
+                            fallback.volume = 0.45;
                             fallback.currentTime = 0;
                             this.currentAtomicAudio = fallback;
                             fallback.ontimeupdate = () => {
@@ -1372,7 +1372,7 @@
                         }
 
                         gain.gain.setValueAtTime(0.01, now);
-                        gain.gain.linearRampToValueAtTime(0.40, now + 0.8);
+                        gain.gain.linearRampToValueAtTime(0.18, now + 0.8);
 
                         osc.connect(filter);
                         filter.connect(gain);
