@@ -1345,7 +1345,7 @@
                 this.ghostMesh = null;
                 this.selectedStructure = null; 
 
-                this.airstrikeCooldown = 0;
+                this.airstrikeCooldown = 45.0;
                 this.activeAirstrike = null; 
                 this.intelShown = { runner: false, shield: false, tank: false, boss: false };
 
@@ -1865,22 +1865,22 @@
             createExplosion(pos, radius, damage) {
                 audio.playExplosion();
 
-                const expMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
-                const expMesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.8, 16, 16), expMat);
+                const expMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.9 });
+                const expMesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.85, 16, 16), expMat);
                 expMesh.position.copy(pos);
                 this.scene.add(expMesh);
 
                 let scaleProgress = 0.2;
                 const expInterval = setInterval(() => {
-                    scaleProgress += 0.2;
+                    scaleProgress += 0.12;
                     expMesh.scale.set(scaleProgress, scaleProgress, scaleProgress);
-                    expMat.opacity -= 0.15;
+                    expMat.opacity -= 0.05;
 
                     if (expMat.opacity <= 0) {
                         clearInterval(expInterval);
                         this.scene.remove(expMesh);
                     }
-                }, 30);
+                }, 35);
 
                 this.createBloodSparks(pos, 0xfacc15);
 
@@ -2654,7 +2654,7 @@
                             this.napalmZones.push({
                                 mesh: fireZone,
                                 pos: impactPos,
-                                life: 1.6,
+                                life: 0.5,
                                 damageTimer: 0
                             });
                         }
