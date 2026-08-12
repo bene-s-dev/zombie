@@ -271,19 +271,21 @@
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between">
             <div class="flex justify-between items-start w-full max-w-5xl mx-auto p-1.5 sm:p-3 pointer-events-auto">
-                <div id="hud-wave-container" class="flex flex-row items-center space-x-1.5 sm:space-x-3 py-0.5 text-center drop-shadow-md">
-                    <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1">
-                        <i class="fa-solid fa-skull"></i>
-                        <span>WELLE 1</span>
-                    </div>
+                <!-- Top-Left Wave Container: flex-row-reverse anchors fixed elements (Timer/Zombies) on right, expanding text grows to left -->
+                <div id="hud-wave-container" class="flex flex-row-reverse items-center space-x-reverse space-x-1.5 sm:space-x-3 py-0.5 drop-shadow-md">
+                    <div id="hud-timer" class="text-[10px] sm:text-xs text-slate-300 font-mono">Zeit: 00:00</div>
                     <span class="text-slate-600 text-xs font-bold">|</span>
                     <div id="hud-zombies-left" class="font-teko text-sm sm:text-xl font-bold text-white leading-none">0 ZOMBIES</div>
                     <span class="text-slate-600 text-xs font-bold">|</span>
-                    <div id="hud-timer" class="text-[10px] sm:text-xs text-slate-300 font-mono">Zeit: 00:00</div>
+                    <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1 text-right">
+                        <i class="fa-solid fa-skull"></i>
+                        <span>WELLE 1</span>
+                    </div>
                 </div>
 
-                <div class="flex items-center space-x-1.5 sm:space-x-2">
-                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" class="relative overflow-hidden bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto animate-pulse" title="Orbitaler Doppel-Luftschlag [E]">
+                <!-- Top-Right Controls: Semi-transparent, uniform height h-10, x2 button stacked under Pause button -->
+                <div class="flex items-start space-x-1.5 sm:space-x-2">
+                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" class="relative overflow-hidden bg-slate-900/50 hover:bg-slate-800/70 active:bg-slate-950/80 border border-amber-500/50 text-amber-400 p-2 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-md transition active:scale-95 flex items-center space-x-1.5 h-10 pointer-events-auto animate-pulse" title="Orbitaler Doppel-Luftschlag [E]">
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="airstrike-icon" class="relative z-10 flex items-center pr-1 text-amber-400 airstrike-ready-blink">
                             <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm"></i>
@@ -291,24 +293,29 @@
                         </div>
                         <div class="relative z-10 flex flex-col text-left">
                             <span class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase leading-none">Doppel-Luftschlag</span>
-                            <span id="airstrike-status-text" class="font-mono text-[10px] sm:text-xs font-bold text-amber-400 leading-tight">[E] BEREIT</span>
+                            <span id="airstrike-status-text" class="font-mono text-[10px] sm:text-xs font-bold text-amber-400 leading-tight">BEREIT</span>
                         </div>
                     </button>
 
-                    <div class="bg-slate-950/85 border border-slate-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg flex items-center space-x-1">
+                    <div class="bg-slate-900/50 border border-slate-700/50 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg flex items-center space-x-1 h-10">
                         <i class="fa-solid fa-coins text-amber-400 text-xs sm:text-base"></i>
                         <span id="hud-money" class="font-mono text-xs sm:text-base font-bold text-amber-400">$ 0</span>
                     </div>
-                    <button id="game-speed-btn" onclick="toggleGameSpeed()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg border border-slate-700 transition active:scale-95 flex items-center justify-center space-x-1 min-w-[44px] min-h-[40px]" title="Vorspulen 2x / Normal 1x">
-                        <i id="speed-btn-icon" class="fa-solid fa-forward text-xs sm:text-sm text-slate-400"></i>
-                        <span id="speed-btn-text" class="font-mono text-xs font-bold">1x</span>
-                    </button>
-                    <button onclick="toggleShop()" class="bg-red-600 hover:bg-red-500 active:bg-red-700 text-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center min-w-[40px] min-h-[40px]">
+
+                    <button onclick="toggleShop()" class="bg-slate-900/50 hover:bg-slate-800/70 active:bg-slate-950/80 text-red-400 border border-red-500/50 p-2 sm:p-2.5 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-md transition active:scale-95 flex items-center justify-center h-10 min-w-[40px]" title="Laden öffnen">
                         <i class="fa-solid fa-store text-sm sm:text-base"></i>
                     </button>
-                    <button onclick="togglePauseModal()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg border border-slate-700 transition active:scale-95 flex items-center justify-center min-w-[40px] min-h-[40px]">
-                        <i class="fa-solid fa-pause text-sm sm:text-base"></i>
-                    </button>
+
+                    <!-- Pause button column with x2 Speed button stacked directly below -->
+                    <div class="flex flex-col space-y-1 items-center">
+                        <button onclick="togglePauseModal()" class="bg-slate-900/50 hover:bg-slate-800/70 active:bg-slate-950/80 text-slate-200 border border-slate-700/50 p-2 sm:p-2.5 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-md transition active:scale-95 flex items-center justify-center h-10 min-w-[40px]" title="Pause">
+                            <i class="fa-solid fa-pause text-sm sm:text-base"></i>
+                        </button>
+                        <button id="game-speed-btn" onclick="toggleGameSpeed()" class="bg-slate-900/50 hover:bg-slate-800/70 active:bg-slate-950/80 text-slate-300 px-2 py-0.5 rounded-lg border border-slate-700/50 shadow-lg backdrop-blur-md transition active:scale-95 flex items-center justify-center space-x-1 min-w-[40px] text-[10px]" title="Vorspulen 2x / Normal 1x">
+                            <i id="speed-btn-icon" class="fa-solid fa-forward text-[10px] text-slate-400"></i>
+                            <span id="speed-btn-text" class="font-mono text-[10px] font-bold">1x</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -345,61 +352,68 @@
         </div>
 
         <!-- ================= PAUSE & SETTINGS MODAL ================= -->
-        <div id="pause-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-            <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <div class="flex items-center space-x-3">
-                        <i class="fa-solid fa-pause text-amber-400 text-2xl"></i>
-                        <h2 class="font-teko text-3xl font-bold text-white tracking-wider uppercase">SPIEL PAUSIERT</h2>
+        <div id="pause-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md">
+            <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-2xl space-y-3 sm:space-y-4 max-h-[92vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
+                    <div class="flex items-center space-x-2.5">
+                        <i class="fa-solid fa-pause text-amber-400 text-xl sm:text-2xl"></i>
+                        <h2 class="font-teko text-2xl sm:text-3xl font-bold text-white tracking-wider uppercase">SPIEL PAUSIERT</h2>
                     </div>
-                    <button onclick="togglePauseModal()" class="text-slate-400 hover:text-white p-2 text-2xl"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="togglePauseModal()" class="text-slate-400 hover:text-white p-1.5 text-xl"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div class="space-y-3">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kamera-Einstellungen</h3>
-                    
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-                        <div class="flex items-center space-x-3 text-xs text-slate-300">
-                            <label class="w-16 font-semibold">Zoom</label>
-                            <input type="range" id="cam-zoom" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-6">
+                <div class="grid grid-cols-1 [@media(orientation:landscape)_and_(max-height:500px)]:grid-cols-2 gap-3">
+                    <!-- Left column (Landscape): Camera settings -->
+                    <div class="space-y-2">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kamera-Einstellungen</h3>
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex items-center space-x-3 text-xs text-slate-300">
+                                <label class="w-14 font-semibold">Zoom</label>
+                                <input type="range" id="cam-zoom" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-5">
+                            </div>
+                            <div class="flex items-center space-x-3 text-xs text-slate-300">
+                                <label class="w-14 font-semibold">Winkel</label>
+                                <input type="range" id="cam-angle" min="0" max="1" step="0.1" value="0.5" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-5">
+                            </div>
+                            <div id="cam-preview-container" class="w-full h-20 bg-black rounded border border-slate-700 overflow-hidden relative"></div>
                         </div>
-                        <div class="flex items-center space-x-3 text-xs text-slate-300">
-                            <label class="w-16 font-semibold">Winkel</label>
-                            <input type="range" id="cam-angle" min="0" max="1" step="0.1" value="0.5" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-6">
-                        </div>
-                        <div id="cam-preview-container" class="w-full h-24 mt-2 bg-black rounded border border-slate-700 overflow-hidden relative"></div>
                     </div>
 
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mt-4">Steuerung & Audio</h3>
-                    <div class="mobile-only bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
-                        <div>
-                            <div class="text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-2"></i> Touch-Layout</div>
-                            <div id="pause-touch-swap-label" class="text-[10px] text-slate-400 mt-0.5">Joystick rechts / Feuer links</div>
+                    <!-- Right column (Landscape): Controls, Audio & Actions -->
+                    <div class="space-y-2 flex flex-col justify-between">
+                        <div class="space-y-2">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Steuerung & Audio</h3>
+                            <div class="mobile-only bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-1.5"></i> Touch-Layout</div>
+                                    <div id="pause-touch-swap-label" class="text-[10px] text-slate-400">Joystick rechts / Feuer links</div>
+                                </div>
+                                <button onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
+                                    Tauschen
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                                    <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-1.5"></i> Musik</span>
+                                    <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                                </label>
+                                <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                                    <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-1.5"></i> SFX</span>
+                                    <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-4 h-4 accent-red-600 rounded">
+                                </label>
+                            </div>
                         </div>
-                        <button onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
-                            Tauschen
-                        </button>
-                    </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
-                            <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-1.5"></i> Musik</span>
-                            <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-5 h-5 accent-red-600 rounded">
-                        </label>
-                        <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
-                            <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-1.5"></i> SFX</span>
-                            <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-5 h-5 accent-red-600 rounded">
-                        </label>
+                        <div class="flex space-x-2 pt-2">
+                            <button onclick="togglePauseModal()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold rounded-xl text-xs sm:text-sm transition">
+                                WEITER
+                            </button>
+                            <button onclick="returnToMainMenu()" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs transition">
+                                Hauptmenü
+                            </button>
+                        </div>
                     </div>
-                </div>
-
-                <div class="flex space-x-3 pt-2">
-                    <button onclick="togglePauseModal()" class="flex-1 py-3 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold rounded-xl text-sm transition">
-                        WEITER
-                    </button>
-                    <button onclick="returnToMainMenu()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs transition">
-                        Hauptmenü
-                    </button>
                 </div>
             </div>
         </div>
@@ -832,60 +846,63 @@
             }
 
             playExplosion() {
-                if (!Storage.data.sfxEnabled || !this.ctx) return;
+                if (!Storage.data.sfxEnabled) return;
                 try {
-                    const now = this.ctx.currentTime;
-                    const bufferSize = this.ctx.sampleRate * 0.45;
-                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                    const output = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+                    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
+                    if (this.ctx) {
+                        const now = this.ctx.currentTime;
+                        const bufferSize = Math.floor(this.ctx.sampleRate * 0.45);
+                        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                        const output = buffer.getChannelData(0);
+                        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
 
-                    // Primary shockwave
-                    const noise = this.ctx.createBufferSource();
-                    noise.buffer = buffer;
-                    const filter = this.ctx.createBiquadFilter();
-                    filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(650, now);
-                    filter.frequency.exponentialRampToValueAtTime(45, now + 0.45);
-                    const noiseGain = this.ctx.createGain();
-                    noiseGain.gain.setValueAtTime(0.7, now);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.45);
-                    noise.connect(filter);
-                    filter.connect(noiseGain);
-                    noiseGain.connect(this.ctx.destination);
-                    noise.start(now);
+                        const noise = this.ctx.createBufferSource();
+                        noise.buffer = buffer;
+                        const filter = this.ctx.createBiquadFilter();
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(650, now);
+                        filter.frequency.exponentialRampToValueAtTime(45, now + 0.45);
+                        const noiseGain = this.ctx.createGain();
+                        noiseGain.gain.setValueAtTime(0.7, now);
+                        noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.45);
+                        noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(this.ctx.destination);
+                        noise.start(now);
 
-                    // Sub-Bass Punch
-                    const osc = this.ctx.createOscillator();
-                    const oscGain = this.ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(130, now);
-                    osc.frequency.exponentialRampToValueAtTime(20, now + 0.35);
-                    oscGain.gain.setValueAtTime(0.75, now);
-                    oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-                    osc.connect(oscGain);
-                    oscGain.connect(this.ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.35);
-
-                    // Distant Open-Field Echo / Reverb Taps
-                    [0.14, 0.28].forEach((delay, idx) => {
-                        const echoTime = now + delay;
-                        const echoNoise = this.ctx.createBufferSource();
-                        echoNoise.buffer = buffer;
-                        const echoFilter = this.ctx.createBiquadFilter();
-                        echoFilter.type = 'lowpass';
-                        echoFilter.frequency.setValueAtTime(320 / (idx + 1), echoTime);
-
-                        const echoGain = this.ctx.createGain();
-                        echoGain.gain.setValueAtTime(0.28 / (idx + 1), echoTime);
-                        echoGain.gain.exponentialRampToValueAtTime(0.005, echoTime + 0.28);
-
-                        echoNoise.connect(echoFilter);
-                        echoFilter.connect(echoGain);
-                        echoGain.connect(this.ctx.destination);
-                        echoNoise.start(echoTime);
-                    });
+                        const osc = this.ctx.createOscillator();
+                        const oscGain = this.ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(130, now);
+                        osc.frequency.exponentialRampToValueAtTime(20, now + 0.35);
+                        oscGain.gain.setValueAtTime(0.75, now);
+                        oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                        osc.connect(oscGain); oscGain.connect(this.ctx.destination);
+                        osc.start(now); osc.stop(now + 0.35);
+                        return;
+                    }
+                } catch(e) {}
+                try {
+                    const sampleRate = 22050;
+                    const dur = 0.4;
+                    const n = Math.floor(sampleRate * dur);
+                    const ab = new ArrayBuffer(44 + n * 2);
+                    const v = new DataView(ab);
+                    const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+                    ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true);
+                    ws(8, 'WAVE'); ws(12, 'fmt '); v.setUint32(16, 16, true);
+                    v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+                    v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true);
+                    v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+                    ws(36, 'data'); v.setUint32(40, n * 2, true);
+                    for (let i = 0; i < n; i++) {
+                        const t = i / sampleRate;
+                        const env = Math.exp(-t * 8);
+                        const noise = (Math.random() * 2 - 1) * 0.8 * env;
+                        const boom = Math.sin(2 * Math.PI * (120 - t * 200) * t) * 0.7 * env;
+                        v.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, noise + boom)) * 32767), true);
+                    }
+                    const url = URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
+                    const el = new Audio(url); el.volume = 0.9; el.play().catch(() => {});
+                    setTimeout(() => URL.revokeObjectURL(url), 2000);
                 } catch(e) {}
             }
 
@@ -981,7 +998,7 @@
             }
 
             playRadioChatter() {
-                // Kept for backward compatibility if needed, but unused for airstrike
+                // Kept for backward compatibility
             }
 
             playRadioVoice(onCompleteCallback) {
@@ -1044,32 +1061,59 @@
             }
 
             playJetFlyover() {
-                if (!Storage.data.sfxEnabled || !this.ctx) return;
+                if (!Storage.data.sfxEnabled) return;
                 try {
-                    const now = this.ctx.currentTime;
-                    const duration = 3.5;
-                    const bufferSize = Math.floor(this.ctx.sampleRate * duration);
-                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                    const output = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-                    const jetNoise = this.ctx.createBufferSource();
-                    jetNoise.buffer = buffer;
+                    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
+                    if (this.ctx) {
+                        const now = this.ctx.currentTime;
+                        const duration = 3.5;
+                        const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+                        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                        const output = buffer.getChannelData(0);
+                        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+                        const jetNoise = this.ctx.createBufferSource();
+                        jetNoise.buffer = buffer;
 
-                    const filter = this.ctx.createBiquadFilter();
-                    filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(300, now);
-                    filter.frequency.exponentialRampToValueAtTime(1800, now + 0.5);
-                    filter.frequency.exponentialRampToValueAtTime(150, now + duration);
+                        const filter = this.ctx.createBiquadFilter();
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(300, now);
+                        filter.frequency.exponentialRampToValueAtTime(1800, now + 0.5);
+                        filter.frequency.exponentialRampToValueAtTime(150, now + duration);
 
-                    const gain = this.ctx.createGain();
-                    gain.gain.setValueAtTime(0.05, now);
-                    gain.gain.linearRampToValueAtTime(0.75, now + 0.5);  // loud by 0.5s, well before first bomb at 0.75s
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                        const gain = this.ctx.createGain();
+                        gain.gain.setValueAtTime(0.05, now);
+                        gain.gain.linearRampToValueAtTime(0.75, now + 0.5);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-                    jetNoise.connect(filter);
-                    filter.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    jetNoise.start(now);
+                        jetNoise.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        jetNoise.start(now);
+                        return;
+                    }
+                } catch(e) {}
+                try {
+                    const sampleRate = 22050;
+                    const dur = 2.5;
+                    const n = Math.floor(sampleRate * dur);
+                    const ab = new ArrayBuffer(44 + n * 2);
+                    const v = new DataView(ab);
+                    const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+                    ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true);
+                    ws(8, 'WAVE'); ws(12, 'fmt '); v.setUint32(16, 16, true);
+                    v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+                    v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true);
+                    v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+                    ws(36, 'data'); v.setUint32(40, n * 2, true);
+                    for (let i = 0; i < n; i++) {
+                        const t = i / sampleRate;
+                        const env = Math.sin(Math.PI * (t / dur));
+                        const noise = (Math.random() * 2 - 1) * 0.7 * env;
+                        v.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, noise)) * 32767), true);
+                    }
+                    const url = URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
+                    const el = new Audio(url); el.volume = 0.85; el.play().catch(() => {});
+                    setTimeout(() => URL.revokeObjectURL(url), 4000);
                 } catch(e) {}
             }
 
@@ -1078,7 +1122,7 @@
                 if (!this.bgMusic) {
                     this.bgMusic = new Audio('music.mp3');
                     this.bgMusic.loop = true;
-                    this.bgMusic.volume = 0.45;
+                    this.bgMusic.volume = 0.18;
                 }
                 this.bgMusic.play().catch(e => console.log("Music playback error", e));
             }
@@ -2637,7 +2681,8 @@
                         if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-1 text-slate-500 opacity-60";
                         if (btn) btn.className = "relative overflow-hidden bg-slate-900/60 border border-slate-800 text-slate-500 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center space-x-1.5 min-h-[40px] pointer-events-auto";
                     } else {
-                        if (statusText) statusText.innerText = "[E] BEREIT!";
+                        const isMobile = window.matchMedia('(pointer: coarse)').matches;
+                        if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[E] BEREIT";
                         if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-1 text-amber-400 airstrike-ready-blink";
                         if (btn) btn.className = "relative overflow-hidden bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto";
                     }
@@ -2663,7 +2708,7 @@
                         if (zone.damageTimer >= 0.2) {
                             zone.damageTimer = 0;
                             this.zombies.forEach(z => {
-                                if (z.position.distanceTo(zone.pos) < 6.0) {
+                                if (z.position.distanceTo(zone.pos) < 17.5) {
                                     z.userData.hp = -9999;
                                     this.flashZombieHit(z);
                                     this.killZombie(z);
@@ -2702,8 +2747,8 @@
                             const dropZ = strike.jetMesh.position.z;
                             const impactPos = new THREE.Vector3(dropX, 0, dropZ);
 
-                            // INSTANT KILL EXPLOSION (99,999 Dmg kills bosses, tanks & all zombies instantly!)
-                            this.createExplosion(impactPos, 6.5, 99999);
+                            // INSTANT KILL EXPLOSION with 17.5m wide killzone radius!
+                            this.createExplosion(impactPos, 17.5, 99999);
 
                             const fireMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
                             const fireZone = new THREE.Mesh(new THREE.CylinderGeometry(5.0, 5.0, 0.15, 12), fireMat);
