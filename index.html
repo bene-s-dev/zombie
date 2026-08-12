@@ -287,7 +287,7 @@
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="airstrike-icon" class="relative z-10 flex items-center pr-1 text-amber-400 airstrike-ready-blink">
                             <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm"></i>
-                            <i class="fa-solid fa-plane-up text-amber-400 text-[10px] sm:text-xs -ml-2.5 translate-y-1 opacity-90"></i>
+                            <i class="fa-solid fa-plane-up text-amber-400 text-[10px] sm:text-xs -ml-1.5 translate-y-1 opacity-90"></i>
                         </div>
                         <div class="relative z-10 flex flex-col text-left">
                             <span class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase leading-none">Doppel-Luftschlag</span>
@@ -1013,10 +1013,10 @@
 
                     const startTime = performance.now();
                     const interval = setInterval(() => {
-                        // Skip seconds 2 to 3 inside radio.mp3
-                        if (!hasSkippedSec2to3 && radio.currentTime >= 2.0 && radio.currentTime < 3.0) {
+                        // Skip seconds 2 to 3.5 inside radio.mp3
+                        if (!hasSkippedSec2to3 && radio.currentTime >= 2.0 && radio.currentTime < 3.5) {
                             hasSkippedSec2to3 = true;
-                            try { radio.currentTime = 3.0; } catch(e) {}
+                            try { radio.currentTime = 3.5; } catch(e) {}
                         }
 
                         const elapsed = (performance.now() - startTime) / 1000;
@@ -2821,8 +2821,8 @@
 
                     // Smart Aim Assist: Lock onto nearest zombie when firing, break lock if out of range
                     if (isFiring && this.zombies.length > 0) {
-                        const AIM_LOCK_RANGE = 24.0;   // lock-on max distance
-                        const AIM_BREAK_RANGE = 30.0;  // auto-break lock if zombie drifts further
+                        const AIM_LOCK_RANGE = 10.0;   // lock-on max distance (10 meters)
+                        const AIM_BREAK_RANGE = 14.0;  // auto-break lock if zombie drifts further
 
                         // Check if locked target is still valid & within break range
                         if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0) {
