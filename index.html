@@ -771,6 +771,10 @@
                 if (!this.ctx) {
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 }
+                const atomicEl = document.getElementById('audio-atomic');
+                if (atomicEl) {
+                    try { atomicEl.load(); } catch(e) {}
+                }
             }
             playPistol() {
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
@@ -1287,40 +1291,56 @@
             playAtomicSound() {
                 if (!Storage.data.sfxEnabled) return;
                 try {
-                    if (this.currentAtomicAudio) {
-                        try {
-                            this.currentAtomicAudio.pause();
-                            this.currentAtomicAudio.currentTime = 0;
-                        } catch(e) {}
+                    let a = document.getElementById('audio-atomic');
+                    if (!a) {
+                        a = new Audio('atomic.mp3');
                     }
+                    this.currentAtomicAudio = a;
 
-                    const audioEl = new Audio('atomic.mp3');
-                    audioEl.volume = 1.0;
-                    this.currentAtomicAudio = audioEl;
+                    a.pause();
+                    a.currentTime = 0;
+                    a.volume = 1.0;
+                    a.loop = false;
 
-                    audioEl.ontimeupdate = () => {
-                        if (audioEl.currentTime >= 5.0) {
+                    a.ontimeupdate = () => {
+                        if (a.currentTime >= 5.0) {
                             try {
-                                audioEl.pause();
-                                audioEl.currentTime = 0;
+                                a.pause();
+                                a.currentTime = 0;
                             } catch(e) {}
-                            audioEl.ontimeupdate = null;
+                            a.ontimeupdate = null;
                         }
                     };
 
-                    const playPromise = audioEl.play();
+                    const playPromise = a.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
-                            setTimeout(() => {
+                            if (this._atomicTimer) clearTimeout(this._atomicTimer);
+                            this._atomicTimer = setTimeout(() => {
                                 try {
-                                    audioEl.pause();
-                                    audioEl.currentTime = 0;
+                                    a.pause();
+                                    a.currentTime = 0;
                                 } catch(e) {}
-                                audioEl.ontimeupdate = null;
+                                a.ontimeupdate = null;
                             }, 5000);
-                        }).catch(err => console.warn("atomic.mp3 playback error", err));
+                        }).catch(err => {
+                            console.warn("DOM audio-atomic blocked, trying fallback Audio()", err);
+                            const fallback = new Audio('atomic.mp3');
+                            fallback.volume = 1.0;
+                            fallback.currentTime = 0;
+                            this.currentAtomicAudio = fallback;
+                            fallback.ontimeupdate = () => {
+                                if (fallback.currentTime >= 5.0) {
+                                    try { fallback.pause(); fallback.currentTime = 0; } catch(e) {}
+                                    fallback.ontimeupdate = null;
+                                }
+                            };
+                            fallback.play().catch(e2 => console.error("Atomic fallback play failed", e2));
+                        });
                     }
-                } catch(e) { console.error("atomic.mp3 error", e); }
+                } catch(e) {
+                    console.error("playAtomicSound error", e);
+                }
             }
 
             startNuclearSiren() {
