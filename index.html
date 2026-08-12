@@ -1297,20 +1297,32 @@
                     }
                     this.currentAtomicAudio = a;
 
+                    const maxVol = 0.28;
                     a.pause();
                     a.currentTime = 0;
-                    a.volume = 0.45;
+                    a.volume = maxVol;
                     a.loop = false;
 
-                    a.ontimeupdate = () => {
-                        if (a.currentTime >= 5.0) {
-                            try {
-                                a.pause();
-                                a.currentTime = 0;
-                            } catch(e) {}
-                            a.ontimeupdate = null;
-                        }
+                    const setupFade = (audioEl) => {
+                        audioEl.ontimeupdate = () => {
+                            const cur = audioEl.currentTime;
+                            if (cur >= 6.5) {
+                                try {
+                                    audioEl.pause();
+                                    audioEl.currentTime = 0;
+                                } catch(e) {}
+                                audioEl.ontimeupdate = null;
+                            } else if (cur >= 5.0) {
+                                // Smooth linear fade-out between 5.0s and 6.5s
+                                const fadeProgress = (cur - 5.0) / 1.5;
+                                audioEl.volume = Math.max(0, maxVol * (1.0 - fadeProgress));
+                            } else {
+                                audioEl.volume = maxVol;
+                            }
+                        };
                     };
+
+                    setupFade(a);
 
                     const playPromise = a.play();
                     if (playPromise !== undefined) {
@@ -1322,19 +1334,14 @@
                                     a.currentTime = 0;
                                 } catch(e) {}
                                 a.ontimeupdate = null;
-                            }, 5000);
+                            }, 6500);
                         }).catch(err => {
                             console.warn("DOM audio-atomic blocked, trying fallback Audio()", err);
                             const fallback = new Audio('atomic.mp3');
-                            fallback.volume = 0.45;
+                            fallback.volume = maxVol;
                             fallback.currentTime = 0;
                             this.currentAtomicAudio = fallback;
-                            fallback.ontimeupdate = () => {
-                                if (fallback.currentTime >= 5.0) {
-                                    try { fallback.pause(); fallback.currentTime = 0; } catch(e) {}
-                                    fallback.ontimeupdate = null;
-                                }
-                            };
+                            setupFade(fallback);
                             fallback.play().catch(e2 => console.error("Atomic fallback play failed", e2));
                         });
                     }
@@ -1372,7 +1379,7 @@
                         }
 
                         gain.gain.setValueAtTime(0.01, now);
-                        gain.gain.linearRampToValueAtTime(0.18, now + 0.8);
+                        gain.gain.linearRampToValueAtTime(0.12, now + 0.8);
 
                         osc.connect(filter);
                         filter.connect(gain);
