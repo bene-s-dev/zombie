@@ -517,6 +517,27 @@
             </div>
         </div>
 
+        <!-- Tactical Intel Threat Alert Modal -->
+        <div id="intel-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+            <div class="bg-slate-900 border border-amber-500/60 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+                <div class="flex items-center space-x-3.5 border-b border-slate-800 pb-3">
+                    <i id="intel-icon" class="fa-solid fa-shield-halved text-sky-400 text-3xl"></i>
+                    <div>
+                        <h3 id="intel-title" class="font-bold text-base sm:text-lg text-amber-400 uppercase tracking-wide leading-tight">TAKTISCHER HINWEIS</h3>
+                        <p id="intel-subtitle" class="text-xs text-slate-400 font-mono mt-0.5">Spezielle Horden-Bedrohung</p>
+                    </div>
+                </div>
+                <div id="intel-body" class="text-xs sm:text-sm text-slate-300 leading-relaxed space-y-2">
+                </div>
+                <div class="pt-2 flex justify-end">
+                    <button onclick="closeIntelModal()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg transition active:scale-95 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-check"></i>
+                        <span>VERSTANDEN / KAMPF FORTSETZEN</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -1298,6 +1319,7 @@
 
                 this.airstrikeCooldown = 0;
                 this.activeAirstrike = null; 
+                this.intelShown = { runner: false, shield: false, tank: false, boss: false };
 
                 this.touchJoystick = { active: false, touchId: null, startX: 0, startY: 0, vectorX: 0, vectorY: 0 };
                 this.isTouchFiring = false;
@@ -1656,6 +1678,10 @@
                         dmgMult = 2.0 * waveDmgScale;
                         armorThreshold = 32;
                     }
+                }
+
+                if (type !== 'normal') {
+                    this.showTacticalIntel(type);
                 }
 
                 const zombieGroup = new THREE.Group();
@@ -2528,6 +2554,60 @@
                 if (strike.jetMesh.position.z > 80) {
                     this.scene.remove(strike.jetMesh);
                     this.activeAirstrike = null;
+                }
+            }
+
+            showTacticalIntel(type) {
+                if (!this.intelShown) this.intelShown = {};
+                if (this.intelShown[type]) return;
+                this.intelShown[type] = true;
+
+                const INTEL_DATA = {
+                    runner: {
+                        title: '⚡ LÄUFER-ZOMBIES DETEKTIERT!',
+                        subtitle: 'Schnelle agile Mutanten',
+                        icon: 'fa-bolt text-amber-400',
+                        body: 'Läufer bewegen sich <strong>70% schneller</strong> als normale Zombies. Bleibe in Bewegung, halte Abstand und nutze deine Waffen!'
+                    },
+                    shield: {
+                        title: '🛡️ SCHILD-ZOMBIES DETEKTIERT!',
+                        subtitle: '100% Immun gegen automatische Türme!',
+                        icon: 'fa-shield-halved text-sky-400',
+                        body: 'Schild-Zombies tragen kugelsichere Frontschilde. <strong>Automatische Türme richten 0 Schaden an!</strong> Du musst sie persönlich mit deiner Waffe oder dem Napalm-Luftschlag [E] ausschalten!'
+                    },
+                    tank: {
+                        title: '🧱 PANZER-ZOMBIES DETEKTIERT!',
+                        subtitle: 'Schwere Rüstung (32 Armor)',
+                        icon: 'fa-cube text-purple-400',
+                        body: 'Panzer-Zombies besitzen schwere Panzerplatten. Schwache Standardfeuer-Geschosse richten kaum Schaden an – upgrade deine Waffen & Türme im Shop!'
+                    },
+                    boss: {
+                        title: '👹 ENDBOSS-GIGANT DETEKTIERT!',
+                        subtitle: 'Extremer Schaden & massive HP!',
+                        icon: 'fa-skull-crossbones text-rose-500 animate-pulse',
+                        body: 'Ein gewaltiger Mutant nähert sich der Basis! Konzentriere das gesamte Feuer deiner Geschütze und nutze deinen <strong>CAS Napalm-Luftschlag [E]</strong>!'
+                    }
+                };
+
+                const data = INTEL_DATA[type];
+                if (!data) return;
+
+                audio.playRadioChatter();
+
+                const modal = document.getElementById('intel-modal');
+                const titleEl = document.getElementById('intel-title');
+                const subtitleEl = document.getElementById('intel-subtitle');
+                const iconEl = document.getElementById('intel-icon');
+                const bodyEl = document.getElementById('intel-body');
+
+                if (modal && titleEl && subtitleEl && iconEl && bodyEl) {
+                    titleEl.innerText = data.title;
+                    subtitleEl.innerText = data.subtitle;
+                    iconEl.className = `fa-solid ${data.icon} text-3xl sm:text-4xl`;
+                    bodyEl.innerHTML = data.body;
+
+                    modal.classList.remove('hidden');
+                    this.isPaused = true;
                 }
             }
 
@@ -3551,6 +3631,14 @@
             gameInstance.scene.remove(struct);
             gameInstance.syncHUD();
             closeInspectModal();
+        }
+
+        function closeIntelModal() {
+            const modal = document.getElementById('intel-modal');
+            if (modal) modal.classList.add('hidden');
+            if (gameInstance && !isShopOpen && !isPauseModalOpen) {
+                gameInstance.isPaused = false;
+            }
         }
 
         function triggerAirstrike() {
