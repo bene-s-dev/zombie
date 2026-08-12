@@ -3601,25 +3601,34 @@
                         let chosenAngle = null;
                         let hitWallTarget = null;
 
-                        for (let ai = 0; ai < angleOffsets.length; ai++) {
-                            const testAngle = directAngle + angleOffsets[ai];
-                            const testX = z.position.x + Math.sin(testAngle) * stepSize;
-                            const testZ = z.position.z + Math.cos(testAngle) * stepSize;
+                        // AI Staggering: Far-away zombies (>15m) calculate pathfinding every 2nd frame
+                        const isDistant = distToPlayerSq > 225;
+                        const skipPathingThisFrame = isDistant && ((zi + this._frameCount) % 2 !== 0) && (z.userData.lastChosenAngle !== undefined);
 
-                            let blocked = false;
-                            for (let wi = 0; wi < this.walls.length; wi++) {
-                                const w = this.walls[wi];
-                                if (checkWallCollision(testX, testZ, zRadius, w)) {
-                                    blocked = true;
-                                    if (ai === 0) hitWallTarget = w;
+                        if (skipPathingThisFrame) {
+                            chosenAngle = z.userData.lastChosenAngle;
+                        } else {
+                            for (let ai = 0; ai < angleOffsets.length; ai++) {
+                                const testAngle = directAngle + angleOffsets[ai];
+                                const testX = z.position.x + Math.sin(testAngle) * stepSize;
+                                const testZ = z.position.z + Math.cos(testAngle) * stepSize;
+
+                                let blocked = false;
+                                for (let wi = 0; wi < this.walls.length; wi++) {
+                                    const w = this.walls[wi];
+                                    if (checkWallCollision(testX, testZ, zRadius, w)) {
+                                        blocked = true;
+                                        if (ai === 0) hitWallTarget = w;
+                                        break;
+                                    }
+                                }
+
+                                if (!blocked) {
+                                    chosenAngle = testAngle;
                                     break;
                                 }
                             }
-
-                            if (!blocked) {
-                                chosenAngle = testAngle;
-                                break;
-                            }
+                            z.userData.lastChosenAngle = chosenAngle;
                         }
 
                         const distToBaseCurr = Math.hypot(z.position.x - basePos.x, z.position.z - basePos.z);
