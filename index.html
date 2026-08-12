@@ -292,9 +292,9 @@
                     </div>
                 </div>
 
-                <!-- Top-Right Controls: Semi-transparent, uniform height h-10, x2 button stacked under Pause button -->
+                <!-- Top-Right Controls: Transparent background, uniform height h-10 sm:h-11, fixed-size x2 speed button stacked under Pause button -->
                 <div class="flex items-start space-x-1.5 sm:space-x-2">
-                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" class="relative overflow-hidden bg-slate-900/50 hover:bg-slate-800/70 active:bg-slate-950/80 border border-amber-500/50 text-amber-400 p-2 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-md transition active:scale-95 flex items-center space-x-1.5 h-10 pointer-events-auto animate-pulse" title="Orbitaler Doppel-Luftschlag [E]">
+                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center space-x-1.5 h-10 sm:h-11 pointer-events-auto animate-pulse" title="Orbitaler Doppel-Luftschlag [E]">
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="airstrike-icon" class="relative z-10 flex items-center pr-1 text-amber-400 airstrike-ready-blink">
                             <i class="fa-solid fa-plane-up text-amber-400 text-xs sm:text-sm"></i>
@@ -306,21 +306,21 @@
                         </div>
                     </button>
 
-                    <div class="bg-slate-900/50 border border-slate-700/50 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg flex items-center space-x-1 h-10">
+                    <div class="bg-transparent border border-amber-500/60 px-2.5 sm:px-3 rounded-lg sm:rounded-xl backdrop-blur-sm shadow-lg flex items-center space-x-1 h-10 sm:h-11">
                         <i class="fa-solid fa-coins text-amber-400 text-xs sm:text-base"></i>
                         <span id="hud-money" class="font-mono text-xs sm:text-base font-bold text-amber-400">$ 0</span>
                     </div>
 
-                    <button onclick="toggleShop()" class="bg-slate-900/50 hover:bg-slate-800/70 active:bg-slate-950/80 text-red-400 border border-red-500/50 p-2 sm:p-2.5 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-md transition active:scale-95 flex items-center justify-center h-10 min-w-[40px]" title="Laden öffnen">
+                    <button onclick="toggleShop()" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 text-red-400 border border-red-500/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-10 sm:h-11 min-w-[40px] sm:min-w-[44px]" title="Laden öffnen">
                         <i class="fa-solid fa-store text-sm sm:text-base"></i>
                     </button>
 
-                    <!-- Pause button column with x2 Speed button stacked directly below -->
+                    <!-- Pause button column with fixed size x2 Speed button stacked directly below -->
                     <div class="flex flex-col space-y-1 items-center">
-                        <button onclick="togglePauseModal()" class="bg-slate-900/50 hover:bg-slate-800/70 active:bg-slate-950/80 text-slate-200 border border-slate-700/50 p-2 sm:p-2.5 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-md transition active:scale-95 flex items-center justify-center h-10 min-w-[40px]" title="Pause">
+                        <button onclick="togglePauseModal()" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 text-slate-200 border border-slate-700/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-10 sm:h-11 min-w-[40px] sm:min-w-[44px]" title="Pause">
                             <i class="fa-solid fa-pause text-sm sm:text-base"></i>
                         </button>
-                        <button id="game-speed-btn" onclick="toggleGameSpeed()" class="bg-slate-900/50 hover:bg-slate-800/70 active:bg-slate-950/80 text-slate-300 px-2 py-0.5 rounded-lg border border-slate-700/50 shadow-lg backdrop-blur-md transition active:scale-95 flex items-center justify-center space-x-1 min-w-[40px] text-[10px]" title="Vorspulen 2x / Normal 1x">
+                        <button id="game-speed-btn" onclick="toggleGameSpeed()" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-950/80 text-slate-300 rounded-lg border border-slate-700/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 text-[10px]" title="Vorspulen 2x / Normal 1x">
                             <i id="speed-btn-icon" class="fa-solid fa-forward text-[10px] text-slate-400"></i>
                             <span id="speed-btn-text" class="font-mono text-[10px] font-bold">1x</span>
                         </button>
@@ -2761,12 +2761,12 @@
                     if (this.airstrikeCooldown > 0) {
                         if (statusText) statusText.innerText = `${Math.ceil(this.airstrikeCooldown)}s`;
                         if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-1 text-slate-500 opacity-60";
-                        if (btn) btn.className = "relative overflow-hidden bg-slate-900/60 border border-slate-800 text-slate-500 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center space-x-1.5 min-h-[40px] pointer-events-auto";
+                        if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 p-2 sm:px-3 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center space-x-1.5 h-10 sm:h-11 pointer-events-auto";
                     } else {
                         const isMobile = window.matchMedia('(pointer: coarse)').matches;
                         if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[E] BEREIT";
                         if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-1 text-amber-400 airstrike-ready-blink";
-                        if (btn) btn.className = "relative overflow-hidden bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-amber-500/60 text-amber-400 p-2 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl shadow-xl transition active:scale-95 flex items-center space-x-1.5 min-h-[40px] pointer-events-auto";
+                        if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg transition active:scale-95 flex items-center space-x-1.5 h-10 sm:h-11 pointer-events-auto";
                     }
                 } else {
                     const progressFill = document.getElementById('airstrike-progress-fill');
@@ -3814,11 +3814,11 @@
                 if (speed === 2) {
                     if (btnText) btnText.innerText = '2x';
                     if (btnIcon) btnIcon.className = 'fa-solid fa-forward-fast text-amber-400 animate-pulse';
-                    if (btn) btn.className = 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg border border-amber-500/50 transition active:scale-95 flex items-center justify-center space-x-1 min-w-[44px] min-h-[40px] animate-pulse';
+                    if (btn) btn.className = 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-lg border border-amber-500/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 text-[10px] animate-pulse';
                 } else {
                     if (btnText) btnText.innerText = '1x';
                     if (btnIcon) btnIcon.className = 'fa-solid fa-forward text-slate-400';
-                    if (btn) btn.className = 'bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg border border-slate-700 transition active:scale-95 flex items-center justify-center space-x-1 min-w-[44px] min-h-[40px]';
+                    if (btn) btn.className = 'bg-transparent hover:bg-slate-900/30 active:bg-slate-950/80 text-slate-300 rounded-lg border border-slate-700/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 text-[10px]';
                 }
             }
         }
