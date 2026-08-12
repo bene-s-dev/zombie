@@ -976,21 +976,16 @@
                     return;
                 }
 
-                // 1. First Störfunk/Squelch — clearly audible before speech
+                // 1. First Störfunk — play immediately, then start loading radio.mp3 after 100ms
+                //    to guarantee the chatter fires before speech begins
                 this.playRadioChatter();
-
-                // 2. Play radio.mp3 — preload + seek on canplaythrough for instant speech
-                //    Small gap (220ms) so the chatter bleep is heard before speech starts
-                const radio = new Audio();
-                radio.preload = 'auto';
-                radio.volume = 0.9;
 
                 let isCallbackDone = false;
                 let speechStarted = false;
                 const finishCallback = () => {
                     if (isCallbackDone) return;
                     isCallbackDone = true;
-                    // 3. Second Störfunk/Squelch after speech ends, then jet arrives
+                    // 3. Second Störfunk after speech ends
                     this.playRadioChatter();
                     setTimeout(() => {
                         if (onCompleteCallback) onCompleteCallback();
@@ -1024,17 +1019,20 @@
                     });
                 };
 
+                // 2. Load radio.mp3 after 100ms so chatter bleep is already playing
+                const radio = new Audio();
+                radio.preload = 'auto';
+                radio.volume = 0.9;
                 radio.addEventListener('canplaythrough', () => {
-                    // Wait 220ms after chatter so bleep is heard, then start speech
-                    setTimeout(startPlayback, 220);
+                    setTimeout(startPlayback, 150);
                 }, { once: true });
                 radio.addEventListener('error', () => finishCallback());
-                radio.src = 'radio.mp3';
-                radio.load();
-                // Fallback: force start after 700ms
                 setTimeout(() => {
-                    if (!speechStarted) startPlayback();
-                }, 700);
+                    radio.src = 'radio.mp3';
+                    radio.load();
+                    // Fallback: force start after 800ms total
+                    setTimeout(() => { if (!speechStarted) startPlayback(); }, 700);
+                }, 100);
             }
 
             playJetFlyover() {
@@ -1051,13 +1049,13 @@
 
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(250, now);
-                    filter.frequency.exponentialRampToValueAtTime(1800, now + 1.6);
+                    filter.frequency.setValueAtTime(300, now);
+                    filter.frequency.exponentialRampToValueAtTime(1800, now + 0.5);
                     filter.frequency.exponentialRampToValueAtTime(150, now + duration);
 
                     const gain = this.ctx.createGain();
-                    gain.gain.setValueAtTime(0.01, now);
-                    gain.gain.linearRampToValueAtTime(0.7, now + 1.6);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.linearRampToValueAtTime(0.75, now + 0.5);  // loud by 0.5s, well before first bomb at 0.75s
                     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
                     jetNoise.connect(filter);
