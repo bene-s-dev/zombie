@@ -280,18 +280,16 @@
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between">
             <div class="flex justify-between items-start w-full max-w-5xl mx-auto p-1.5 sm:p-3 pointer-events-auto">
-                <!-- Top-Left Wave Container: Fixed width containers prevent fields from jumping when text updates -->
-                <div id="hud-wave-container" class="flex items-center space-x-1.5 sm:space-x-3 py-0.5 drop-shadow-md">
-                    <div id="hud-wave-title-wrap" class="min-w-[120px] sm:min-w-[160px] flex items-center justify-start">
+                <!-- Top-Left Wave Container: Time on left (compact w-auto), Zombies in middle, Wave on right, no dividers -->
+                <div id="hud-wave-container" class="flex items-center space-x-2 sm:space-x-3.5 py-0.5 drop-shadow-md">
+                    <div id="hud-timer" class="w-auto font-mono text-[10px] sm:text-xs text-slate-300 whitespace-nowrap">Zeit: 00:00</div>
+                    <div id="hud-zombies-left" class="w-24 sm:w-32 font-teko text-sm sm:text-xl font-bold text-white leading-none text-center truncate">0 UNTOTE</div>
+                    <div id="hud-wave-title-wrap" class="min-w-[110px] sm:min-w-[150px] flex items-center justify-start">
                         <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1">
                             <i class="fa-solid fa-skull"></i>
                             <span>WELLE 1</span>
                         </div>
                     </div>
-                    <span class="text-slate-600 text-xs font-bold">|</span>
-                    <div id="hud-zombies-left" class="w-24 sm:w-32 font-teko text-sm sm:text-xl font-bold text-white leading-none text-center truncate">0 UNTOTE</div>
-                    <span class="text-slate-600 text-xs font-bold">|</span>
-                    <div id="hud-timer" class="w-20 sm:w-24 text-[10px] sm:text-xs text-slate-300 font-mono text-center truncate">Zeit: 00:00</div>
                 </div>
 
                 <!-- Top-Right Controls: Transparent background, uniform height h-10 sm:h-11, fixed-size x2 speed button stacked under Pause button -->
@@ -1698,11 +1696,13 @@
                         }
                     }
                     if (this.isPaused || this.isGameOver) return;
+                    let touchHandled = false;
                     for (let i = 0; i < e.changedTouches.length; i++) {
                         const touch = e.changedTouches[i];
                         const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
                         if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal')) continue;
 
+                        touchHandled = true;
                         const halfWidth = window.innerWidth / 2;
                         const isJoystickSide = Storage.data.swapTouchControls ? (touch.clientX <= halfWidth) : (touch.clientX > halfWidth);
 
@@ -1735,6 +1735,7 @@
                             }
                         }
                     }
+                    if (touchHandled && e.cancelable) e.preventDefault();
                 };
 
                 const onTouchMove = (e) => {
