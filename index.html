@@ -1037,6 +1037,33 @@
                     this.bgMusic.currentTime = 0;
                 }
             }
+
+            fadeMusicVolume(targetVolume, durationMs = 450) {
+                if (!this.bgMusic) return;
+                if (this.musicFadeInterval) clearInterval(this.musicFadeInterval);
+
+                const startVolume = this.bgMusic.volume;
+                const startTime = performance.now();
+
+                this.musicFadeInterval = setInterval(() => {
+                    const elapsed = performance.now() - startTime;
+                    const progress = Math.min(1.0, elapsed / durationMs);
+
+                    this.bgMusic.volume = startVolume + (targetVolume - startVolume) * progress;
+
+                    if (progress >= 1.0) {
+                        clearInterval(this.musicFadeInterval);
+                    }
+                }, 30);
+            }
+
+            duckMusic() {
+                this.fadeMusicVolume(0.12, 450);
+            }
+
+            unduckMusic() {
+                this.fadeMusicVolume(0.45, 450);
+            }
         }
         const audio = new SoundEngine();
 
@@ -2608,6 +2635,7 @@
 
                     modal.classList.remove('hidden');
                     this.isPaused = true;
+                    if (typeof updateMusicDucking === 'function') updateMusicDucking();
                 }
             }
 
@@ -3633,12 +3661,25 @@
             closeInspectModal();
         }
 
+        function updateMusicDucking() {
+            const intelModal = document.getElementById('intel-modal');
+            const isIntelOpen = intelModal && !intelModal.classList.contains('hidden');
+            const isPausedAny = isShopOpen || isPauseModalOpen || isIntelOpen || (gameInstance && gameInstance.isGameOver);
+
+            if (isPausedAny) {
+                audio.duckMusic();
+            } else {
+                audio.unduckMusic();
+            }
+        }
+
         function closeIntelModal() {
             const modal = document.getElementById('intel-modal');
             if (modal) modal.classList.add('hidden');
             if (gameInstance && !isShopOpen && !isPauseModalOpen) {
                 gameInstance.isPaused = false;
             }
+            updateMusicDucking();
         }
 
         function triggerAirstrike() {
@@ -3662,6 +3703,7 @@
             } else {
                 modal.classList.add('hidden');
             }
+            updateMusicDucking();
         }
 
         function toggleTouchSwap() {
@@ -3706,6 +3748,7 @@
             } else {
                 shopModal.classList.add('hidden');
             }
+            updateMusicDucking();
         }
 
         function buyWeapon(id) {
