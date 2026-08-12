@@ -2460,25 +2460,68 @@
                 }
             }
 
+            createNeonTargetMarker(targetX) {
+                if (this.targetMarkerGroup) {
+                    this.scene.remove(this.targetMarkerGroup);
+                }
+
+                const markerGroup = new THREE.Group();
+                const laserMat = new THREE.MeshBasicMaterial({ color: 0x00ff66, transparent: true, opacity: 0.5 });
+                const lineMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.7 });
+
+                // Center target laser line
+                const centerLine = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 130), laserMat);
+                centerLine.rotation.x = -Math.PI / 2;
+                centerLine.position.set(targetX, 0.05, 0);
+                markerGroup.add(centerLine);
+
+                // Left boundary marker (Jet 1 corridor)
+                const leftLine = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 130), lineMat);
+                leftLine.rotation.x = -Math.PI / 2;
+                leftLine.position.set(targetX - 9.5, 0.05, 0);
+                markerGroup.add(leftLine);
+
+                // Right boundary marker (Jet 2 corridor)
+                const rightLine = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 130), lineMat);
+                rightLine.rotation.x = -Math.PI / 2;
+                rightLine.position.set(targetX + 9.5, 0.05, 0);
+                markerGroup.add(rightLine);
+
+                // Crosshair dashes along Z axis
+                for (let z = -55; z <= 55; z += 15) {
+                    const dash = new THREE.Mesh(new THREE.PlaneGeometry(19, 0.25), lineMat);
+                    dash.rotation.x = -Math.PI / 2;
+                    dash.position.set(targetX, 0.05, z);
+                    markerGroup.add(dash);
+                }
+
+                this.scene.add(markerGroup);
+                this.targetMarkerGroup = markerGroup;
+                this.targetMarkerLife = 10.0;
+            }
+
             triggerAirstrike() {
                 if (this.isPaused || this.isGameOver || this.airstrikeCooldown > 0 || (this.activeAirstrikes && this.activeAirstrikes.length > 0)) return;
 
                 this.airstrikeCooldown = 45.0;
 
-                // 1. Play Radio Voice Speech (starts instantly without silent offset delay)
+                // Lock player's exact X position when requested
+                const lockX = this.playerGroup.position.x;
+                this.createNeonTargetMarker(lockX);
+
+                // 1. Play Radio Voice Speech (starts instantly)
                 audio.playRadioVoice(() => {
                     if (this.isGameOver) return;
 
-                    const playerX = this.playerGroup.position.x;
                     this.activeAirstrikes = [];
 
-                    // Flight 1: Jet 1 (Lead Fighter)
-                    this.spawnJetStrike(playerX);
+                    // Flight 1: Jet 1 (Left Flank Corridor: lockX - 5.5m)
+                    this.spawnJetStrike(lockX - 5.5);
 
-                    // Flight 2: Jet 2 (Wingman Fighter, 1.2s later with Jet sound, NO RADIO!)
+                    // Flight 2: Jet 2 (Right Flank Corridor: lockX + 5.5m, 1.2s later with Jet sound, NO RADIO!)
                     setTimeout(() => {
                         if (!this.isGameOver) {
-                            this.spawnJetStrike(playerX);
+                            this.spawnJetStrike(lockX + 5.5);
                         }
                     }, 1200);
                 });
@@ -2539,6 +2582,14 @@
                     }
                 }
 
+                if (this.targetMarkerGroup) {
+                    this.targetMarkerLife -= dt;
+                    if (this.targetMarkerLife <= 0) {
+                        this.scene.remove(this.targetMarkerGroup);
+                        this.targetMarkerGroup = null;
+                    }
+                }
+
                 if (this.napalmZones && this.napalmZones.length > 0) {
                     for (let i = this.napalmZones.length - 1; i >= 0; i--) {
                         const zone = this.napalmZones[i];
@@ -2573,7 +2624,7 @@
                             strike.lastDropZ = strike.jetMesh.position.z;
 
                             const isLeft = (strike.droppedBombs % 2 === 1);
-                            const offsetX = isLeft ? -4.0 : 4.0;
+                            const offsetX = isLeft ? -3.5 : 3.5;
                             const dropX = THREE.MathUtils.clamp(strike.targetX + offsetX + (Math.random() - 0.5) * 1.0, -72, 72);
                             const dropZ = strike.jetMesh.position.z;
                             const impactPos = new THREE.Vector3(dropX, 0, dropZ);
