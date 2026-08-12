@@ -940,9 +940,9 @@
                 // 1. Confirmation Bleep / Squelch Sound
                 this.playRadioChatter();
 
-                // 2. Play radio.mp3 with specified volume envelope
+                // 2. Play radio.mp3 instantly with zero delay
                 const radio = new Audio('radio.mp3');
-                radio.volume = 0.0;
+                radio.volume = 0.65;
 
                 let isCallbackDone = false;
                 const finishCallback = () => {
@@ -957,11 +957,11 @@
                     const fadeInterval = setInterval(() => {
                         const elapsed = (performance.now() - startTime) / 1000;
 
-                        if (elapsed < 3.0) {
-                            // Fade-in up to second 3 (0.0 to 0.9)
-                            radio.volume = Math.min(0.9, (elapsed / 3.0) * 0.9);
+                        if (elapsed < 2.0) {
+                            // Quick ramp up to 0.9 by second 2
+                            radio.volume = 0.65 + (elapsed / 2.0) * 0.25;
                         } else if (elapsed <= 7.0) {
-                            // Hold full volume 1s longer (seconds 3 to 7)
+                            // Hold full volume (seconds 2 to 7)
                             radio.volume = 0.9;
                         } else if (elapsed <= 9.0) {
                             // Fast fade-out between second 7 and 9 (0.9 down to 0.0)
@@ -2549,12 +2549,11 @@
                 const strike = this.activeAirstrike;
                 strike.jetMesh.position.z += strike.speed * dt;
 
-                strike.dropTimer = (strike.dropTimer || 0) + dt;
-
-                // Time-based bomb drop sequence (every 0.36s / 360ms rhythm!)
-                if (strike.droppedBombs < strike.maxBombs && strike.dropTimer >= 0.36 && strike.jetMesh.position.z >= -60) {
-                    strike.dropTimer = 0;
+                // Double Line Corridor across the entire map (-60 to +60 Z-axis)
+                // Left Line (X - 3.8m) / Right Line (X + 3.8m) alternating drops!
+                if (strike.droppedBombs < strike.maxBombs && strike.jetMesh.position.z >= (strike.lastDropZ + 9.5)) {
                     strike.droppedBombs++;
+                    strike.lastDropZ = strike.jetMesh.position.z;
 
                     const isLeft = (strike.droppedBombs % 2 === 1);
                     const offsetX = isLeft ? -3.8 : 3.8;
