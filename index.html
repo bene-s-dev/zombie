@@ -2975,7 +2975,20 @@
 
                 turretGroup.add(headGroup);
 
-                const currentCost = getTurretCost(spec.id);
+                // 3D Floating Health Bar
+                const hpBarGroup = new THREE.Group();
+                hpBarGroup.position.set(0, 2.85, 0);
+
+                const hpBgMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, side: THREE.DoubleSide });
+                const hpBgMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.22), hpBgMat);
+
+                const hpFillMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide });
+                const hpFillMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.52, 0.16), hpFillMat);
+                hpFillMesh.position.z = 0.01;
+
+                hpBarGroup.add(hpBgMesh);
+                hpBarGroup.add(hpFillMesh);
+                turretGroup.add(hpBarGroup);
 
                 turretGroup.userData = {
                     isTurret: true,
@@ -2994,12 +3007,30 @@
                     maxHp: spec.maxHp,
                     level: 1,
                     totalInvested: currentCost,
-                    lastFired: 0
+                    lastFired: 0,
+                    hpBarGroup: hpBarGroup,
+                    hpBarFill: hpFillMesh,
+                    hpBarMat: hpFillMat
                 };
 
                 this.turrets.push(turretGroup);
                 this.scene.add(turretGroup);
                 return turretGroup;
+            }
+
+            updateTurretHpBar(t) {
+                if (!t || !t.userData || !t.userData.hpBarFill) return;
+                const hpRatio = Math.max(0, Math.min(1, t.userData.hp / t.userData.maxHp));
+                t.userData.hpBarFill.scale.set(hpRatio, 1, 1);
+                t.userData.hpBarFill.position.x = -0.76 * (1 - hpRatio);
+
+                if (hpRatio > 0.5) {
+                    t.userData.hpBarMat.color.setHex(0x22c55e);
+                } else if (hpRatio > 0.25) {
+                    t.userData.hpBarMat.color.setHex(0xf59e0b);
+                } else {
+                    t.userData.hpBarMat.color.setHex(0xef4444);
+                }
             }
 
             buildWallAt(wallTypeId, x, z, rot = 0) {
@@ -4452,6 +4483,15 @@
                     this.syncHUD();
                     this._lastHudSync = now2;
                     this._needHudSync = false;
+                }
+
+                // Update turret 3D health bars (billboard towards camera & sync fill)
+                for (let ti = 0; ti < this.turrets.length; ti++) {
+                    const t = this.turrets[ti];
+                    if (t && t.userData && t.userData.hpBarGroup) {
+                        t.userData.hpBarGroup.quaternion.copy(this.camera.quaternion);
+                        this.updateTurretHpBar(t);
+                    }
                 }
 
                 this.renderer.render(this.scene, this.camera);
