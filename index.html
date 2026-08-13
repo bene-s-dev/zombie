@@ -195,11 +195,11 @@
                 <i class="fa-solid fa-hammer text-amber-400"></i>
                 <span class="font-teko text-base font-bold text-amber-400 tracking-wider">BAU: <span id="placement-item-name" class="text-white">TURM</span></span>
             </div>
-            <button onclick="rotatePlacement()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
+            <button type="button" onclick="rotatePlacement()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
                 <i class="fa-solid fa-rotate-right"></i>
                 <span>Drehen</span>
             </button>
-            <button onclick="cancelPlacement()" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
+            <button type="button" onclick="cancelPlacement()" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
                 <i class="fa-solid fa-xmark"></i>
                 <span>Abbrechen</span>
             </button>
@@ -216,24 +216,24 @@
                             <span id="inspect-subtitle" class="text-[10px] text-amber-400 font-mono">Level 1</span>
                         </div>
                     </div>
-                    <button onclick="closeInspectModal()" class="text-slate-400 hover:text-white p-2 text-2xl"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" onclick="closeInspectModal()" class="text-slate-400 hover:text-white p-2 text-2xl"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
                 <div id="inspect-stats" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1 text-left font-mono">
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 pt-1">
-                    <button id="inspect-upgrade-btn" onclick="upgradeSelectedStructure()" class="py-3 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                    <button type="button" id="inspect-upgrade-btn" onclick="upgradeSelectedStructure()" class="py-3 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
                         <i class="fa-solid fa-arrow-up"></i>
                         <span id="inspect-upgrade-text">Upgrade ($150)</span>
                     </button>
-                    <button id="inspect-repair-btn" onclick="repairSelectedStructure()" class="py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                    <button type="button" id="inspect-repair-btn" onclick="repairSelectedStructure()" class="py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
                         <i class="fa-solid fa-wrench"></i>
                         <span id="inspect-repair-text">Reparieren</span>
                     </button>
                 </div>
 
-                <button onclick="sellSelectedStructure()" class="w-full py-3 bg-rose-950/80 hover:bg-rose-900 active:bg-rose-950 text-rose-300 border border-rose-800/60 font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                <button type="button" onclick="sellSelectedStructure()" class="w-full py-3 bg-rose-950/80 hover:bg-rose-900 active:bg-rose-950 text-rose-300 border border-rose-800/60 font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
                     <i class="fa-solid fa-trash-can mr-1"></i>
                     <span id="inspect-sell-text">Verkaufen (+$70)</span>
                 </button>

@@ -1065,15 +1065,14 @@
                     if (typeof showPurchaseToast === 'function') showPurchaseToast(`${WALL_TYPES[specId]?.name || 'Wall'} platziert!`);
                 }
 
-                audio.playCoin();
+                if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') {
+                    audio.playCoin();
+                }
                 this.syncHUD();
                 this.saveGameSession();
 
-                if (this.money >= cost) {
-                    this.updateGhostPosition(x, z);
-                } else {
-                    this.cancelPlacement();
-                }
+                // Finish placement mode immediately and resume gameplay smoothly
+                this.cancelPlacement();
             }
 
             cancelPlacement() {
@@ -1083,7 +1082,8 @@
                     this.scene.remove(this.ghostMesh);
                     this.ghostMesh = null;
                 }
-                document.getElementById('placement-hud').classList.add('hidden');
+                const hud = document.getElementById('placement-hud');
+                if (hud) hud.classList.add('hidden');
                 this.isPaused = false;
             }
 
