@@ -65,7 +65,7 @@
         }
 
         #portrait-warning {
-            display: none;
+            display: none !important;
         }
         @media (pointer: coarse) and (orientation: portrait) {
             #portrait-warning {
@@ -101,7 +101,7 @@
     <div id="game-wrapper" class="relative w-full h-full flex items-center justify-center overflow-hidden">
 
         <!-- PORTRAIT WARNING FOR MOBILE/TOUCH DEVICES ONLY -->
-        <div id="portrait-warning" class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md text-white flex-col items-center justify-center p-6 text-center">
+        <div id="portrait-warning" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md text-white flex-col items-center justify-center p-6 text-center">
             <div class="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center mb-4 animate-bounce">
                 <i class="fa-solid fa-mobile-screen-button text-amber-400 text-3xl rotate-90"></i>
             </div>
@@ -236,13 +236,13 @@
 
                     <div class="space-y-2.5 my-auto">
                         <!-- SPIEL FORTSETZEN Button (Visible when save session exists) -->
-                        <button id="resume-game-btn" onclick="resumeGame()" class="hidden w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-emerald-950/40 active:scale-95 transition transform flex items-center justify-center space-x-3">
+                        <button type="button" id="resume-game-btn" onclick="resumeGame()" class="hidden w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-emerald-950/40 active:scale-95 transition transform flex items-center justify-center space-x-3 cursor-pointer pointer-events-auto">
                             <i class="fa-solid fa-rotate-left text-xl sm:text-2xl"></i>
                             <span id="resume-game-btn-text">SPIEL FORTSETZEN</span>
                         </button>
 
                         <!-- NEUES SPIEL Button -->
-                        <button onclick="startNewGame()" class="w-full py-3.5 sm:py-4 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3">
+                        <button type="button" onclick="startNewGame()" class="w-full py-3.5 sm:py-4 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3 cursor-pointer pointer-events-auto">
                             <i class="fa-solid fa-play text-xl sm:text-2xl"></i>
                             <span>NEUES SPIEL</span>
                         </button>
