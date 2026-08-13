@@ -1657,7 +1657,7 @@
         let gameInstance = null;
         let isShopOpen = false;
 
-        const ONLINE_API_URL = 'https://crudcrud.com/api/808f38cac41e4ad89e704562a3ff9b41/highscores';
+        const ONLINE_API_URL = 'https://api.restful-api.dev/objects/ff8081819ff5b110019ffbe8f30513b0';
 
         function ensureDefaultHighscores() {
             if (!Storage.data.highscores || !Array.isArray(Storage.data.highscores) || Storage.data.highscores.length === 0) {
@@ -1720,8 +1720,9 @@
 
                 if (res.ok) {
                     const json = await res.json();
-                    if (Array.isArray(json) && json.length > 0) {
-                        const onlineScores = json.map(item => ({
+                    const rawList = json && json.data && Array.isArray(json.data.highscores) ? json.data.highscores : (Array.isArray(json) ? json : []);
+                    if (rawList.length > 0) {
+                        const onlineScores = rawList.map(item => ({
                             name: item.name || 'SPIELER',
                             time: Number(item.time) || 0,
                             wave: Number(item.wave) || 1,
@@ -1865,10 +1866,14 @@
                 if (statusText) statusText.innerText = "SENDEN...";
 
                 try {
+                    const updatedScores = Storage.data.highscores || [];
                     await fetch(ONLINE_API_URL, {
-                        method: 'POST',
+                        method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newEntry)
+                        body: JSON.stringify({
+                            name: "Zombie Game Highscores",
+                            data: { highscores: updatedScores }
+                        })
                     });
                     if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
                     if (statusText) statusText.innerText = "ONLINE";
