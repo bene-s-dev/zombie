@@ -4737,16 +4737,6 @@
                     heartsContainer.innerHTML = heartsHtml;
                 }
 
-                document.getElementById('hud-base-hp-text').innerText = `${Math.ceil(this.baseHp)}/${this.maxBaseHp}`;
-                document.getElementById('hud-base-hp-bar').style.width = `${(this.baseHp / this.maxBaseHp) * 100}%`;
-
-                const shieldBar = document.getElementById('hud-base-shield-bar');
-                if (this.maxBaseShield > 0) {
-                    shieldBar.style.width = `${(this.baseShield / this.maxBaseShield) * 100}%`;
-                } else {
-                    shieldBar.style.width = '0%';
-                }
-
                 document.getElementById('hud-money').innerText = `$ ${this.money}`;
                 document.getElementById('shop-money-display').innerText = `$ ${this.money}`;
 
