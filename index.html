@@ -360,9 +360,10 @@
                         <button onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 text-slate-200 border border-slate-700/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-10 sm:h-11 min-w-[40px] sm:min-w-[44px]" title="Pause">
                             <i class="fa-solid fa-pause text-sm sm:text-base"></i>
                         </button>
-                        <button id="game-speed-btn" onclick="toggleGameSpeed()" style="touch-action: manipulation;" class="bg-transparent hover:bg-slate-900/30 active:bg-slate-950/80 text-slate-300 rounded-lg border border-slate-700/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 text-[10px]" title="Vorspulen 2x / Normal 1x">
-                            <i id="speed-btn-icon" class="fa-solid fa-forward text-[10px] text-slate-400"></i>
-                            <span id="speed-btn-text" class="font-mono text-[10px] font-bold">1x</span>
+                        <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/80 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-lg border border-amber-500/50 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 px-1 text-[10px]" title="Nächste Welle sofort starten (Max. 3 gleichzeitig)">
+                            <i class="fa-solid fa-plus text-[10px] text-amber-400 font-bold"></i>
+                            <i class="fa-solid fa-skull text-[10px] text-red-400"></i>
+                            <span id="early-wave-badge" class="font-mono text-[9px] font-bold text-amber-300 ml-0.5">1/3</span>
                         </button>
                     </div>
                 </div>
@@ -472,11 +473,15 @@
                     </div>
                 </div>
 
-                <!-- FOOTER ACTIONS: HAUPTMENÜ & WEITER / SPIEL FORTSETZEN -->
-                <div class="flex items-center space-x-3 pt-3 border-t border-slate-800">
-                    <button onclick="returnToMainMenu()" class="px-4 sm:px-5 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs sm:text-sm transition flex items-center space-x-2">
+                <!-- FOOTER ACTIONS: HAUPTMENÜ, EVAKUIEREN & WEITER / SPIEL FORTSETZEN -->
+                <div class="flex items-center space-x-2 sm:space-x-3 pt-3 border-t border-slate-800">
+                    <button onclick="returnToMainMenu()" class="px-3 sm:px-4 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs sm:text-sm transition flex items-center space-x-1.5">
                         <i class="fa-solid fa-house"></i>
                         <span>Hauptmenü</span>
+                    </button>
+                    <button onclick="surrenderGame()" class="px-3 sm:px-4 py-3 bg-rose-950/70 hover:bg-rose-900 active:bg-rose-950 text-rose-300 font-bold rounded-xl text-xs sm:text-sm border border-rose-700/60 transition flex items-center space-x-1.5" title="Operation beenden und Highscore einloggen">
+                        <i class="fa-solid fa-person-walking-arrow-right"></i>
+                        <span>Evakuieren</span>
                     </button>
                     <button onclick="togglePauseModal()" class="flex-1 py-3 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl tracking-wider font-bold rounded-xl shadow-xl active:scale-98 transition flex items-center justify-center space-x-2">
                         <i class="fa-solid fa-play text-lg"></i>
@@ -1619,7 +1624,7 @@
             combat_drone: { name: 'Begleit-Kampfdrohne', level: 0, maxLevel: 5, costBase: 750, desc: 'Schaltet eine schwebende 3D-Drohne frei, die über dir fliegt und automatisch Zombies beschießt!' },
             player_speed: { name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 150, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
             player_hp: { name: 'Kampfweste & Max HP', level: 0, maxLevel: 5, costBase: 200, desc: 'Erhöht maximale Spieler-Gesundheit um +30' },
-            scavenger: { name: 'Plünderer-Bonus', level: 0, maxLevel: 100, costBase: 150, desc: 'Erhöht erbeutetes Geld pro Zombie um 5% multiplikativ pro Stufe' },
+            scavenger: { name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 150, desc: 'Erhöht erbeutetes Geld pro Zombie um 5% multiplikativ pro Stufe' },
             crit_chance: { name: 'Kritische Treffer', level: 0, maxLevel: 5, costBase: 300, desc: 'Gewährt +10% Chance auf doppeltem Waffenschaden' },
             base_hp: { name: 'Basis-Panzerung', level: 0, maxLevel: 5, costBase: 250, desc: 'Erhöht maximale Basis-Gesundheit um +250 HP' },
             base_shield: { name: 'Plasma-Schildgenerator', level: 0, maxLevel: 5, costBase: 400, desc: 'Erzeugt einen Schild, der eingehenden Schaden absorbiert' },
@@ -1715,7 +1720,7 @@
                             }
                         });
 
-                        uniqueScores.sort((a, b) => b.time !== a.time ? b.time - a.time : b.kills - a.kills);
+                        uniqueScores.sort((a, b) => b.wave !== a.wave ? b.wave - a.wave : (b.kills !== a.kills ? b.kills - a.kills : b.time - a.time));
                         Storage.data.highscores = uniqueScores.slice(0, 10);
                         if (Storage.data.highscores.length > 0) {
                             Storage.data.highScoreSeconds = Math.max(Storage.data.highScoreSeconds || 0, Storage.data.highscores[0].time);
@@ -1737,15 +1742,13 @@
 
         function updateHighscoreUI() {
             ensureDefaultHighscores();
-            // Update Bestzeit oben rechts im Menü
-            const sec = Storage.data.highScoreSeconds || 0;
-            const m = Math.floor(sec / 60).toString().padStart(2, '0');
-            const s = (sec % 60).toString().padStart(2, '0');
+            // Update Beste Welle oben rechts im Menü
+            const list = Storage.data.highscores || [];
+            const maxWave = list.length > 0 ? list[0].wave : 1;
             const menuHighscoreEl = document.getElementById('menu-highscore');
-            if (menuHighscoreEl) menuHighscoreEl.innerText = `${m}:${s}`;
+            if (menuHighscoreEl) menuHighscoreEl.innerText = `Welle ${maxWave}`;
             
             // Render Highscore-Board
-            const list = Storage.data.highscores || [];
             const tbody = document.getElementById('highscore-list-body');
             const emptyEl = document.getElementById('highscore-list-empty');
             const tableWrapper = document.getElementById('highscore-list-table-wrapper');
@@ -1795,13 +1798,14 @@
             }
         }
 
-        function checkHighscoreQualification(sec, kills) {
-            if (sec <= 0) return false;
+        function checkHighscoreQualification(wave, kills, sec) {
+            if (wave <= 0) return false;
             const list = Storage.data.highscores || [];
             if (list.length < 10) return true;
             const last = list[list.length - 1];
-            if (sec > last.time) return true;
-            if (sec === last.time && kills > last.kills) return true;
+            if (wave > last.wave) return true;
+            if (wave === last.wave && kills > last.kills) return true;
+            if (wave === last.wave && kills === last.kills && sec > last.time) return true;
             return false;
         }
 
@@ -1825,7 +1829,7 @@
                 
                 let scores = Storage.data.highscores || [];
                 scores.push(newEntry);
-                scores.sort((a, b) => b.time !== a.time ? b.time - a.time : b.kills - a.kills);
+                scores.sort((a, b) => b.wave !== a.wave ? b.wave - a.wave : (b.kills !== a.kills ? b.kills - a.kills : b.time - a.time));
                 scores = scores.slice(0, 10);
                 Storage.data.highscores = scores;
                 if (scores.length > 0) {
@@ -1898,6 +1902,7 @@
                 const diff = Storage.data.difficulty;
                 this.diffMult = 1.0;
                 this.gameSpeed = 1;
+                this.activeSimultaneousWaves = 1;
                 
                 this.money = 450;
                 this.playerHp = 200;
@@ -2323,17 +2328,19 @@
                 this.zombiesLeftToSpawn--;
 
                 const angle = Math.random() * Math.PI * 2;
-                const distance = 72 + Math.random() * 8;
+                const minDist = Math.max(18, 72 - (this.currentWave - 1) * 3.5);
+                const maxDist = Math.max(32, 80 - (this.currentWave - 1) * 2.5);
+                const distance = minDist + Math.random() * (maxDist - minDist);
                 const x = Math.cos(angle) * distance;
                 const z = Math.sin(angle) * distance;
 
-                const waveHpScale = 1 + (this.currentWave - 1) * 0.24;
-                const waveDmgScale = 1 + (this.currentWave - 1) * 0.16;
+                const waveHpScale = Math.pow(1.20, this.currentWave - 1);
+                const waveDmgScale = Math.pow(1.12, this.currentWave - 1);
 
                 const isBossWave = (this.currentWave % 7 === 0) && (this.zombiesLeftToSpawn === 0);
 
                 let type = 'normal';
-                let hp = (28 + (this.currentWave - 1) * 10) * waveHpScale;
+                let hp = (28 + Math.pow(this.currentWave - 1, 1.25) * 12) * waveHpScale;
                 let speed = 0.062 + Math.min(0.045, (this.currentWave - 1) * 0.004);
                 let scale = 1.0;
                 let color = 0x16a34a;
@@ -2410,6 +2417,14 @@
                         color = 0x6b21a8;
                         reward = 80;
                         dmgMult = 1.0 * waveDmgScale;
+                    } else if (this.currentWave >= 3 && (this.money >= 1200 || (this.upgrades && this.upgrades.scavenger >= 2)) && Math.random() < 0.35) {
+                        type = 'raider';
+                        hp = 55 * waveHpScale;
+                        speed = 0.115 * this.diffMult;
+                        scale = 0.95;
+                        color = 0xf59e0b;
+                        reward = 60;
+                        dmgMult = 1.2 * waveDmgScale;
                     }
                 }
 
@@ -2423,7 +2438,7 @@
                 // MeshLambertMaterial restores rich 3D shading, depth, and shadow reception!
                 const bodyMat = new THREE.MeshLambertMaterial({ color: color });
                 const clothMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
-                const eyeMat = new THREE.MeshBasicMaterial({ color: type === 'spitter' ? 0xa3e635 : (type === 'summoner' ? 0xf472b6 : 0xef4444) });
+                const eyeMat = new THREE.MeshBasicMaterial({ color: type === 'spitter' ? 0xa3e635 : (type === 'summoner' ? 0xf472b6 : (type === 'raider' ? 0xfef08a : 0xef4444)) });
                 const bodyMaterials = [bodyMat, clothMat];
 
                 if (type === 'crawler') {
@@ -2534,8 +2549,8 @@
 
             spawnMinionCrawler(x, z) {
                 if (this.isPaused || this.isGameOver) return;
-                const waveHpScale = 1 + (this.currentWave - 1) * 0.30;
-                const waveDmgScale = 1 + (this.currentWave - 1) * 0.20;
+                const waveHpScale = Math.pow(1.20, this.currentWave - 1);
+                const waveDmgScale = Math.pow(1.12, this.currentWave - 1);
 
                 const zombieGroup = new THREE.Group();
                 zombieGroup.position.set(x, 0, z);
@@ -2678,6 +2693,8 @@
                     if (expMat.opacity <= 0) {
                         clearInterval(expInterval);
                         this.scene.remove(expMesh);
+                        expMesh.geometry.dispose();
+                        expMat.dispose();
                     }
                 }, 35);
 
@@ -3460,6 +3477,8 @@
 
                         if (zone.life <= 0) {
                             this.scene.remove(zone.mesh);
+                            if (zone.mesh.geometry) zone.mesh.geometry.dispose();
+                            if (zone.mesh.material) zone.mesh.material.dispose();
                             this.napalmZones.splice(i, 1);
                         }
                     }
@@ -3794,6 +3813,12 @@
                         subtitle: 'Beschwören kontinuierlich Krabbler-Minions',
                         icon: 'fa-wand-magic-sparkles text-purple-400',
                         body: 'Beschwörer-Zombies nutzen dunkle Magie und **beschwören im Sekundentakt neue Krabbler**. Eliminiere sie schnell!'
+                    },
+                    raider: {
+                        title: '💰 TRESOR-RÄUBER DETEKTIERT!',
+                        subtitle: 'Reichtums-Mutanten stehlen dein Vermögen!',
+                        icon: 'fa-coins text-amber-400 animate-bounce',
+                        body: 'Dein hohes Vermögen hat **Tresor-Räuber** angelockt! Diese blitzschnellen Mutanten greifen dich & deine Basis an und **stehlen pro Treffer 8% deines Geldes**. Eliminiere sie sofort!'
                     },
                     boss: {
                         title: '👹 ENDBOSS-GIGANT DETEKTIERT!',
@@ -4260,6 +4285,22 @@
                             }
                         }
 
+                        if (z.userData.type === 'raider' && (distToPlayer < 1.4 || distToBaseNext < BASE_RADIUS + 0.5)) {
+                            const nowMs = performance.now();
+                            if (!z.userData.lastSteal || (nowMs - z.userData.lastSteal > 850)) {
+                                z.userData.lastSteal = nowMs;
+                                if (this.money > 0) {
+                                    const stolen = Math.max(50, Math.round(this.money * 0.08));
+                                    this.money = Math.max(0, this.money - stolen);
+                                    if (typeof showWarningToast === 'function') {
+                                        showWarningToast(`-$${stolen} GELD GESTOHLEN!`);
+                                    }
+                                    audio.playPistol();
+                                    this._needHudSync = true;
+                                }
+                            }
+                        }
+
                         if (distToPlayer < 1.4 && !this.isInvulnerable) {
                             let pDmg = (0.3 * z.userData.dmgMult) * dt * 60;
                             this.playerHp = Math.max(0, this.playerHp - pDmg);
@@ -4431,6 +4472,21 @@
                 const weaponDmg = Math.round(this.currentWeapon.damage * (1 + (wLvl - 1) * 0.35));
                 document.getElementById('hud-weapon-name').innerText = `${this.currentWeapon.name} (Lvl ${wLvl})`;
                 document.getElementById('hud-weapon-stats').innerText = `Dmg: ${weaponDmg} | Cadence: ${this.currentWeapon.firerate}ms`;
+
+                const earlyWaveBadge = document.getElementById('early-wave-badge');
+                const earlyWaveBtn = document.getElementById('early-wave-btn');
+                if (earlyWaveBadge && earlyWaveBtn) {
+                    const activeCount = this.activeSimultaneousWaves || 1;
+                    if (activeCount >= 3) {
+                        earlyWaveBadge.innerText = '3/3 MAX';
+                        earlyWaveBadge.className = 'font-mono text-[9px] font-bold text-red-400';
+                        earlyWaveBtn.classList.add('opacity-60', 'cursor-not-allowed');
+                    } else {
+                        earlyWaveBadge.innerText = `${activeCount}/3`;
+                        earlyWaveBadge.className = 'font-mono text-[9px] font-bold text-amber-300';
+                        earlyWaveBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+                    }
+                }
             }
 
             saveGameSession() {
@@ -4517,10 +4573,12 @@
                             if (spec) {
                                 const turret = this.buildTurretAt(tData.typeId, tData.x, tData.z, tData.rot || 0);
                                 if (turret) {
-                                    turret.userData.level = tData.level || 1;
                                     turret.userData.totalInvested = tData.totalInvested || spec.cost;
                                     turret.userData.hp = tData.hp !== undefined ? tData.hp : spec.hp;
                                     turret.userData.maxHp = tData.maxHp || spec.maxHp;
+                                    if (tData.level && tData.level > 1) {
+                                        applyTurretLevelUpgrades(turret, tData.level);
+                                    }
                                 }
                             }
                         });
@@ -4556,6 +4614,7 @@
             nextWave() {
                 if (this.isWaveTransitioning) return;
                 this.isWaveTransitioning = true;
+                this.activeSimultaneousWaves = 1;
 
                 const waveTitle = document.getElementById('hud-wave-title');
                 if (waveTitle) {
@@ -4572,6 +4631,34 @@
                     this.syncHUD();
                     this.saveGameSession();
                 }, 2200);
+            }
+
+            triggerEarlyWave() {
+                if (!this.isRunning || this.isPaused || this.isGameOver) return;
+                const activeCount = this.activeSimultaneousWaves || 1;
+                if (activeCount >= 3) {
+                    if (typeof showWarningToast === 'function') {
+                        showWarningToast('❌ Max. 3 Wellen gleichzeitig!');
+                    }
+                    return;
+                }
+
+                this.activeSimultaneousWaves = activeCount + 1;
+                this.currentWave++;
+
+                const newZombiesCount = Math.round(12 + (this.currentWave - 1) * 6);
+                this.zombiesLeftToSpawn += newZombiesCount;
+
+                const bonusMoney = 180 + (this.currentWave * 40);
+                this.money += bonusMoney;
+
+                audio.playCoin();
+                if (typeof showWarningToast === 'function') {
+                    showWarningToast(`⚠️ WELLE ${this.currentWave} GESTARTET! (+$${bonusMoney})`);
+                }
+
+                this.updateSpawnInterval();
+                this.syncHUD();
             }
 
             triggerGameOver(reason = 'base') {
@@ -4606,6 +4693,9 @@
                 if (reason === 'player') {
                     if (titleEl) titleEl.innerText = "SPIELER ELIMINIERT";
                     if (descEl) descEl.innerText = "Du wurdest von den Untoten überwältigt.";
+                } else if (reason === 'surrender') {
+                    if (titleEl) titleEl.innerText = "TAKTISCHE EVAKUIERUNG";
+                    if (descEl) descEl.innerText = "Du hast die Operation beendet und deine Truppen erfolgreich evakuiert.";
                 } else {
                     if (titleEl) titleEl.innerText = "BASIS ZERSTÖRT";
                     if (descEl) descEl.innerText = "Die Untoten haben die 3D-Verteidigung überrannt.";
@@ -4625,7 +4715,7 @@
                     difficulty: Storage.data.difficulty
                 };
 
-                const qualifies = checkHighscoreQualification(this.gameSeconds, this.totalKills);
+                const qualifies = checkHighscoreQualification(this.currentWave, this.totalKills, this.gameSeconds);
                 const hsEntryEl = document.getElementById('highscore-entry');
                 if (hsEntryEl) {
                     if (qualifies) {
@@ -4662,6 +4752,17 @@
                 this.renderer.shadowMap.enabled = false;
 
                 this.container.appendChild(this.renderer.domElement);
+
+                this.renderer.domElement.addEventListener('webglcontextlost', (e) => {
+                    e.preventDefault();
+                    console.warn('WebGL Context Lost. Preventing default crash.');
+                }, false);
+                this.renderer.domElement.addEventListener('webglcontextrestored', () => {
+                    console.log('WebGL Context Restored.');
+                    if (this.renderer && this.scene && this.camera) {
+                        this.renderer.render(this.scene, this.camera);
+                    }
+                }, false);
 
                 const aspect = window.innerWidth / window.innerHeight;
                 this.camera = new THREE.PerspectiveCamera(isMobile ? 48 : 52, aspect, 0.1, 600);
@@ -4953,35 +5054,13 @@
             updateSpawnInterval() {
                 if (this.spawnTimer) clearInterval(this.spawnTimer);
                 const baseInterval = Math.max(380, 1400 - (this.currentWave - 1) * 160);
-                this.spawnTimer = setInterval(() => this.spawnZombie(), baseInterval / (this.gameSpeed || 1));
-            }
-
-            setGameSpeed(speed) {
-                this.gameSpeed = speed;
-                this.updateSpawnInterval();
-                if (this.turretTimer) clearInterval(this.turretTimer);
-                this.turretTimer = setInterval(() => this.updateTurrets(), 400 / this.gameSpeed);
-
-                const btnText = document.getElementById('speed-btn-text');
-                const btnIcon = document.getElementById('speed-btn-icon');
-                const btn = document.getElementById('game-speed-btn');
-
-                if (speed === 2) {
-                    if (btnText) btnText.innerText = '2x';
-                    if (btnIcon) btnIcon.className = 'fa-solid fa-forward-fast text-amber-400 animate-pulse';
-                    if (btn) btn.className = 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-lg border border-amber-500/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 text-[10px] animate-pulse';
-                } else {
-                    if (btnText) btnText.innerText = '1x';
-                    if (btnIcon) btnIcon.className = 'fa-solid fa-forward text-slate-400';
-                    if (btn) btn.className = 'bg-transparent hover:bg-slate-900/30 active:bg-slate-950/80 text-slate-300 rounded-lg border border-slate-700/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-7 text-[10px]';
-                }
+                this.spawnTimer = setInterval(() => this.spawnZombie(), baseInterval);
             }
         }
 
-        function toggleGameSpeed() {
+        function triggerEarlyWave() {
             if (!gameInstance) return;
-            const newSpeed = gameInstance.gameSpeed === 2 ? 1 : 2;
-            gameInstance.setGameSpeed(newSpeed);
+            gameInstance.triggerEarlyWave();
         }
 
         function switchShopTab(tabId) {
@@ -5128,7 +5207,7 @@
                         <div>
                             <div class="font-bold text-white text-sm flex items-center space-x-2">
                                 <span>${upg.name}</span>
-                                <span class="bg-slate-800 text-amber-400 font-mono text-[10px] px-2 py-0.5 rounded-full">Lvl ${currentLvl}/${upg.maxLevel}</span>
+                                <span class="bg-slate-800 text-amber-400 font-mono text-[10px] px-2 py-0.5 rounded-full">Lvl ${currentLvl}${upg.maxLevel === Infinity ? '' : '/' + upg.maxLevel}</span>
                             </div>
                             <div class="text-xs text-slate-400 mt-1">${descText}</div>
                         </div>
@@ -5173,6 +5252,51 @@
             }
         }
 
+        function applyTurretLevelUpgrades(struct, targetLevel) {
+            if (!struct || !struct.userData || !struct.userData.isTurret) return;
+            const ud = struct.userData;
+            const currentLvl = ud.level || 1;
+            if (targetLevel <= currentLvl) return;
+
+            for (let lvl = currentLvl + 1; lvl <= targetLevel; lvl++) {
+                ud.level = lvl;
+                ud.damage *= 1.35;
+                ud.range += 2;
+
+                if (ud.head) {
+                    ud.head.scale.multiplyScalar(1.06);
+
+                    const ringMat = new THREE.MeshBasicMaterial({ 
+                        color: lvl % 2 === 0 ? 0x06b6d4 : 0xfacc15 
+                    });
+                    const levelRing = new THREE.Mesh(
+                        new THREE.TorusGeometry(1.2 + lvl * 0.04, 0.06, 8, 16),
+                        ringMat
+                    );
+                    levelRing.rotation.x = Math.PI / 2;
+                    levelRing.position.y = 0.2 + lvl * 0.22;
+                    struct.add(levelRing);
+
+                    if (lvl === 2) {
+                        const armorMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 });
+                        const plateL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.8), armorMat);
+                        plateL.position.set(-0.65, 0, 0);
+                        const plateR = plateL.clone();
+                        plateR.position.set(0.65, 0, 0);
+                        ud.head.add(plateL);
+                        ud.head.add(plateR);
+                    } 
+                    else if (lvl === 3) {
+                        const barrelMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9 });
+                        const topBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9), barrelMat);
+                        topBarrel.rotation.x = Math.PI / 2;
+                        topBarrel.position.set(0, 0.38, 0.6);
+                        ud.head.add(topBarrel);
+                    }
+                }
+            }
+        }
+
         function upgradeSelectedStructure() {
             if (!gameInstance || !gameInstance.selectedStructure) return;
             const struct = gameInstance.selectedStructure;
@@ -5182,42 +5306,8 @@
             const cost = Math.round(ud.totalInvested * 0.75);
             if (gameInstance.money >= cost) {
                 gameInstance.money -= cost;
-                ud.level++;
-                ud.damage *= 1.35;
-                ud.range += 2;
+                applyTurretLevelUpgrades(struct, ud.level + 1);
                 ud.totalInvested += cost;
-
-                if (ud.head) {
-                    ud.head.scale.multiplyScalar(1.06);
-
-                    const ringMat = new THREE.MeshBasicMaterial({ 
-                        color: ud.level % 2 === 0 ? 0x06b6d4 : 0xfacc15 
-                    });
-                    const levelRing = new THREE.Mesh(
-                        new THREE.TorusGeometry(1.2 + ud.level * 0.04, 0.06, 8, 16),
-                        ringMat
-                    );
-                    levelRing.rotation.x = Math.PI / 2;
-                    levelRing.position.y = 0.2 + ud.level * 0.22;
-                    struct.add(levelRing);
-
-                    if (ud.level === 2) {
-                        const armorMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 });
-                        const plateL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.8), armorMat);
-                        plateL.position.set(-0.65, 0, 0);
-                        const plateR = plateL.clone();
-                        plateR.position.set(0.65, 0, 0);
-                        ud.head.add(plateL);
-                        ud.head.add(plateR);
-                    } 
-                    else if (ud.level === 3) {
-                        const barrelMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9 });
-                        const topBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9), barrelMat);
-                        topBarrel.rotation.x = Math.PI / 2;
-                        topBarrel.position.set(0, 0.38, 0.6);
-                        ud.head.add(topBarrel);
-                    }
-                }
 
                 gameInstance.syncHUD();
                 gameInstance.inspectStructure(gameInstance.selectedStructure);
@@ -5377,6 +5467,14 @@
             updateMusicDucking();
         }
 
+        function surrenderGame() {
+            if (!gameInstance || gameInstance.isGameOver) return;
+            if (confirm("Möchtest du die Operation beenden und deine Truppen evakuieren? Dein Highscore wird abgespeichert.")) {
+                if (isPauseModalOpen) togglePauseModal();
+                gameInstance.triggerGameOver('surrender');
+            }
+        }
+
         function toggleTouchSwap() {
             Storage.data.swapTouchControls = !Storage.data.swapTouchControls;
             Storage.save();
@@ -5442,6 +5540,25 @@
 
             if (window.shopToastTimeout) clearTimeout(window.shopToastTimeout);
             window.shopToastTimeout = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-4', 'opacity-0');
+            }, 1600);
+        }
+
+        function showWarningToast(msg) {
+            let toast = document.getElementById('game-warning-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'game-warning-toast';
+                toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-rose-600 text-white px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-1.5 transition-all duration-300 transform -translate-y-4 opacity-0 pointer-events-none';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<i class="fa-solid fa-coins text-base animate-bounce"></i> <span>${msg}</span>`;
+            toast.classList.remove('-translate-y-4', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (window.warningToastTimeout) clearTimeout(window.warningToastTimeout);
+            window.warningToastTimeout = setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('-translate-y-4', 'opacity-0');
             }, 1600);
