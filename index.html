@@ -269,13 +269,13 @@
 
                     <div class="space-y-2.5 my-auto">
                         <!-- SPIEL FORTSETZEN Button (Visible when save session exists) -->
-                        <button type="button" id="resume-game-btn" onclick="resumeGame()" class="hidden w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-emerald-950/40 active:scale-95 transition transform flex items-center justify-center space-x-3 cursor-pointer pointer-events-auto">
+                        <button type="button" id="resume-game-btn" onclick="resumeGame()" class="hidden w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-emerald-950/40 active:scale-95 transition transform flex items-center justify-center space-x-3 cursor-pointer">
                             <i class="fa-solid fa-rotate-left text-xl sm:text-2xl"></i>
                             <span id="resume-game-btn-text">SPIEL FORTSETZEN</span>
                         </button>
 
                         <!-- NEUES SPIEL Button -->
-                        <button type="button" onclick="startNewGame()" class="w-full py-3.5 sm:py-4 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3 cursor-pointer pointer-events-auto">
+                        <button type="button" onclick="startNewGame()" class="w-full py-3.5 sm:py-4 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/40 active:scale-95 transition transform flex items-center justify-center space-x-3 cursor-pointer">
                             <i class="fa-solid fa-play text-xl sm:text-2xl"></i>
                             <span>NEUES SPIEL</span>
                         </button>
@@ -487,9 +487,9 @@
                         <div class="mobile-only bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
                             <div>
                                 <div class="text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-1.5"></i> Touch-Layout</div>
-                                <div id="pause-touch-swap-label" class="text-[10px] text-slate-400">Joystick rechts / Feuer links</div>
+                                <div id="pause-touch-swap-label" class="text-[10px] text-slate-400">Joystick links / Feuer rechts</div>
                             </div>
-                            <button onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
+                            <button type="button" onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
                                 Tauschen
                             </button>
                         </div>

@@ -6,7 +6,7 @@ const Storage = {
         difficulty: 'medium',
         musicEnabled: true,
         sfxEnabled: true,
-        swapTouchControls: false,
+        swapTouchControls: true,
         cameraZoom: 1.0,
         cameraAngle: 0.5,
         highscores: [],
@@ -18,6 +18,7 @@ const Storage = {
             if (saved) {
                 this.data = { ...this.data, ...JSON.parse(saved) };
             }
+            if (this.data.swapTouchControls === undefined) this.data.swapTouchControls = true;
             if (!this.data.highscores) this.data.highscores = [];
             if (!this.data.lastPlayerName) this.data.lastPlayerName = 'SPIELER';
         } catch(e) { console.error("Could not load save profile", e); }

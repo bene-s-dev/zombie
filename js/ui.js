@@ -608,7 +608,11 @@ let isShopOpen = false;
             audio.stopMusic();
 
             document.getElementById('game-hud').classList.add('hidden');
-            document.getElementById('main-menu').classList.remove('opacity-0', 'pointer-events-none');
+            const mainMenu = document.getElementById('main-menu');
+            if (mainMenu) {
+                mainMenu.style.display = 'flex';
+                mainMenu.classList.remove('opacity-0', 'pointer-events-none', 'hidden');
+            }
             updateMainMenuResumeButton();
         }
 
@@ -860,7 +864,7 @@ let isShopOpen = false;
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) loadingScreen.classList.remove('hidden');
 
-            if (document.documentElement.requestFullscreen) {
+            if (document.documentElement && document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(err => console.log(err));
             }
 
@@ -925,7 +929,10 @@ let isShopOpen = false;
 
                 audio.startMusic();
                 const mainMenu = document.getElementById('main-menu');
-                if (mainMenu) mainMenu.classList.add('opacity-0', 'pointer-events-none');
+                if (mainMenu) {
+                    mainMenu.classList.add('opacity-0', 'pointer-events-none', 'hidden');
+                    mainMenu.style.display = 'none';
+                }
                 const gameHud = document.getElementById('game-hud');
                 if (gameHud) gameHud.classList.remove('hidden');
 
