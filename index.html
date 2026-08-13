@@ -2966,6 +2966,7 @@
 
                 audio.playCoin();
                 this.syncHUD();
+                this.saveGameSession();
 
                 if (this.money >= cost) {
                     this.updateGhostPosition(x, z);
@@ -5645,7 +5646,9 @@
             document.getElementById('inspect-modal').classList.add('hidden');
             if (gameInstance) {
                 gameInstance.selectedStructure = null;
-                gameInstance.isPaused = false;
+                if (!gameInstance.isPlacementMode && !isShopOpen && !isPauseModalOpen) {
+                    gameInstance.isPaused = false;
+                }
             }
         }
 
@@ -5792,7 +5795,7 @@
         function closeIntelModal() {
             const modal = document.getElementById('intel-modal');
             if (modal) modal.classList.add('hidden');
-            if (gameInstance && !isShopOpen && !isPauseModalOpen) {
+            if (gameInstance && !isShopOpen && !isPauseModalOpen && !gameInstance.isPlacementMode) {
                 gameInstance.isPaused = false;
             }
             updateMusicDucking();
@@ -5847,7 +5850,7 @@
         function togglePauseModal() {
             if (!gameInstance || gameInstance.isGameOver) return;
             isPauseModalOpen = !isPauseModalOpen;
-            gameInstance.isPaused = isPauseModalOpen || isShopOpen;
+            gameInstance.isPaused = isPauseModalOpen || isShopOpen || gameInstance.isPlacementMode;
 
             const modal = document.getElementById('pause-modal');
             if (isPauseModalOpen) {
@@ -5910,7 +5913,7 @@
             isShopOpen = explicitState !== undefined ? explicitState : !isShopOpen;
             const shopModal = document.getElementById('shop-modal');
             if (gameInstance) {
-                gameInstance.isPaused = isShopOpen || isPauseModalOpen;
+                gameInstance.isPaused = isShopOpen || isPauseModalOpen || gameInstance.isPlacementMode;
                 if (isShopOpen) gameInstance.saveGameSession();
             }
             if (isShopOpen) {
