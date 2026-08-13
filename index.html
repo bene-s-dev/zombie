@@ -779,27 +779,43 @@
             constructor() {
                 this.ctx = null;
                 this.musicInterval = null;
+                this._noiseBuffer = null;
             }
             init() {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (!this._noiseBuffer && this.ctx) {
-                    try {
-                        const sr = this.ctx.sampleRate || 44100;
-                        const sz = Math.floor(sr * 0.5);
-                        this._noiseBuffer = this.ctx.createBuffer(1, sz, sr);
-                        const data = this._noiseBuffer.getChannelData(0);
-                        for (let i = 0; i < sz; i++) data[i] = Math.random() * 2 - 1;
-                    } catch(e) {}
+                try {
+                    if (!this.ctx) {
+                        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume().catch(() => {});
+                    }
+                    this.ensureNoiseBuffer();
+                } catch (e) {
+                    console.warn("Audio Context init error:", e);
                 }
                 const atomicEl = document.getElementById('audio-atomic');
                 if (atomicEl) {
                     try { atomicEl.load(); } catch(e) {}
                 }
             }
+
+            ensureNoiseBuffer() {
+                if (this._noiseBuffer || !this.ctx) return this._noiseBuffer;
+                try {
+                    const sr = this.ctx.sampleRate || 44100;
+                    const sz = Math.floor(sr * 0.5);
+                    this._noiseBuffer = this.ctx.createBuffer(1, sz, sr);
+                    const data = this._noiseBuffer.getChannelData(0);
+                    for (let i = 0; i < sz; i++) data[i] = Math.random() * 2 - 1;
+                } catch(e) {
+                    console.warn("Failed to create noise buffer", e);
+                }
+                return this._noiseBuffer;
+            }
             playPistol() {
-                if (!Storage.data.sfxEnabled || !this.ctx) return;
+                if (!Storage.data.sfxEnabled) return;
+                this.init();
+                if (!this.ctx || !this._noiseBuffer) return;
                 try {
                     const now = this.ctx.currentTime;
                     const noise = this.ctx.createBufferSource();
@@ -830,7 +846,9 @@
             }
 
             playRifle() {
-                if (!Storage.data.sfxEnabled || !this.ctx) return;
+                if (!Storage.data.sfxEnabled) return;
+                this.init();
+                if (!this.ctx || !this._noiseBuffer) return;
                 try {
                     const now = this.ctx.currentTime;
                     const noise = this.ctx.createBufferSource();
@@ -862,7 +880,9 @@
             }
 
             playShotgun() {
-                if (!Storage.data.sfxEnabled || !this.ctx) return;
+                if (!Storage.data.sfxEnabled) return;
+                this.init();
+                if (!this.ctx || !this._noiseBuffer) return;
                 try {
                     const now = this.ctx.currentTime;
                     const noise = this.ctx.createBufferSource();
@@ -911,7 +931,9 @@
             }
 
             playRocket() {
-                if (!Storage.data.sfxEnabled || !this.ctx) return;
+                if (!Storage.data.sfxEnabled) return;
+                this.init();
+                if (!this.ctx || !this._noiseBuffer) return;
                 try {
                     const now = this.ctx.currentTime;
                     const noise = this.ctx.createBufferSource();
@@ -943,8 +965,9 @@
 
             playExplosion() {
                 if (!Storage.data.sfxEnabled) return;
+                this.init();
                 try {
-                    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
+                    if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
                     if (this.ctx && this._noiseBuffer) {
                         const now = this.ctx.currentTime;
                         const noise = this.ctx.createBufferSource();
@@ -6126,22 +6149,20 @@
             }
 
             const startTime = performance.now();
-            const totalDurationMs = 3000; // Exact 3 seconds smooth continuous loading
+            const totalDurationMs = 2200;
 
             let isFinished = false;
             let currentStatus = 'Initialisiere 3D-Engine & Materialien...';
 
-            // Continuous 60fps Smooth Progress Animation Loop
             function animLoop() {
                 if (isFinished) return;
                 const elapsed = performance.now() - startTime;
                 const progress = Math.min(100, (elapsed / totalDurationMs) * 100);
 
-                // STRICTLY 3 STATUS SENTENCES DURING LOADING
                 if (progress < 35) {
                     currentStatus = 'Initialisiere 3D-Engine & Materialien...';
                 } else if (progress < 70) {
-                    currentStatus = 'Pre-Instanziierung aller 9 Zombie-Typen...';
+                    currentStatus = 'Pre-Instanziierung aller Zombie-Typen...';
                 } else {
                     currentStatus = 'Kompiliere WebGL-Pipeline & Starte...';
                 }
@@ -6154,51 +6175,59 @@
             }
             requestAnimationFrame(animLoop);
 
-            // Phase 1: Audio Init & Cleanup
-            audio.init();
-            if (gameInstance) {
-                gameInstance.destroy();
-                gameInstance = null;
-                document.getElementById('three-container').innerHTML = '';
-            }
-            await new Promise(r => setTimeout(r, 400));
+            try {
+                audio.init();
+                if (gameInstance) {
+                    try { gameInstance.destroy(); } catch(e) {}
+                    gameInstance = null;
+                }
+                const container = document.getElementById('three-container');
+                if (container) container.innerHTML = '';
 
-            // Phase 2: Create Game Instance & Restore Session
-            gameInstance = new Game3D();
-            if (sessionToRestore) {
-                gameInstance.restoreGameSession(sessionToRestore);
-            }
-            await new Promise(r => setTimeout(r, 500));
+                await new Promise(r => setTimeout(r, 150));
 
-            // Phase 3: Pre-instantiate all zombie models in staging group
-            const sampleTypes = ['normal', 'runner', 'crawler', 'shield', 'exploder', 'spitter', 'tank', 'summoner', 'boss'];
-            const stagingGroup = new THREE.Group();
-            stagingGroup.position.set(0, -500, 0);
-            gameInstance.scene.add(stagingGroup);
-            await new Promise(r => setTimeout(r, 500));
+                gameInstance = new Game3D();
+                if (sessionToRestore) {
+                    gameInstance.restoreGameSession(sessionToRestore);
+                }
+                await new Promise(r => setTimeout(r, 200));
 
-            // Phase 4: WebGL Shader Compilation & Warmup
-            if (gameInstance && gameInstance.renderer && gameInstance.scene && gameInstance.camera) {
-                gameInstance.renderer.compile(gameInstance.scene, gameInstance.camera);
-                gameInstance.renderer.render(gameInstance.scene, gameInstance.camera);
-            }
-            gameInstance.scene.remove(stagingGroup);
+                if (gameInstance && gameInstance.renderer && gameInstance.scene && gameInstance.camera) {
+                    try {
+                        gameInstance.renderer.compile(gameInstance.scene, gameInstance.camera);
+                        gameInstance.renderer.render(gameInstance.scene, gameInstance.camera);
+                    } catch(e) {}
+                }
 
-            // Wait until full 3000ms animation finishes
-            const remainingTime = Math.max(0, totalDurationMs - (performance.now() - startTime));
-            await new Promise(r => setTimeout(r, remainingTime));
+                const remainingTime = Math.max(0, totalDurationMs - (performance.now() - startTime));
+                await new Promise(r => setTimeout(r, remainingTime));
+            } catch (err) {
+                console.error("Game startup error:", err);
+            } finally {
+                isFinished = true;
+                updateLoadingUI(100, 'Vorbereitung abgeschlossen!');
 
-            isFinished = true;
-            updateLoadingUI(100, 'Vorbereitung abgeschlossen!');
+                audio.startMusic();
+                const mainMenu = document.getElementById('main-menu');
+                if (mainMenu) mainMenu.classList.add('opacity-0', 'pointer-events-none');
+                const gameHud = document.getElementById('game-hud');
+                if (gameHud) gameHud.classList.remove('hidden');
 
-            audio.startMusic();
-            document.getElementById('main-menu').classList.add('opacity-0', 'pointer-events-none');
-            document.getElementById('game-hud').classList.remove('hidden');
-
-            setTimeout(() => {
                 if (loadingScreen) loadingScreen.classList.add('hidden');
-            }, 180);
+            }
         }
+
+        const unlockAudioContext = () => {
+            if (audio) {
+                audio.init();
+                if (audio.ctx && audio.ctx.state === 'suspended') {
+                    audio.ctx.resume().catch(() => {});
+                }
+            }
+        };
+        window.addEventListener('click', unlockAudioContext, { passive: true });
+        window.addEventListener('touchstart', unlockAudioContext, { passive: true });
+        window.addEventListener('pointerdown', unlockAudioContext, { passive: true });
 
         function startNewGame() {
             Storage.clearSession();
