@@ -728,13 +728,16 @@
             updateCameraPreview();
         }
 
+        let _camSaveTimeout = null;
         function updateCameraPreview() {
             const zoom = parseFloat(document.getElementById('cam-zoom').value);
             const angle = parseFloat(document.getElementById('cam-angle').value);
             
             Storage.data.cameraZoom = zoom;
             Storage.data.cameraAngle = angle;
-            Storage.save();
+            
+            if (_camSaveTimeout) clearTimeout(_camSaveTimeout);
+            _camSaveTimeout = setTimeout(() => { Storage.save(); }, 300);
 
             if (previewCamera && previewRenderer) {
                 const baseZ = 12;
@@ -757,18 +760,19 @@
         function checkWallCollision(px, pz, entityRadius, wall) {
             const wWidth = wall.userData.wWidth || 3.6;
             const wDepth = wall.userData.wDepth || 1.0;
-            const rot = wall.rotation.y;
+            if (wall.userData._cos === undefined) {
+                const rot = wall.rotation.y;
+                wall.userData._cos = Math.cos(-rot);
+                wall.userData._sin = Math.sin(-rot);
+            }
 
             const dx = px - wall.position.x;
             const dz = pz - wall.position.z;
 
-            const localX = dx * Math.cos(-rot) - dz * Math.sin(-rot);
-            const localZ = dx * Math.sin(-rot) + dz * Math.cos(-rot);
+            const localX = dx * wall.userData._cos - dz * wall.userData._sin;
+            const localZ = dx * wall.userData._sin + dz * wall.userData._cos;
 
-            const hw = wWidth / 2 + entityRadius;
-            const hd = wDepth / 2 + entityRadius;
-
-            return Math.abs(localX) < hw && Math.abs(localZ) < hd;
+            return Math.abs(localX) < (wWidth * 0.5 + entityRadius) && Math.abs(localZ) < (wDepth * 0.5 + entityRadius);
         }
 
         class SoundEngine {
@@ -780,6 +784,15 @@
                 if (!this.ctx) {
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 }
+                if (!this._noiseBuffer && this.ctx) {
+                    try {
+                        const sr = this.ctx.sampleRate || 44100;
+                        const sz = Math.floor(sr * 0.5);
+                        this._noiseBuffer = this.ctx.createBuffer(1, sz, sr);
+                        const data = this._noiseBuffer.getChannelData(0);
+                        for (let i = 0; i < sz; i++) data[i] = Math.random() * 2 - 1;
+                    } catch(e) {}
+                }
                 const atomicEl = document.getElementById('audio-atomic');
                 if (atomicEl) {
                     try { atomicEl.load(); } catch(e) {}
@@ -789,12 +802,8 @@
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
                 try {
                     const now = this.ctx.currentTime;
-                    const bufferSize = this.ctx.sampleRate * 0.08;
-                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                    const output = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
                     const noise = this.ctx.createBufferSource();
-                    noise.buffer = buffer;
+                    noise.buffer = this._noiseBuffer;
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'lowpass';
                     filter.frequency.setValueAtTime(1600, now);
@@ -824,12 +833,8 @@
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
                 try {
                     const now = this.ctx.currentTime;
-                    const bufferSize = this.ctx.sampleRate * 0.1;
-                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                    const output = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
                     const noise = this.ctx.createBufferSource();
-                    noise.buffer = buffer;
+                    noise.buffer = this._noiseBuffer;
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'bandpass';
                     filter.frequency.setValueAtTime(1200, now);
@@ -860,12 +865,8 @@
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
                 try {
                     const now = this.ctx.currentTime;
-                    const bufferSize = this.ctx.sampleRate * 0.22;
-                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                    const output = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
                     const noise = this.ctx.createBufferSource();
-                    noise.buffer = buffer;
+                    noise.buffer = this._noiseBuffer;
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'lowpass';
                     filter.frequency.setValueAtTime(750, now);
@@ -913,12 +914,8 @@
                 if (!Storage.data.sfxEnabled || !this.ctx) return;
                 try {
                     const now = this.ctx.currentTime;
-                    const bufferSize = this.ctx.sampleRate * 0.3;
-                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                    const output = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
                     const noise = this.ctx.createBufferSource();
-                    noise.buffer = buffer;
+                    noise.buffer = this._noiseBuffer;
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'lowpass';
                     filter.frequency.setValueAtTime(500, now);
@@ -948,15 +945,10 @@
                 if (!Storage.data.sfxEnabled) return;
                 try {
                     if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
-                    if (this.ctx) {
+                    if (this.ctx && this._noiseBuffer) {
                         const now = this.ctx.currentTime;
-                        const bufferSize = Math.floor(this.ctx.sampleRate * 0.45);
-                        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                        const output = buffer.getChannelData(0);
-                        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-
                         const noise = this.ctx.createBufferSource();
-                        noise.buffer = buffer;
+                        noise.buffer = this._noiseBuffer;
                         const filter = this.ctx.createBiquadFilter();
                         filter.type = 'lowpass';
                         filter.frequency.setValueAtTime(650, now);
@@ -2035,7 +2027,7 @@
                     this.mousePos.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
                     this.raycaster.setFromCamera(this.mousePos, this.camera);
-                    const intersects = new THREE.Vector3();
+                    const intersects = this._v3;
                     if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
                         this.pointerWorldPos.copy(intersects);
                         if (this.isPlacementMode && this.ghostMesh) {
@@ -2055,7 +2047,7 @@
                         this.mousePos.x = (clientX / window.innerWidth) * 2 - 1;
                         this.mousePos.y = -(clientY / window.innerHeight) * 2 + 1;
                         this.raycaster.setFromCamera(this.mousePos, this.camera);
-                        const intersects = new THREE.Vector3();
+                        const intersects = this._v3;
                         if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
                             this.pointerWorldPos.copy(intersects);
                             if (this.ghostMesh) {
@@ -2604,20 +2596,29 @@
 
                 const now = performance.now();
 
+                if (!this._turretBulletGeo) {
+                    this._turretBulletGeo = new THREE.CylinderGeometry(0.15, 0.15, 1.2, 8);
+                    this._turretBulletGeo.rotateX(Math.PI / 2);
+                    this._turretBulletMatNormal = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                    this._turretBulletMatExplosive = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+                }
+
                 this.turrets.forEach(turret => {
                     const ud = turret.userData;
                     if (now < ud.lastFired + ud.firerate) return;
 
                     let closestZombie = null;
-                    let minDist = ud.range;
+                    let minDistSq = ud.range * ud.range;
 
-                    this.zombies.forEach(z => {
-                        const dist = turret.position.distanceTo(z.position);
-                        if (dist < minDist) {
-                            minDist = dist;
+                    for (let zi = 0; zi < this.zombies.length; zi++) {
+                        const z = this.zombies[zi];
+                        if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                        const distSq = turret.position.distanceToSquared(z.position);
+                        if (distSq < minDistSq) {
+                            minDistSq = distSq;
                             closestZombie = z;
                         }
-                    });
+                    }
 
                     if (closestZombie) {
                         ud.lastFired = now;
@@ -2630,8 +2631,11 @@
 
                         if (ud.isTesla) {
                             audio.playTesla();
-                            this.zombies.forEach(z => {
-                                if (turret.position.distanceTo(z.position) <= ud.range) {
+                            const teslaRangeSq = ud.range * ud.range;
+                            for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                                const z = this.zombies[zi];
+                                if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                                if (turret.position.distanceToSquared(z.position) <= teslaRangeSq) {
                                     if (z.userData.isShield) {
                                         this.createBloodSparks(z.position, 0xc084fc);
                                     } else {
@@ -2648,19 +2652,17 @@
                                         }
                                     }
                                 }
-                            });
+                            }
                         } else {
-                            const bulletGeo = new THREE.CylinderGeometry(0.15, 0.15, 1.2, 8);
-                            bulletGeo.rotateX(Math.PI / 2);
-                            const bulletMat = new THREE.MeshBasicMaterial({ color: ud.isExplosive ? 0xf97316 : 0x38bdf8 });
-                            const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+                            const bulletMat = ud.isExplosive ? this._turretBulletMatExplosive : this._turretBulletMatNormal;
+                            const bullet = new THREE.Mesh(this._turretBulletGeo, bulletMat);
 
                             bullet.position.copy(turret.position);
                             bullet.position.y = 1.8;
                             bullet.rotation.y = angle;
 
                             bullet.userData = {
-                                dir: new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)).normalize(),
+                                dir: new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)),
                                 speed: ud.isExplosive ? 35 : 55,
                                 damage: ud.damage,
                                 isExplosive: ud.isExplosive,
@@ -2686,22 +2688,29 @@
                     audio.playExplosion();
                 }
 
+                if (!this._unitSphereGeo) {
+                    this._unitSphereGeo = new THREE.SphereGeometry(1, 16, 16);
+                }
+
                 const visRad = visualRadius !== null ? visualRadius : radius;
+                const baseScale = visRad * 0.85;
                 const expMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.9 });
-                const expMesh = new THREE.Mesh(new THREE.SphereGeometry(visRad * 0.85, 16, 16), expMat);
+                const expMesh = new THREE.Mesh(this._unitSphereGeo, expMat);
                 expMesh.position.copy(pos);
                 this.scene.add(expMesh);
 
                 let scaleProgress = 0.2;
+                expMesh.scale.set(baseScale * scaleProgress, baseScale * scaleProgress, baseScale * scaleProgress);
+
                 const expInterval = setInterval(() => {
                     scaleProgress += 0.12;
-                    expMesh.scale.set(scaleProgress, scaleProgress, scaleProgress);
+                    const currentScale = baseScale * scaleProgress;
+                    expMesh.scale.set(currentScale, currentScale, currentScale);
                     expMat.opacity -= 0.05;
 
                     if (expMat.opacity <= 0) {
                         clearInterval(expInterval);
                         this.scene.remove(expMesh);
-                        expMesh.geometry.dispose();
                         expMat.dispose();
                     }
                 }, 35);
@@ -2709,10 +2718,13 @@
                 this.createBloodSparks(pos, 0xfacc15);
 
                 if (damage > 0) {
+                    const radiusSq = radius * radius;
                     for (let i = this.zombies.length - 1; i >= 0; i--) {
                         const z = this.zombies[i];
-                        const dist = pos.distanceTo(z.position);
-                        if (dist <= radius) {
+                        if (z.userData.isDead) continue;
+                        const distSq = pos.distanceToSquared(z.position);
+                        if (distSq <= radiusSq) {
+                            const dist = Math.sqrt(distSq);
                             const falloff = 1 - (dist / radius) * 0.5;
                             z.userData.hp -= damage * falloff;
                             this.flashZombieHit(z);
@@ -2721,8 +2733,9 @@
                     }
 
                     if (damageFriendly) {
-                        const distPlayer = pos.distanceTo(this.playerGroup.position);
-                        if (distPlayer <= radius) {
+                        const distPlayerSq = pos.distanceToSquared(this.playerGroup.position);
+                        if (distPlayerSq <= radiusSq) {
+                            const distPlayer = Math.sqrt(distPlayerSq);
                             const falloff = 1 - (distPlayer / radius) * 0.5;
                             this.playerHp = Math.max(0, this.playerHp - (damage * 0.6 * falloff));
                             this.showDamageOverlay();
@@ -2730,8 +2743,10 @@
                             if (this.playerHp <= 0) this.triggerGameOver('player');
                         }
 
-                        const distBase = pos.distanceTo(this.baseGroup.position);
-                        if (distBase <= radius + 8.5) {
+                        const baseRadPlus = radius + 8.5;
+                        const distBaseSq = pos.distanceToSquared(this.baseGroup.position);
+                        if (distBaseSq <= baseRadPlus * baseRadPlus) {
+                            const distBase = Math.sqrt(distBaseSq);
                             const falloff = 1 - (Math.max(0, distBase - 8.5) / radius) * 0.5;
                             let baseDmg = damage * 0.45 * falloff;
                             if (this.baseShield > 0) {
@@ -2748,8 +2763,9 @@
 
                         for (let k = this.turrets.length - 1; k >= 0; k--) {
                             const t = this.turrets[k];
-                            const distT = pos.distanceTo(t.position);
-                            if (distT <= radius) {
+                            const distTSq = pos.distanceToSquared(t.position);
+                            if (distTSq <= radiusSq) {
+                                const distT = Math.sqrt(distTSq);
                                 const falloff = 1 - (distT / radius) * 0.5;
                                 t.userData.hp -= damage * 1.5 * falloff;
                                 this.createBloodSparks(t.position, 0xf59e0b);
@@ -2763,8 +2779,9 @@
 
                         for (let wIdx = this.walls.length - 1; wIdx >= 0; wIdx--) {
                             const w = this.walls[wIdx];
-                            const distW = pos.distanceTo(w.position);
-                            if (distW <= radius) {
+                            const distWSq = pos.distanceToSquared(w.position);
+                            if (distWSq <= radiusSq) {
+                                const distW = Math.sqrt(distWSq);
                                 const falloff = 1 - (distW / radius) * 0.5;
                                 w.userData.hp -= damage * 1.5 * falloff;
                                 this.createBloodSparks(w.position, 0xeab308);
@@ -3152,25 +3169,33 @@
             }
 
             killZombie(z) {
+                if (!z || !z.userData || z.userData.isDead) return;
+                z.userData.isDead = true;
+
+                if (this.lockedAimTarget === z) {
+                    this.lockedAimTarget = null;
+                }
+
                 const idx = this.zombies.indexOf(z);
                 if (idx !== -1) {
-                    if (z.userData.type === 'exploder' && !z.userData.hasExploded) {
-                        z.userData.hasExploded = true;
-                        this.createExplosion(z.position, 3.8, 85 * (z.userData.dmgMult || 1), 3.8, false, true);
-                    }
-                    const scavengerLvl = this.upgrades.scavenger || 0;
-                    const scavengerMult = Math.pow(1.05, scavengerLvl);
-                    this.money += Math.round(z.userData.reward * scavengerMult);
-                    this.totalKills++;
-                    this.scene.remove(z);
                     this.zombies.splice(idx, 1);
-                    audio.playCoin();
-
-                    if (this.zombiesLeftToSpawn <= 0 && this.zombies.length === 0 && !this.isWaveTransitioning) {
-                        this.nextWave();
-                    }
-                    this.syncHUD();
                 }
+                this.scene.remove(z);
+
+                if (z.userData.type === 'exploder' && !z.userData.hasExploded) {
+                    z.userData.hasExploded = true;
+                    this.createExplosion(z.position, 3.8, 85 * (z.userData.dmgMult || 1), 3.8, false, true);
+                }
+                const scavengerLvl = this.upgrades.scavenger || 0;
+                const scavengerMult = Math.pow(1.05, scavengerLvl);
+                this.money += Math.round(z.userData.reward * scavengerMult);
+                this.totalKills++;
+                audio.playCoin();
+
+                if (this.zombiesLeftToSpawn <= 0 && this.zombies.length === 0 && !this.isWaveTransitioning) {
+                    this.nextWave();
+                }
+                this.syncHUD();
             }
 
             tryShoot() {
@@ -3195,31 +3220,38 @@
                 const isCrit = Math.random() < (this.upgrades.crit_chance * 0.10);
                 if (isCrit) weaponDmg *= 2.0;
 
+                if (!this._playerBulletGeo) {
+                    this._playerBulletGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 8);
+                    this._playerBulletGeo.rotateX(Math.PI / 2);
+                    this._playerBulletMatCache = {};
+                }
+
+                const colorHex = isCrit ? 0xec4899 : this.currentWeapon.color;
+                if (!this._playerBulletMatCache[colorHex]) {
+                    this._playerBulletMatCache[colorHex] = new THREE.MeshBasicMaterial({ color: colorHex });
+                }
+                const bulletMat = this._playerBulletMatCache[colorHex];
+
+                const muzzlePos = this._v1;
+
                 for (let i = 0; i < this.currentWeapon.count; i++) {
                     const spreadAngle = baseAngle + (Math.random() - 0.5) * this.currentWeapon.spread;
 
-                    const bulletGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 8);
-                    bulletGeo.rotateX(Math.PI / 2);
-                    const bulletMat = new THREE.MeshBasicMaterial({ 
-                        color: isCrit ? 0xec4899 : this.currentWeapon.color 
-                    });
-                    const bullet = new THREE.Mesh(bulletGeo, bulletMat);
-
-                    const muzzlePos = new THREE.Vector3();
                     if (this.gunMesh) {
                         this.gunMesh.getWorldPosition(muzzlePos);
-                        const forwardOffset = new THREE.Vector3(Math.sin(spreadAngle), 0, Math.cos(spreadAngle)).multiplyScalar(0.9);
-                        muzzlePos.add(forwardOffset);
+                        muzzlePos.x += Math.sin(spreadAngle) * 0.9;
+                        muzzlePos.z += Math.cos(spreadAngle) * 0.9;
                     } else {
                         muzzlePos.copy(this.playerGroup.position);
                         muzzlePos.y = 1.45;
                     }
 
+                    const bullet = new THREE.Mesh(this._playerBulletGeo, bulletMat);
                     bullet.position.copy(muzzlePos);
                     bullet.rotation.y = spreadAngle;
 
                     bullet.userData = {
-                        dir: new THREE.Vector3(Math.sin(spreadAngle), 0, Math.cos(spreadAngle)).normalize(),
+                        dir: new THREE.Vector3(Math.sin(spreadAngle), 0, Math.cos(spreadAngle)),
                         speed: this.currentWeapon.speed,
                         damage: weaponDmg,
                         isExplosive: this.currentWeapon.isExplosive,
@@ -3262,17 +3294,12 @@
 
                 const particleCount = Math.min(3, MAX_PARTICLES - this.particles.length);
 
-                // Reuse cached geometry & material per color to avoid per-hit allocations
-                if (!this._sparkGeoCache) this._sparkGeoCache = {};
                 if (!this._sparkMatCache) this._sparkMatCache = {};
-                if (!this._sparkGeoCache['box']) {
-                    this._sparkGeoCache['box'] = new THREE.BoxGeometry(0.18, 0.18, 0.18);
-                }
                 const colorKey = colorHex.toString(16);
                 if (!this._sparkMatCache[colorKey]) {
                     this._sparkMatCache[colorKey] = new THREE.MeshBasicMaterial({ color: colorHex });
                 }
-                const pGeo = this._sparkGeoCache['box'];
+                const pGeo = SHARED_PARTICLE_GEO;
                 const pMat = this._sparkMatCache[colorKey];
 
                 for (let i = 0; i < particleCount; i++) {
@@ -3368,15 +3395,17 @@
                 if (now < this.lastDroneFired + firerate) return;
 
                 let closestZombie = null;
-                let minDist = 24.0;
+                let minDistSq = 576.0;
 
-                this.zombies.forEach(z => {
-                    const dist = this.droneGroup.position.distanceTo(z.position);
-                    if (dist < minDist) {
-                        minDist = dist;
+                for (let zi = 0; zi < this.zombies.length; zi++) {
+                    const z = this.zombies[zi];
+                    if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                    const distSq = this.droneGroup.position.distanceToSquared(z.position);
+                    if (distSq < minDistSq) {
+                        minDistSq = distSq;
                         closestZombie = z;
                     }
-                });
+                }
 
                 if (closestZombie) {
                     this.lastDroneFired = now;
@@ -3387,10 +3416,10 @@
                     );
                     this.droneGroup.rotation.y = angle;
 
-                    const laserGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.2, 8);
-                    laserGeo.rotateX(Math.PI / 2);
-                    const laserMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
-                    const bullet = new THREE.Mesh(laserGeo, laserMat);
+                    if (!this._droneLaserMat) {
+                        this._droneLaserMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+                    }
+                    const bullet = new THREE.Mesh(SHARED_BULLET_GEO, this._droneLaserMat);
 
                     bullet.position.copy(this.droneGroup.position);
                     bullet.position.y -= 0.18;
@@ -3399,7 +3428,7 @@
                     const droneDmg = 28 + (droneLvl * 14);
 
                     bullet.userData = {
-                        dir: new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)).normalize(),
+                        dir: new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)),
                         speed: 60,
                         damage: droneDmg,
                         isExplosive: false,
@@ -3521,29 +3550,35 @@
             updateAirstrike(dt) {
                 if (this.airstrikeCooldown > 0) {
                     this.airstrikeCooldown = Math.max(0, this.airstrikeCooldown - dt);
-                    const statusText = document.getElementById('airstrike-status-text');
-                    const btnIcon = document.getElementById('airstrike-icon');
-                    const btn = document.getElementById('hud-airstrike-btn');
-                    const progressFill = document.getElementById('airstrike-progress-fill');
+                    const cdSec = Math.ceil(this.airstrikeCooldown);
 
-                    const maxCd = 45.0;
-                    const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.airstrikeCooldown) / maxCd) * 100)));
+                    if (this._lastAirstrikeCdSec !== cdSec) {
+                        this._lastAirstrikeCdSec = cdSec;
+                        const statusText = document.getElementById('airstrike-status-text');
+                        const btnIcon = document.getElementById('airstrike-icon');
+                        const btn = document.getElementById('hud-airstrike-btn');
+                        const progressFill = document.getElementById('airstrike-progress-fill');
 
-                    if (progressFill) {
-                        progressFill.style.width = `${fillPct}%`;
+                        const maxCd = 45.0;
+                        const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.airstrikeCooldown) / maxCd) * 100)));
+
+                        if (progressFill) {
+                            progressFill.style.width = `${fillPct}%`;
+                        }
+
+                        if (this.airstrikeCooldown > 0) {
+                            if (statusText) statusText.innerText = `${cdSec}s`;
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 px-2 py-1 sm:px-2.5 rounded-lg opacity-80 cursor-not-allowed flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                        } else {
+                            const isMobile = window.matchMedia('(pointer: coarse)').matches;
+                            if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[E] BEREIT";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-amber-400 airstrike-ready-blink";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 px-2 py-1 sm:px-2.5 rounded-lg shadow-lg transition active:scale-95 flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                        }
                     }
-
-                    if (this.airstrikeCooldown > 0) {
-                        if (statusText) statusText.innerText = `${Math.ceil(this.airstrikeCooldown)}s`;
-                        if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
-                        if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 px-2 py-1 sm:px-2.5 rounded-lg opacity-80 cursor-not-allowed flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
-                    } else {
-                        const isMobile = window.matchMedia('(pointer: coarse)').matches;
-                        if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[E] BEREIT";
-                        if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-amber-400 airstrike-ready-blink";
-                        if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 px-2 py-1 sm:px-2.5 rounded-lg shadow-lg transition active:scale-95 flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
-                    }
-                } else {
+                } else if (this._lastAirstrikeCdSec !== 0) {
+                    this._lastAirstrikeCdSec = 0;
                     const progressFill = document.getElementById('airstrike-progress-fill');
                     if (progressFill) progressFill.style.width = "0%";
                 }
@@ -3564,13 +3599,15 @@
 
                         if (zone.damageTimer >= 0.2) {
                             zone.damageTimer = 0;
-                            this.zombies.forEach(z => {
+                            for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                                const z = this.zombies[zi];
+                                if (z.userData.isDead) continue;
                                 if (z.position.distanceTo(zone.pos) < 17.5) {
                                     z.userData.hp = -9999;
                                     this.flashZombieHit(z);
                                     this.killZombie(z);
                                 }
-                            });
+                            }
                         }
 
                         if (zone.life <= 0) {
@@ -3686,27 +3723,33 @@
             updateNuke(dt) {
                 if (this.nukeCooldown > 0) {
                     this.nukeCooldown = Math.max(0, this.nukeCooldown - dt);
-                    const statusText = document.getElementById('nuke-status-text');
-                    const btnIcon = document.getElementById('nuke-icon');
-                    const btn = document.getElementById('hud-nuke-btn');
-                    const progressFill = document.getElementById('nuke-progress-fill');
+                    const cdSec = Math.ceil(this.nukeCooldown);
 
-                    const maxCd = 90.0;
-                    const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.nukeCooldown) / maxCd) * 100)));
+                    if (this._lastNukeCdSec !== cdSec) {
+                        this._lastNukeCdSec = cdSec;
+                        const statusText = document.getElementById('nuke-status-text');
+                        const btnIcon = document.getElementById('nuke-icon');
+                        const btn = document.getElementById('hud-nuke-btn');
+                        const progressFill = document.getElementById('nuke-progress-fill');
 
-                    if (progressFill) progressFill.style.width = `${fillPct}%`;
+                        const maxCd = 90.0;
+                        const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.nukeCooldown) / maxCd) * 100)));
 
-                    if (this.nukeCooldown > 0) {
-                        if (statusText) statusText.innerText = `${Math.ceil(this.nukeCooldown)}s`;
-                        if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
-                        if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 px-2 py-1 sm:px-2.5 rounded-lg opacity-80 cursor-not-allowed flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
-                    } else {
-                        const isMobile = window.matchMedia('(pointer: coarse)').matches;
-                        if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[Q] BEREIT";
-                        if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-red-500 animate-spin";
-                        if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-red-500/60 text-red-400 px-2 py-1 sm:px-2.5 rounded-lg shadow-lg transition active:scale-95 flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                        if (progressFill) progressFill.style.width = `${fillPct}%`;
+
+                        if (this.nukeCooldown > 0) {
+                            if (statusText) statusText.innerText = `${cdSec}s`;
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 px-2 py-1 sm:px-2.5 rounded-lg opacity-80 cursor-not-allowed flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                        } else {
+                            const isMobile = window.matchMedia('(pointer: coarse)').matches;
+                            if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[Q] BEREIT";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-red-500 animate-spin";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-red-500/60 text-red-400 px-2 py-1 sm:px-2.5 rounded-lg shadow-lg transition active:scale-95 flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                        }
                     }
-                } else {
+                } else if (this._lastNukeCdSec !== 0) {
+                    this._lastNukeCdSec = 0;
                     const progressFill = document.getElementById('nuke-progress-fill');
                     if (progressFill) progressFill.style.width = "0%";
                 }
@@ -3996,13 +4039,13 @@
 
                     // Smart Aim Assist: Lock onto nearest zombie when firing, break lock if out of range
                     if (isFiring && this.zombies.length > 0) {
-                        const AIM_LOCK_RANGE = 10.0;   // lock-on max distance (10 meters)
-                        const AIM_BREAK_RANGE = 14.0;  // auto-break lock if zombie drifts further
+                        const AIM_LOCK_RANGE_SQ = 100.0;   // lock-on max distance (10 meters)
+                        const AIM_BREAK_RANGE_SQ = 196.0;  // auto-break lock if zombie drifts further
 
                         // Check if locked target is still valid & within break range
-                        if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0) {
-                            const lockedDist = this.playerGroup.position.distanceTo(this.lockedAimTarget.position);
-                            if (lockedDist > AIM_BREAK_RANGE) {
+                        if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0 && !this.lockedAimTarget.userData.isDead) {
+                            const lockedDistSq = this.playerGroup.position.distanceToSquared(this.lockedAimTarget.position);
+                            if (lockedDistSq > AIM_BREAK_RANGE_SQ) {
                                 this.lockedAimTarget = null; // break lock — zombie too far
                             }
                         } else {
@@ -4012,14 +4055,16 @@
                         // If no lock, find new nearest within lock range
                         if (!this.lockedAimTarget) {
                             let nearestZombie = null;
-                            let minDist = AIM_LOCK_RANGE;
-                            this.zombies.forEach(z => {
-                                const dist = this.playerGroup.position.distanceTo(z.position);
-                                if (dist < minDist) {
-                                    minDist = dist;
+                            let minDistSq = AIM_LOCK_RANGE_SQ;
+                            for (let zi = 0; zi < this.zombies.length; zi++) {
+                                const z = this.zombies[zi];
+                                if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                                const distSq = this.playerGroup.position.distanceToSquared(z.position);
+                                if (distSq < minDistSq) {
+                                    minDistSq = distSq;
                                     nearestZombie = z;
                                 }
-                            });
+                            }
                             this.lockedAimTarget = nearestZombie;
                         }
 
@@ -4078,8 +4123,9 @@
                                 }
                             }
 
-                            const distToBase = Math.hypot(nextX - this.baseGroup.position.x, nextZ - this.baseGroup.position.z);
-                            const blockedByBase = distToBase < 5.2;
+                            const dbx = nextX - this.baseGroup.position.x;
+                            const dbz = nextZ - this.baseGroup.position.z;
+                            const blockedByBase = (dbx * dbx + dbz * dbz) < 27.04;
 
                             if (!blockedByWall && !blockedByBase) {
                                 this.playerGroup.position.x = nextX;
@@ -4125,9 +4171,12 @@
 
                     // Re-build Spatial Grid Hash for O(1) Collision Detection
                     this.grid.clear();
-                    for (let zi = 0; zi < this.zombies.length; zi++) {
+                    for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
                         const z = this.zombies[zi];
-                        if (z.userData.hp <= 0) continue;
+                        if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) {
+                            this.killZombie(z);
+                            continue;
+                        }
                         const gx = Math.floor((z.position.x + 100) / 8);
                         const gz = Math.floor((z.position.z + 100) / 8);
                         const key = ((gx & 0xFF) << 8) | (gz & 0xFF);
@@ -4155,7 +4204,9 @@
 
                         for (let wi = 0; wi < this.walls.length; wi++) {
                             const w = this.walls[wi];
-                            if (Math.hypot(b.position.x - w.position.x, b.position.z - w.position.z) < w.userData.radius) {
+                            const dwx = b.position.x - w.position.x;
+                            const dwz = b.position.z - w.position.z;
+                            if (dwx * dwx + dwz * dwz < w.userData.radius * w.userData.radius) {
                                 bulletHit = true;
                                 this.createBloodSparks(b.position, 0x94a3b8);
                                 break;
@@ -4165,8 +4216,9 @@
                         if (!bulletHit) {
                             if (b.userData.isEnemy) {
                                 // Enemy projectile hits player
-                                const distToP = b.position.distanceTo(this.playerGroup.position);
-                                if (distToP < 1.3) {
+                                const dpx = b.position.x - this.playerGroup.position.x;
+                                const dpz = b.position.z - this.playerGroup.position.z;
+                                if (dpx * dpx + dpz * dpz < 1.69) {
                                     bulletHit = true;
                                     let pDmg = b.userData.damage;
                                     if (this.playerShield > 0) {
@@ -4197,9 +4249,11 @@
                                         for (let j = 0; j < bucket.length; j++) {
                                             const z = bucket[j];
                                             if (z.userData.hp <= 0) continue;
-                                            const distXZ = Math.hypot(b.position.x - z.position.x, b.position.z - z.position.z);
+                                            const dzx = b.position.x - z.position.x;
+                                            const dzz = b.position.z - z.position.z;
+                                            const hitRad = 1.75 * z.userData.scale;
 
-                                            if (distXZ < 1.75 * z.userData.scale) {
+                                            if (dzx * dzx + dzz * dzz < hitRad * hitRad) {
                                                 bulletHit = true;
                                                 if (b.userData.isExplosive) {
                                                     this.createExplosion(b.position, b.userData.splashRadius, b.userData.damage);
@@ -4221,7 +4275,8 @@
                                                         z.position.x += b.userData.dir.x * 0.3;
                                                         z.position.z += b.userData.dir.z * 0.3;
                                                         this.flashZombieHit(z);
-                                                        this.createBloodSparks(new THREE.Vector3(z.position.x, 1.2 * z.userData.scale, z.position.z), 0xef4444);
+                                                        this._v2.set(z.position.x, 1.2 * z.userData.scale, z.position.z);
+                                                        this.createBloodSparks(this._v2, 0xef4444);
                                                         audio.playZombieHit();
                                                         if (z.userData.hp <= 0) this.killZombie(z);
                                                     }
@@ -4250,14 +4305,17 @@
                     // Use fewer angle offsets on mobile (5 vs 9) to halve zombie AI cost
                     const angleOffsets = isMob ? this._angleOffsetsMob : this._angleOffsets;
 
-                    for (let zi = 0; zi < this.zombies.length; zi++) {
+                    for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
                         const z = this.zombies[zi];
+                        if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) {
+                            this.killZombie(z);
+                            continue;
+                        }
                         // Use squared distance to avoid sqrt — cheaper for target selection
                         const dxP = z.position.x - playerPos.x;
                         const dzP = z.position.z - playerPos.z;
                         const distToPlayerSq = dxP * dxP + dzP * dzP;
-                        const distToPlayer = Math.sqrt(distToPlayerSq);
-                        const target = distToPlayer < 18 ? playerPos : basePos;
+                        const target = distToPlayerSq < 324 ? playerPos : basePos; // 18^2 = 324
 
                         const directAngle = Math.atan2(target.x - z.position.x, target.z - z.position.z);
                         const stepSize = z.userData.speed * (dt * 60);
@@ -4296,18 +4354,21 @@
                             z.userData.lastChosenAngle = chosenAngle;
                         }
 
-                        const distToBaseCurr = Math.hypot(z.position.x - basePos.x, z.position.z - basePos.z);
-                        let distToBaseNext = distToBaseCurr;
+                        let distToBaseNextSq = 99999;
 
                         if (chosenAngle !== null) {
                             z.rotation.y = chosenAngle;
                             const nextX = z.position.x + Math.sin(chosenAngle) * stepSize;
                             const nextZ = z.position.z + Math.cos(chosenAngle) * stepSize;
 
-                            distToBaseNext = Math.hypot(nextX - basePos.x, nextZ - basePos.z);
-                            if (distToBaseNext < BASE_RADIUS) {
-                                const dirX = (nextX - basePos.x) / (distToBaseNext || 1);
-                                const dirZ = (nextZ - basePos.z) / (distToBaseNext || 1);
+                            const dbx = nextX - basePos.x;
+                            const dbz = nextZ - basePos.z;
+                            distToBaseNextSq = dbx * dbx + dbz * dbz;
+
+                            if (distToBaseNextSq < BASE_RADIUS_SQ) {
+                                const distToBaseNext = Math.sqrt(distToBaseNextSq);
+                                const dirX = dbx / (distToBaseNext || 1);
+                                const dirZ = dbz / (distToBaseNext || 1);
 
                                 z.position.x = basePos.x + dirX * BASE_RADIUS;
                                 z.position.z = basePos.z + dirZ * BASE_RADIUS;
@@ -4360,7 +4421,7 @@
                         for (let k = this.turrets.length - 1; k >= 0; k--) {
                             const t = this.turrets[k];
                             const attackRange = 1.8 * (z.userData.type === 'boss' ? (z.userData.scale || 2.4) : 1.0);
-                            if (z.position.distanceTo(t.position) < attackRange) {
+                            if (z.position.distanceToSquared(t.position) < attackRange * attackRange) {
                                 const turretDmg = z.userData.type === 'boss' ? 240 * z.userData.dmgMult : 28 * z.userData.dmgMult;
                                 t.userData.hp -= turretDmg * dt;
                                 this.createBloodSparks(t.position, z.userData.type === 'boss' ? 0xef4444 : 0xf59e0b);
@@ -4378,7 +4439,7 @@
                         }
 
                         // Special Zombie Behaviors
-                        if (z.userData.type === 'exploder' && (distToPlayer < 1.8 || distToBaseNext < BASE_RADIUS + 0.5)) {
+                        if (z.userData.type === 'exploder' && (distToPlayerSq < 3.24 || distToBaseNextSq < 81.0)) { // 1.8^2 = 3.24, 9.0^2 = 81
                             if (!z.userData.exploded) {
                                 z.userData.exploded = true;
                                 this.killZombie(z);
@@ -4397,10 +4458,13 @@
 
                         if (z.userData.type === 'spitter') {
                             z.userData.spitTimer = (z.userData.spitTimer || 0) + dt;
-                            if (z.userData.spitTimer >= 2.8 && distToPlayer > 5.0 && distToPlayer < 18.0) {
+                            if (z.userData.spitTimer >= 2.8 && distToPlayerSq > 25.0 && distToPlayerSq < 324.0) { // 5^2=25, 18^2=324
                                 z.userData.spitTimer = 0;
-                                const spitMat = new THREE.MeshBasicMaterial({ color: 0x84cc16 });
-                                const spitMesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), spitMat);
+                                if (!this._spitGeo) {
+                                    this._spitGeo = new THREE.SphereGeometry(0.35, 8, 8);
+                                    this._spitMat = new THREE.MeshBasicMaterial({ color: 0x84cc16 });
+                                }
+                                const spitMesh = new THREE.Mesh(this._spitGeo, this._spitMat);
                                 spitMesh.position.copy(z.position);
                                 spitMesh.position.y = 1.3;
                                 const dir = new THREE.Vector3().subVectors(this.playerGroup.position, z.position).normalize();
@@ -4416,7 +4480,7 @@
                             }
                         }
 
-                        if (z.userData.type === 'raider' && (distToPlayer < 1.4 || distToBaseNext < BASE_RADIUS + 0.5)) {
+                        if (z.userData.type === 'raider' && (distToPlayerSq < 1.96 || distToBaseNextSq < 81.0)) { // 1.4^2 = 1.96
                             const nowMs = performance.now();
                             if (!z.userData.lastSteal || (nowMs - z.userData.lastSteal > 850)) {
                                 z.userData.lastSteal = nowMs;
@@ -4432,7 +4496,7 @@
                             }
                         }
 
-                        if (distToPlayer < 1.4 && !this.isInvulnerable) {
+                        if (distToPlayerSq < 1.96 && !this.isInvulnerable) { // 1.4^2 = 1.96
                             let pDmg = (0.3 * z.userData.dmgMult) * dt * 60;
                             if (this.playerShield > 0) {
                                 const absorbed = Math.min(this.playerShield, pDmg);
@@ -4825,6 +4889,20 @@
 
                 this.updateSpawnInterval();
                 this.syncHUD();
+            }
+
+            destroy() {
+                this.isRunning = false;
+                this.isGameOver = true;
+                if (this.secondTimer) clearInterval(this.secondTimer);
+                if (this.spawnTimer) clearInterval(this.spawnTimer);
+                if (this.turretTimer) clearInterval(this.turretTimer);
+                if (this.renderer) {
+                    try { this.renderer.dispose(); } catch(e) {}
+                    if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+                    }
+                }
             }
 
             triggerGameOver(reason = 'base') {
@@ -5936,7 +6014,8 @@
             // Phase 1: Audio Init & Cleanup
             audio.init();
             if (gameInstance) {
-                gameInstance.isRunning = false;
+                gameInstance.destroy();
+                gameInstance = null;
                 document.getElementById('three-container').innerHTML = '';
             }
             await new Promise(r => setTimeout(r, 400));
