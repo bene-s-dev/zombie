@@ -595,11 +595,15 @@
                         </div>
                     </div>
 
-                    <!-- Right: Retry button (fills height on landscape) -->
-                    <div class="flex items-stretch">
-                        <button onclick="restartGame()" class="w-full py-3 sm:py-4 bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 active:from-red-700 text-white font-teko text-2xl sm:text-2xl font-bold rounded-xl transition shadow-lg shadow-red-950/50 flex items-center justify-center space-x-2">
+                    <!-- Right: Action buttons -->
+                    <div class="flex flex-col justify-center space-y-2">
+                        <button onclick="restartGame()" class="w-full py-3 sm:py-3.5 bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 active:from-red-700 text-white font-teko text-2xl font-bold rounded-xl transition shadow-lg shadow-red-950/50 flex items-center justify-center space-x-2">
                             <i class="fa-solid fa-rotate-right"></i>
                             <span>ERNEUT VERSUCHEN</span>
+                        </button>
+                        <button onclick="returnToMainMenu()" class="w-full py-2.5 sm:py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 font-bold rounded-xl text-xs sm:text-sm transition flex items-center justify-center space-x-2 border border-slate-700">
+                            <i class="fa-solid fa-house"></i>
+                            <span>HAUPTMENÜ</span>
                         </button>
                     </div>
 
@@ -3115,7 +3119,7 @@
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
 
                     document.getElementById('inspect-upgrade-text').innerText = `Upgrade ($${upgCost})`;
-                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Voll Intakt';
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Reparieren';
 
                     upgradeBtn.classList.remove('hidden');
                     repairBtn.classList.remove('hidden');
@@ -3127,7 +3131,7 @@
                         <div>• Endboss-Schutz: <strong class="text-rose-400">${ud.typeId === 'laser_wall' ? 'Hoch' : 'Mittel'}</strong></div>
                     `;
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.6);
-                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Voll Intakt';
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Reparieren';
                     upgradeBtn.classList.add('hidden');
                     repairBtn.classList.remove('hidden');
                 }
@@ -5684,6 +5688,8 @@
         function returnToMainMenu() {
             if (isPauseModalOpen) togglePauseModal();
             if (isShopOpen) toggleShop();
+            const goModal = document.getElementById('game-over-modal');
+            if (goModal) goModal.classList.add('hidden');
 
             if (gameInstance) {
                 if (!gameInstance.isGameOver) gameInstance.saveGameSession();
