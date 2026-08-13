@@ -2044,22 +2044,93 @@
                 audio.playJetFlyover();
 
                 const jetGroup = new THREE.Group();
-                const jetMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
-                const wingMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 });
+                // Bright high-visibility metallic tactical titanium alloy fuselage
+                const jetMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xf8fafc, 
+                    metalness: 0.5, 
+                    roughness: 0.2,
+                    emissive: 0x334155,
+                    emissiveIntensity: 0.35
+                });
+                const wingMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xe2e8f0, 
+                    metalness: 0.6, 
+                    roughness: 0.25,
+                    emissive: 0x1e293b,
+                    emissiveIntensity: 0.3
+                });
 
-                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.8, 4.5, 8), jetMat);
+                // Main Fuselage (streamlined supersonic body)
+                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.85, 5.2, 8), jetMat);
                 fuselage.rotation.x = Math.PI / 2;
                 jetGroup.add(fuselage);
 
-                const wings = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.1, 1.2), wingMat);
-                wings.position.set(0, 0, -0.5);
+                // Glowing Cyan Cockpit Canopy Glass
+                const canopyMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 1.8, 8), canopyMat);
+                canopy.rotation.x = Math.PI / 2;
+                canopy.position.set(0, 0.42, 0.3);
+                canopy.scale.set(0.7, 1, 0.5);
+                jetGroup.add(canopy);
+
+                // Swept Delta Wings
+                const wings = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.12, 1.6), wingMat);
+                wings.position.set(0, 0, -0.4);
                 jetGroup.add(wings);
 
+                // Twin Vertical Tail Stabilizers
+                const finGeo = new THREE.BoxGeometry(0.1, 1.2, 0.9);
+                const finL = new THREE.Mesh(finGeo, wingMat);
+                finL.position.set(-0.75, 0.6, -1.9);
+                finL.rotation.z = -0.15;
+                jetGroup.add(finL);
+
+                const finR = new THREE.Mesh(finGeo, wingMat);
+                finR.position.set(0.75, 0.6, -1.9);
+                finR.rotation.z = 0.15;
+                jetGroup.add(finR);
+
+                // === POSITIONS- & NAVIGATIONS-LICHTER ===
+                // 1. Linke Tragfläche: ROTES Positionslicht (Port Light)
+                const redNavMat = new THREE.MeshBasicMaterial({ color: 0xff1111 });
+                const redNav = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), redNavMat);
+                redNav.position.set(-2.8, 0, -0.4);
+                jetGroup.add(redNav);
+
+                // 2. Rechte Tragfläche: GRÜNES Positionslicht (Starboard Light)
+                const greenNavMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+                const greenNav = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), greenNavMat);
+                greenNav.position.set(2.8, 0, -0.4);
+                jetGroup.add(greenNav);
+
+                // 3. Heck-Strobe: Weisses Blitzlicht
+                const strobeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const tailStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), strobeMat);
+                tailStrobe.position.set(0, 1.15, -2.2);
+                jetGroup.add(tailStrobe);
+
+                // 4. Bug-Scheinwerfer (Bright White Nose Light)
+                const noseLightMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+                const noseLight = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), noseLightMat);
+                noseLight.position.set(0, -0.05, 2.55);
+                jetGroup.add(noseLight);
+
+                // 5. Dual Twin Glowing Jet Afterburners (Feurige Triebwerke)
                 const burnerMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-                const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.1, 0.8, 8), burnerMat);
-                burner.rotation.x = Math.PI / 2;
-                burner.position.set(0, 0, -2.4);
-                jetGroup.add(burner);
+                const burnerL = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.1, 1.0, 8), burnerMat);
+                burnerL.rotation.x = Math.PI / 2;
+                burnerL.position.set(-0.45, 0, -2.7);
+                jetGroup.add(burnerL);
+
+                const burnerR = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.1, 1.0, 8), burnerMat);
+                burnerR.rotation.x = Math.PI / 2;
+                burnerR.position.set(0.45, 0, -2.7);
+                jetGroup.add(burnerR);
+
+                // Dynamisches Boden-Licht (Beleuchtet Boden & Arena beim Überflug)
+                const jetLight = new THREE.PointLight(0x38bdf8, 3.5, 45);
+                jetLight.position.set(0, -2.0, 0);
+                jetGroup.add(jetLight);
 
                 jetGroup.position.set(targetX, 24, -188);
                 jetGroup.rotation.y = 0;
@@ -2074,7 +2145,8 @@
                     droppedBombs: 0,
                     maxBombs: 16,
                     lastDropZ: -300,
-                    dropDelay: 1.5
+                    dropDelay: 1.5,
+                    tailStrobe: tailStrobe
                 });
             }
 
@@ -2155,6 +2227,10 @@
                         const strike = this.activeAirstrikes[k];
                         strike.jetMesh.position.z += strike.speed * dt;
 
+                        if (strike.tailStrobe) {
+                            strike.tailStrobe.visible = (Math.floor(performance.now() / 120) % 2 === 0);
+                        }
+
                         // Count down initial drop delay (0.75s after jet flyover sound)
                         if (strike.dropDelay > 0) {
                             strike.dropDelay -= dt;
@@ -2229,16 +2305,75 @@
 
             spawnNukeJet() {
                 const jetGroup = new THREE.Group();
-                const jetMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.95, roughness: 0.1 });
-                const wingMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
+                // Bright high-visibility metallic stealth pearl titanium finish
+                const jetMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xf8fafc, 
+                    metalness: 0.6, 
+                    roughness: 0.2,
+                    emissive: 0x475569,
+                    emissiveIntensity: 0.4
+                });
+                const wingMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xe2e8f0, 
+                    metalness: 0.7, 
+                    roughness: 0.25,
+                    emissive: 0x334155,
+                    emissiveIntensity: 0.35
+                });
 
-                const wings = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.2, 3.2), wingMat);
+                // Giant Swept Stealth Bomber Wings
+                const wings = new THREE.Mesh(new THREE.BoxGeometry(14.0, 0.28, 4.5), wingMat);
                 wings.rotation.y = Math.PI / 8;
                 jetGroup.add(wings);
 
-                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.3, 7.0, 8), jetMat);
+                // Main Fuselage
+                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.6, 9.0, 8), jetMat);
                 fuselage.rotation.x = Math.PI / 2;
                 jetGroup.add(fuselage);
+
+                // Glowing Amber Nuclear Cockpit Visor
+                const visorMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+                const visor = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 2.0), visorMat);
+                visor.position.set(0, 0.8, 1.2);
+                jetGroup.add(visor);
+
+                // === POSITIONS- & ATOM-WARNLICHTER ===
+                // 1. Linke Tragflächenspitze: ROTES Positionslicht
+                const redNavMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const redNav = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), redNavMat);
+                redNav.position.set(-6.8, 0, -1.2);
+                jetGroup.add(redNav);
+
+                // 2. Rechte Tragflächenspitze: GRÜNES Positionslicht
+                const greenNavMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
+                const greenNav = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), greenNavMat);
+                greenNav.position.set(6.8, 0, -1.2);
+                jetGroup.add(greenNav);
+
+                // 3. Atom-Warn-Blinklichter auf den Flügeln (Amber Strobe Beacons)
+                const strobeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+                const beaconL = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), strobeMat);
+                beaconL.position.set(-3.5, 0.35, 0);
+                jetGroup.add(beaconL);
+
+                const beaconR = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), strobeMat);
+                beaconR.position.set(3.5, 0.35, 0);
+                jetGroup.add(beaconR);
+
+                // 4. Quad Jet Glowing Exhaust Thrusters (4 Triebwerke)
+                const burnerMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+                for (let bi = -2; bi <= 2; bi++) {
+                    if (bi === 0) continue;
+                    const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.15, 1.2, 8), burnerMat);
+                    burner.rotation.x = Math.PI / 2;
+                    burner.position.set(bi * 1.1, 0, -4.6);
+                    jetGroup.add(burner);
+                }
+
+                // Starkes Amber-Bodenlicht
+                const nukeLight = new THREE.PointLight(0xf59e0b, 5.0, 60);
+                nukeLight.position.set(0, -3.0, 0);
+                jetGroup.add(nukeLight);
 
                 jetGroup.position.set(0, 36, -200);
                 this.scene.add(jetGroup);
@@ -2247,7 +2382,8 @@
                     jetMesh: jetGroup,
                     speed: 65,
                     bombDropped: false,
-                    nukeBombMesh: null
+                    nukeBombMesh: null,
+                    beacons: [beaconL, beaconR]
                 };
             }
 
@@ -2288,6 +2424,11 @@
                 if (this.activeNukeStrike) {
                     const strike = this.activeNukeStrike;
                     strike.jetMesh.position.z += strike.speed * dt;
+
+                    if (strike.beacons) {
+                        const isBeaconOn = (Math.floor(performance.now() / 150) % 2 === 0);
+                        strike.beacons.forEach(b => { if (b) b.visible = isBeaconOn; });
+                    }
 
                     if (!strike.bombDropped && strike.jetMesh.position.z >= -20) {
                         strike.bombDropped = true;
