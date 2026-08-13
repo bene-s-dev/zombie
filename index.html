@@ -1589,14 +1589,14 @@
         const audio = new SoundEngine();
 
         const WEAPONS = {
-            pistol: { id: 'pistol', name: 'Pistole', cost: 0, level: 1, maxLevel: 10, damage: 40, firerate: 200, speed: 52, spread: 0.03, count: 1, isExplosive: false, color: 0xfacc15 },
-            smg: { id: 'smg', name: 'Maschinenpistole MP5', cost: 200, level: 1, maxLevel: 10, damage: 24, firerate: 105, speed: 54, spread: 0.07, count: 1, isExplosive: false, color: 0xeab308 },
-            shotgun: { id: 'shotgun', name: 'Schrotflinte', cost: 350, level: 1, maxLevel: 10, damage: 26, firerate: 620, speed: 45, spread: 0.26, count: 7, isExplosive: false, color: 0xf97316 },
-            rifle: { id: 'rifle', name: 'Sturmgewehr AK-47', cost: 650, level: 1, maxLevel: 10, damage: 48, firerate: 125, speed: 60, spread: 0.04, count: 1, isExplosive: false, color: 0xef4444 },
-            sniper: { id: 'sniper', name: 'Scharfschützengewehr', cost: 900, level: 1, maxLevel: 10, damage: 260, firerate: 850, speed: 85, spread: 0.005, count: 1, isExplosive: false, color: 0x38bdf8 },
-            rpg: { id: 'rpg', name: 'RPG Raketenwerfer', cost: 1300, level: 1, maxLevel: 10, damage: 340, firerate: 1150, speed: 34, spread: 0.02, count: 1, isExplosive: true, splashRadius: 7.5, color: 0xd97706 },
-            minigun: { id: 'minigun', name: 'Schwere Minigun', cost: 1800, level: 1, maxLevel: 10, damage: 42, firerate: 60, speed: 64, spread: 0.09, count: 1, isExplosive: false, color: 0xa855f7 },
-            plasma: { id: 'plasma', name: 'Plasma-Disruptor', cost: 2500, level: 1, maxLevel: 10, damage: 240, firerate: 420, speed: 48, spread: 0.02, count: 1, isExplosive: true, splashRadius: 5.5, color: 0x06b6d4 }
+            pistol: { id: 'pistol', name: 'Pistole', cost: 0, level: 1, maxLevel: Infinity, damage: 40, firerate: 200, speed: 52, spread: 0.03, count: 1, isExplosive: false, color: 0xfacc15 },
+            smg: { id: 'smg', name: 'Maschinenpistole MP5', cost: 200, level: 1, maxLevel: Infinity, damage: 24, firerate: 105, speed: 54, spread: 0.07, count: 1, isExplosive: false, color: 0xeab308 },
+            shotgun: { id: 'shotgun', name: 'Schrotflinte', cost: 350, level: 1, maxLevel: Infinity, damage: 26, firerate: 620, speed: 45, spread: 0.26, count: 7, isExplosive: false, color: 0xf97316 },
+            rifle: { id: 'rifle', name: 'Sturmgewehr AK-47', cost: 650, level: 1, maxLevel: Infinity, damage: 48, firerate: 125, speed: 60, spread: 0.04, count: 1, isExplosive: false, color: 0xef4444 },
+            sniper: { id: 'sniper', name: 'Scharfschützengewehr', cost: 900, level: 1, maxLevel: Infinity, damage: 260, firerate: 850, speed: 85, spread: 0.005, count: 1, isExplosive: false, color: 0x38bdf8 },
+            rpg: { id: 'rpg', name: 'RPG Raketenwerfer', cost: 1300, level: 1, maxLevel: Infinity, damage: 340, firerate: 1150, speed: 34, spread: 0.02, count: 1, isExplosive: true, splashRadius: 7.5, color: 0xd97706 },
+            minigun: { id: 'minigun', name: 'Schwere Minigun', cost: 1800, level: 1, maxLevel: Infinity, damage: 42, firerate: 60, speed: 64, spread: 0.09, count: 1, isExplosive: false, color: 0xa855f7 },
+            plasma: { id: 'plasma', name: 'Plasma-Disruptor', cost: 2500, level: 1, maxLevel: Infinity, damage: 240, firerate: 420, speed: 48, spread: 0.02, count: 1, isExplosive: true, splashRadius: 5.5, color: 0x06b6d4 }
         };
 
         const TURRET_TYPES = {
@@ -1620,12 +1620,12 @@
         const UPGRADES = {
             combat_drone: { name: 'Begleit-Kampfdrohne', level: 0, maxLevel: 5, costBase: 750, desc: 'Schaltet eine schwebende 3D-Drohne frei, die über dir fliegt und automatisch Zombies beschießt!' },
             player_speed: { name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 150, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
-            player_hp: { name: 'Kampfweste & Max HP', level: 0, maxLevel: 5, costBase: 200, desc: 'Erhöht maximale Spieler-Gesundheit um +30' },
-            player_shield: { name: 'Körperschild-Generator', level: 0, maxLevel: 5, costBase: 350, desc: 'Erzeugt ein sichtbares 3D-Schutzfeld um die Spielfigur (+100 Schild pro Stufe)' },
+            player_hp: { name: 'Kampfweste & Max HP', level: 0, maxLevel: Infinity, costBase: 200, desc: 'Erhöht maximale Spieler-Gesundheit um +30 HP' },
+            player_shield: { name: '🛡️ Spieler-Körperschild (Generator & Max HP)', level: 0, maxLevel: Infinity, costBase: 350, desc: 'Schutzfeld für die Spielfigur (+100 Schild-HP pro Stufe). Absorbiert 100% des Schadens (Spieler-HP erleidet 0 Schaden).' },
             scavenger: { name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 150, desc: 'Erhöht erbeutetes Geld pro Zombie um 5% multiplikativ pro Stufe' },
             crit_chance: { name: 'Kritische Treffer', level: 0, maxLevel: 5, costBase: 300, desc: 'Gewährt +10% Chance auf doppeltem Waffenschaden' },
-            base_hp: { name: 'Basis-Panzerung', level: 0, maxLevel: 5, costBase: 250, desc: 'Erhöht maximale Basis-Gesundheit um +250 HP' },
-            base_shield: { name: 'Plasma-Schildgenerator', level: 0, maxLevel: 5, costBase: 400, desc: 'Erzeugt einen Schild, der eingehenden Schaden absorbiert' },
+            base_hp: { name: 'Basis-Panzerung', level: 0, maxLevel: Infinity, costBase: 250, desc: 'Erhöht maximale Basis-Gesundheit um +250 HP' },
+            base_shield: { name: '🛡️ Basis-Kraftfeld (Generator & Max HP)', level: 0, maxLevel: Infinity, costBase: 400, desc: 'Kraftfeld für die Hauptbasis (+200 Schild-HP pro Stufe). Fängt 100% aller Zombie-Angriffe & Explosionen ab.' },
             auto_repair: { name: 'Nano-Reparatur-Drohnen', level: 0, maxLevel: 5, costBase: 500, desc: 'Repariert die Basis kontinuierlich im Kampf (+5 HP/Sek)' },
             base_spikes: { name: 'Dornen-Perimeter', level: 0, maxLevel: 5, costBase: 350, desc: 'Fügt Zombies Schaden zu, die die Basis-Grenze angreifen' }
         };
@@ -2735,9 +2735,17 @@
                     if (damageFriendly) {
                         const distPlayerSq = pos.distanceToSquared(this.playerGroup.position);
                         if (distPlayerSq <= radiusSq) {
-                            const distPlayer = Math.sqrt(distPlayerSq);
-                            const falloff = 1 - (distPlayer / radius) * 0.5;
-                            this.playerHp = Math.max(0, this.playerHp - (damage * 0.6 * falloff));
+                            const distP = Math.sqrt(distPlayerSq);
+                            const falloff = 1 - (distP / radius) * 0.5;
+                            let pDmg = damage * 0.6 * falloff;
+                            if (this.playerShield > 0) {
+                                const absorbed = Math.min(this.playerShield, pDmg);
+                                this.playerShield -= absorbed;
+                                pDmg -= absorbed;
+                            }
+                            if (pDmg > 0) {
+                                this.playerHp = Math.max(0, this.playerHp - pDmg);
+                            }
                             this.showDamageOverlay();
                             this._needHudSync = true;
                             if (this.playerHp <= 0) this.triggerGameOver('player');
@@ -4235,6 +4243,24 @@
                                     this.syncHUD();
                                     if (this.playerHp <= 0) this.handlePlayerDeath();
                                 }
+                                // Enemy projectile hits base
+                                const dbx = b.position.x - this.baseGroup.position.x;
+                                const dbz = b.position.z - this.baseGroup.position.z;
+                                if (!bulletHit && (dbx * dbx + dbz * dbz < 27.04)) {
+                                    bulletHit = true;
+                                    let bDmg = b.userData.damage;
+                                    if (this.baseShield > 0) {
+                                        const absorbed = Math.min(this.baseShield, bDmg);
+                                        this.baseShield -= absorbed;
+                                        bDmg -= absorbed;
+                                        this.createBloodSparks(b.position, 0x06b6d4);
+                                    }
+                                    if (bDmg > 0) {
+                                        this.baseHp = Math.max(0, this.baseHp - bDmg);
+                                    }
+                                    this.syncHUD();
+                                    if (this.baseHp <= 0) this.triggerGameOver('base');
+                                }
                             } else {
                                 // Player/turret bullets hit zombies via Spatial Grid Hashing (Query 3x3 cells)
                                 const bx = Math.floor((b.position.x + 100) / 8);
@@ -4642,7 +4668,7 @@
 
             syncHUD() {
                 if (this.playerShield > 0) {
-                    document.getElementById('hud-player-hp-text').innerText = `${Math.ceil(this.playerHp)}/${this.maxPlayerHp} (+${Math.ceil(this.playerShield)})`;
+                    document.getElementById('hud-player-hp-text').innerText = `${Math.ceil(this.playerHp)}/${this.maxPlayerHp} (🛡️${Math.ceil(this.playerShield)})`;
                 } else {
                     document.getElementById('hud-player-hp-text').innerText = `${Math.ceil(this.playerHp)}/${this.maxPlayerHp}`;
                 }
@@ -4654,6 +4680,22 @@
                         playerShieldBar.style.width = `${(this.playerShield / this.maxPlayerShield) * 100}%`;
                     } else {
                         playerShieldBar.style.width = '0%';
+                    }
+                }
+
+                if (this.baseShield > 0) {
+                    document.getElementById('hud-base-hp-text').innerText = `${Math.ceil(this.baseHp)}/${this.maxBaseHp} (🛡️${Math.ceil(this.baseShield)})`;
+                } else {
+                    document.getElementById('hud-base-hp-text').innerText = `${Math.ceil(this.baseHp)}/${this.maxBaseHp}`;
+                }
+                document.getElementById('hud-base-hp-bar').style.width = `${(this.baseHp / this.maxBaseHp) * 100}%`;
+
+                const shieldBar = document.getElementById('hud-base-shield-bar');
+                if (shieldBar) {
+                    if (this.maxBaseShield > 0) {
+                        shieldBar.style.width = `${(this.baseShield / this.maxBaseShield) * 100}%`;
+                    } else {
+                        shieldBar.style.width = '0%';
                     }
                 }
 
@@ -5442,6 +5484,60 @@
             if (upgradesContainer) {
                 upgradesContainer.innerHTML = '';
 
+                // --- 1. SCHILDE & KRAFTFELDER (EINDEUTIGE TRENNUNG SPIELER & BASIS SCHILD) ---
+                const playerShieldMax = gameInstance.maxPlayerShield || 0;
+                const playerShieldCurrent = gameInstance.playerShield || 0;
+                const playerShieldPct = playerShieldMax > 0 ? Math.min(100, Math.round((playerShieldCurrent / playerShieldMax) * 100)) : 0;
+                const playerShieldCost = Math.round(40 + (playerShieldMax * 0.25));
+                const canRefillPlayerShield = playerShieldMax > 0 && playerShieldCurrent < playerShieldMax;
+
+                const pShieldCard = document.createElement('div');
+                pShieldCard.className = "p-4 rounded-2xl border bg-slate-950 border-cyan-900/50 flex justify-between items-center";
+                pShieldCard.innerHTML = `
+                    <div class="flex-1 pr-3">
+                        <div class="font-bold text-cyan-400 text-sm flex items-center space-x-1.5">
+                            <i class="fa-solid fa-user-shield text-base text-cyan-400"></i>
+                            <span>SPIELER-KÖRPERSCHILD</span>
+                            <span class="bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full">${playerShieldCurrent}/${playerShieldMax} HP</span>
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1">Absorbiert 100% des Schadens (Spieler-HP nimmt 0 Schaden). Ist neu kaufbar/aufladbar bei Zerstörung.</div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2 relative">
+                            <div class="bg-cyan-400 h-full transition-all duration-300" style="width: ${playerShieldPct}%"></div>
+                        </div>
+                    </div>
+                    <button onclick="refillPlayerShield()" ${canRefillPlayerShield ? '' : 'disabled'} class="px-3 py-2 ${canRefillPlayerShield ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'} rounded-lg text-xs font-bold min-h-[36px] flex-shrink-0">
+                        ${playerShieldMax === 0 ? 'Erst Upgrade kaufen' : (playerShieldCurrent >= playerShieldMax ? 'Voll Intakt' : `Neu aufladen $${playerShieldCost}`)}
+                    </button>
+                `;
+                upgradesContainer.appendChild(pShieldCard);
+
+                const baseShieldMax = gameInstance.maxBaseShield || 0;
+                const baseShieldCurrent = gameInstance.baseShield || 0;
+                const baseShieldPct = baseShieldMax > 0 ? Math.min(100, Math.round((baseShieldCurrent / baseShieldMax) * 100)) : 0;
+                const baseShieldCost = Math.round(60 + (baseShieldMax * 0.25));
+                const canRefillBaseShield = baseShieldMax > 0 && baseShieldCurrent < baseShieldMax;
+
+                const bShieldCard = document.createElement('div');
+                bShieldCard.className = "p-4 rounded-2xl border bg-slate-950 border-sky-900/50 flex justify-between items-center";
+                bShieldCard.innerHTML = `
+                    <div class="flex-1 pr-3">
+                        <div class="font-bold text-sky-400 text-sm flex items-center space-x-1.5">
+                            <i class="fa-solid fa-building-shield text-base text-sky-400"></i>
+                            <span>BASIS-KRAFTFELD</span>
+                            <span class="bg-sky-950 text-sky-300 border border-sky-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full">${baseShieldCurrent}/${baseShieldMax} HP</span>
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1">Absorbiert 100% aller Zombie-Angriffe & Explosionen auf die Basis. Neu kaufbar/aufladbar bei Zerstörung.</div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2 relative">
+                            <div class="bg-sky-400 h-full transition-all duration-300" style="width: ${baseShieldPct}%"></div>
+                        </div>
+                    </div>
+                    <button onclick="refillBaseShield()" ${canRefillBaseShield ? '' : 'disabled'} class="px-3 py-2 ${canRefillBaseShield ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-950/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'} rounded-lg text-xs font-bold min-h-[36px] flex-shrink-0">
+                        ${baseShieldMax === 0 ? 'Erst Upgrade kaufen' : (baseShieldCurrent >= baseShieldMax ? 'Voll Intakt' : `Neu aufladen $${baseShieldCost}`)}
+                    </button>
+                `;
+                upgradesContainer.appendChild(bShieldCard);
+
+                // --- 2. REPARATUR & HEILUNG ---
                 const repairCard = document.createElement('div');
                 repairCard.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
                 repairCard.innerHTML = `
@@ -5464,6 +5560,7 @@
                 `;
                 upgradesContainer.appendChild(healCard);
 
+                // --- 3. UPGRADES CATALOG ---
                 Object.entries(UPGRADES).forEach(([key, upg]) => {
                     const currentLvl = gameInstance.upgrades[key] || 0;
                     const cost = getUpgradeCost(key, currentLvl);
@@ -5906,7 +6003,7 @@
                 }
                 if (key === 'player_shield') {
                     gameInstance.maxPlayerShield += 100;
-                    gameInstance.playerShield += 100;
+                    gameInstance.playerShield = gameInstance.maxPlayerShield;
                 }
                 if (key === 'base_hp') {
                     gameInstance.maxBaseHp += 250;
@@ -5914,13 +6011,59 @@
                 }
                 if (key === 'base_shield') {
                     gameInstance.maxBaseShield += 200;
-                    gameInstance.baseShield += 200;
+                    gameInstance.baseShield = gameInstance.maxBaseShield;
                 }
 
                 gameInstance.syncHUD();
                 renderShopCatalog();
                 gameInstance.saveGameSession();
                 showPurchaseToast(`${upg.name} auf Level ${currentLvl + 1} verbessert!`);
+            }
+        }
+
+        function refillPlayerShield() {
+            if (!gameInstance) return;
+            if (gameInstance.maxPlayerShield <= 0) {
+                showWarningToast("Zuerst Spieler-Schild Upgrade kaufen!");
+                return;
+            }
+            const cost = Math.round(40 + (gameInstance.maxPlayerShield * 0.25));
+            if (gameInstance.playerShield >= gameInstance.maxPlayerShield) {
+                showWarningToast("Spieler-Schild ist bereits voll!");
+                return;
+            }
+            if (gameInstance.money >= cost) {
+                gameInstance.money -= cost;
+                gameInstance.playerShield = gameInstance.maxPlayerShield;
+                gameInstance.syncHUD();
+                gameInstance.saveGameSession();
+                renderShopCatalog();
+                showPurchaseToast("Spieler-Schild neu aufgeladen! (100% Schutz)");
+            } else {
+                showWarningToast(`Zu wenig Geld! Benötigt: $${cost}`);
+            }
+        }
+
+        function refillBaseShield() {
+            if (!gameInstance) return;
+            if (gameInstance.maxBaseShield <= 0) {
+                showWarningToast("Zuerst Basis-Schild Upgrade kaufen!");
+                return;
+            }
+            const cost = Math.round(60 + (gameInstance.maxBaseShield * 0.25));
+            if (gameInstance.baseShield >= gameInstance.maxBaseShield) {
+                showWarningToast("Basis-Kraftfeld ist bereits voll!");
+                return;
+            }
+            if (gameInstance.money >= cost) {
+                gameInstance.money -= cost;
+                gameInstance.baseShield = gameInstance.maxBaseShield;
+                gameInstance.syncHUD();
+                gameInstance.saveGameSession();
+                renderShopCatalog();
+                showPurchaseToast("Basis-Kraftfeld neu aufgeladen! (100% Schutz)");
+            } else {
+                showWarningToast(`Zu wenig Geld! Benötigt: $${cost}`);
             }
         }
 
