@@ -822,26 +822,28 @@
                     noise.buffer = this._noiseBuffer;
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(1600, now);
+                    filter.frequency.setValueAtTime(1000, now);
+                    filter.frequency.exponentialRampToValueAtTime(60, now + 0.05);
                     const noiseGain = this.ctx.createGain();
-                    noiseGain.gain.setValueAtTime(0.25, now);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.08);
+                    noiseGain.gain.setValueAtTime(0.2, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
                     noise.connect(filter);
                     filter.connect(noiseGain);
                     noiseGain.connect(this.ctx.destination);
                     noise.start(now);
+                    noise.stop(now + 0.05);
 
                     const osc = this.ctx.createOscillator();
                     const oscGain = this.ctx.createGain();
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(220, now);
-                    osc.frequency.exponentialRampToValueAtTime(45, now + 0.06);
+                    osc.frequency.exponentialRampToValueAtTime(45, now + 0.05);
                     oscGain.gain.setValueAtTime(0.3, now);
-                    oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+                    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
                     osc.connect(oscGain);
                     oscGain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.06);
+                    osc.stop(now + 0.05);
                 } catch(e) {}
             }
 
@@ -854,28 +856,29 @@
                     const noise = this.ctx.createBufferSource();
                     noise.buffer = this._noiseBuffer;
                     const filter = this.ctx.createBiquadFilter();
-                    filter.type = 'bandpass';
-                    filter.frequency.setValueAtTime(1200, now);
-                    filter.Q.value = 1.2;
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(900, now);
+                    filter.frequency.exponentialRampToValueAtTime(60, now + 0.06);
                     const noiseGain = this.ctx.createGain();
-                    noiseGain.gain.setValueAtTime(0.35, now);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.1);
+                    noiseGain.gain.setValueAtTime(0.22, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
                     noise.connect(filter);
                     filter.connect(noiseGain);
                     noiseGain.connect(this.ctx.destination);
                     noise.start(now);
+                    noise.stop(now + 0.06);
 
                     const osc = this.ctx.createOscillator();
                     const oscGain = this.ctx.createGain();
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(180, now);
-                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.08);
-                    oscGain.gain.setValueAtTime(0.4, now);
-                    oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.06);
+                    oscGain.gain.setValueAtTime(0.35, now);
+                    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
                     osc.connect(oscGain);
                     oscGain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.08);
+                    osc.stop(now + 0.06);
                 } catch(e) {}
             }
 
@@ -889,26 +892,28 @@
                     noise.buffer = this._noiseBuffer;
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(750, now);
+                    filter.frequency.setValueAtTime(700, now);
+                    filter.frequency.exponentialRampToValueAtTime(50, now + 0.14);
                     const noiseGain = this.ctx.createGain();
-                    noiseGain.gain.setValueAtTime(0.5, now);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.22);
+                    noiseGain.gain.setValueAtTime(0.45, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
                     noise.connect(filter);
                     filter.connect(noiseGain);
                     noiseGain.connect(this.ctx.destination);
                     noise.start(now);
+                    noise.stop(now + 0.14);
 
                     const osc = this.ctx.createOscillator();
                     const oscGain = this.ctx.createGain();
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(130, now);
-                    osc.frequency.exponentialRampToValueAtTime(25, now + 0.15);
-                    oscGain.gain.setValueAtTime(0.55, now);
-                    oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.frequency.exponentialRampToValueAtTime(25, now + 0.14);
+                    oscGain.gain.setValueAtTime(0.5, now);
+                    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
                     osc.connect(oscGain);
                     oscGain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.15);
+                    osc.stop(now + 0.14);
                 } catch(e) {}
             }
 
@@ -922,7 +927,7 @@
                     osc.frequency.setValueAtTime(750, now);
                     osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
                     gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
                     osc.start(now);
@@ -941,25 +946,27 @@
                     const filter = this.ctx.createBiquadFilter();
                     filter.type = 'lowpass';
                     filter.frequency.setValueAtTime(500, now);
+                    filter.frequency.exponentialRampToValueAtTime(40, now + 0.2);
                     const noiseGain = this.ctx.createGain();
-                    noiseGain.gain.setValueAtTime(0.45, now);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    noiseGain.gain.setValueAtTime(0.4, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
                     noise.connect(filter);
                     filter.connect(noiseGain);
                     noiseGain.connect(this.ctx.destination);
                     noise.start(now);
+                    noise.stop(now + 0.2);
 
                     const osc = this.ctx.createOscillator();
                     const oscGain = this.ctx.createGain();
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(120, now);
-                    osc.frequency.exponentialRampToValueAtTime(20, now + 0.25);
-                    oscGain.gain.setValueAtTime(0.5, now);
-                    oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.frequency.exponentialRampToValueAtTime(20, now + 0.2);
+                    oscGain.gain.setValueAtTime(0.45, now);
+                    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
                     osc.connect(oscGain);
                     oscGain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.25);
+                    osc.stop(now + 0.2);
                 } catch(e) {}
             }
 
@@ -978,9 +985,10 @@
                         filter.frequency.exponentialRampToValueAtTime(45, now + 0.45);
                         const noiseGain = this.ctx.createGain();
                         noiseGain.gain.setValueAtTime(0.7, now);
-                        noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.45);
+                        noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
                         noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(this.ctx.destination);
                         noise.start(now);
+                        noise.stop(now + 0.45);
 
                         const osc = this.ctx.createOscillator();
                         const oscGain = this.ctx.createGain();
@@ -988,7 +996,7 @@
                         osc.frequency.setValueAtTime(130, now);
                         osc.frequency.exponentialRampToValueAtTime(20, now + 0.35);
                         oscGain.gain.setValueAtTime(0.75, now);
-                        oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                        oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
                         osc.connect(oscGain); oscGain.connect(this.ctx.destination);
                         osc.start(now); osc.stop(now + 0.35);
                         return;
