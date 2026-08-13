@@ -361,42 +361,7 @@ class SoundEngine {
         } catch(e) {}
     }
 
-    playDogGrowl() {
-        if (!Storage.data.sfxEnabled) return;
-        this.init();
-        if (!this.ctx) return;
-        try {
-            const now = this.ctx.currentTime;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(75 + Math.random() * 15, now);
-            osc.frequency.linearRampToValueAtTime(65, now + 0.35);
-
-            // LFO for growl shudder
-            const lfo = this.ctx.createOscillator();
-            const lfoGain = this.ctx.createGain();
-            lfo.frequency.setValueAtTime(22, now);
-            lfoGain.gain.setValueAtTime(0.15, now);
-            lfo.connect(gain.gain);
-            lfo.start(now);
-            lfo.stop(now + 0.35);
-
-            const filter = this.ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(450, now);
-
-            gain.gain.setValueAtTime(0.01, now);
-            gain.gain.linearRampToValueAtTime(0.25, now + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now);
-            osc.stop(now + 0.35);
-        } catch(e) {}
-    }
+    playDogGrowl() {}
 
     playDogBite() {
         if (!Storage.data.sfxEnabled) return;

@@ -1849,12 +1849,6 @@
 
                     const distToZombie = dogPos.distanceTo(targetZombie.position);
 
-                    // Occasional combat growl
-                    if (now - this.lastDogGrowlTime > 3200 && Math.random() < 0.3) {
-                        this.lastDogGrowlTime = now;
-                        audio.playDogGrowl();
-                    }
-
                     // BITE ATTACK RANGE CHECK (~2.1 units)
                     const biteRange = 2.1 + (dogLvl >= 5 ? 0.6 : 0);
                     if (distToZombie <= biteRange) {
