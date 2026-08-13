@@ -377,8 +377,9 @@
                         <div id="hud-player-lives-hearts" class="flex items-center space-x-0.5 text-xs text-red-500 mr-1"></div>
                         <span id="hud-player-hp-text" class="text-emerald-400 font-mono">200/200</span>
                     </div>
-                    <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
                         <div id="hud-player-hp-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%;"></div>
+                        <div id="hud-player-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
                     </div>
                 </div>
 
@@ -391,7 +392,7 @@
 
                 <div class="bg-slate-950/85 border border-slate-800 p-2 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[100px] sm:min-w-[140px] pointer-events-auto">
                     <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1">
-                        <span class="text-slate-300"><i class="fa-solid fa-fort-awesome text-sky-400 mr-1"></i> BASIS</span>
+                        <span class="text-slate-300"><i class="fa-solid fa-building-shield text-sky-400 mr-1"></i> BASIS</span>
                         <span id="hud-base-hp-text" class="text-sky-400 font-mono">1000/1000</span>
                     </div>
                     <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
@@ -1624,6 +1625,7 @@
             combat_drone: { name: 'Begleit-Kampfdrohne', level: 0, maxLevel: 5, costBase: 750, desc: 'Schaltet eine schwebende 3D-Drohne frei, die über dir fliegt und automatisch Zombies beschießt!' },
             player_speed: { name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 150, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
             player_hp: { name: 'Kampfweste & Max HP', level: 0, maxLevel: 5, costBase: 200, desc: 'Erhöht maximale Spieler-Gesundheit um +30' },
+            player_shield: { name: 'Körperschild-Generator', level: 0, maxLevel: 5, costBase: 350, desc: 'Erzeugt ein sichtbares 3D-Schutzfeld um die Spielfigur (+100 Schild pro Stufe)' },
             scavenger: { name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 150, desc: 'Erhöht erbeutetes Geld pro Zombie um 5% multiplikativ pro Stufe' },
             crit_chance: { name: 'Kritische Treffer', level: 0, maxLevel: 5, costBase: 300, desc: 'Gewährt +10% Chance auf doppeltem Waffenschaden' },
             base_hp: { name: 'Basis-Panzerung', level: 0, maxLevel: 5, costBase: 250, desc: 'Erhöht maximale Basis-Gesundheit um +250 HP' },
@@ -1907,6 +1909,8 @@
                 this.money = 450;
                 this.playerHp = 200;
                 this.maxPlayerHp = 200;
+                this.playerShield = 0;
+                this.maxPlayerShield = 0;
                 this.playerLives = 3;
                 this.isInvulnerable = false;
                 this.baseHp = 1000;
@@ -1924,7 +1928,7 @@
                 this.lastFired = 0;
 
                 this.upgrades = {
-                    combat_drone: 0, player_speed: 0, player_hp: 0, scavenger: 0, crit_chance: 0,
+                    combat_drone: 0, player_speed: 0, player_hp: 0, player_shield: 0, scavenger: 0, crit_chance: 0,
                     base_hp: 0, base_shield: 0, auto_repair: 0, base_spikes: 0
                 };
                 this.droneGroup = null;
@@ -2359,7 +2363,7 @@
                     armorThreshold = 45;
                 } else {
                     const rnd = Math.random();
-                    // STRICT PROGRESSION: Exactly 1 new zombie type introduced per wave!
+                    // SPACED OUT PROGRESSION: 1 new zombie type every 2 waves!
                     if (this.currentWave >= 2 && rnd < 0.22) {
                         type = 'runner';
                         hp = 38 * waveHpScale;
@@ -2368,7 +2372,7 @@
                         color = 0xeab308;
                         reward = 28;
                         dmgMult = 0.8 * waveDmgScale;
-                    } else if (this.currentWave >= 3 && rnd < 0.38) {
+                    } else if (this.currentWave >= 4 && rnd < 0.38) {
                         type = 'crawler';
                         hp = 22 * waveHpScale;
                         speed = 0.115 * this.diffMult;
@@ -2376,7 +2380,7 @@
                         color = 0x451a03;
                         reward = 20;
                         dmgMult = 0.7 * waveDmgScale;
-                    } else if (this.currentWave >= 4 && rnd < 0.50) {
+                    } else if (this.currentWave >= 6 && rnd < 0.50) {
                         type = 'shield';
                         hp = 75 * waveHpScale;
                         speed = 0.058 * this.diffMult;
@@ -2384,7 +2388,7 @@
                         color = 0x0284c7;
                         reward = 42;
                         dmgMult = 1.2 * waveDmgScale;
-                    } else if (this.currentWave >= 5 && rnd < 0.62) {
+                    } else if (this.currentWave >= 8 && rnd < 0.62) {
                         type = 'exploder';
                         hp = 42 * waveHpScale;
                         speed = 0.09 * this.diffMult;
@@ -2392,7 +2396,7 @@
                         color = 0xf97316;
                         reward = 38;
                         dmgMult = 1.0 * waveDmgScale;
-                    } else if (this.currentWave >= 6 && rnd < 0.72) {
+                    } else if (this.currentWave >= 10 && rnd < 0.72) {
                         type = 'spitter';
                         hp = 65 * waveHpScale;
                         speed = 0.052 * this.diffMult;
@@ -2400,7 +2404,7 @@
                         color = 0x84cc16;
                         reward = 50;
                         dmgMult = 1.1 * waveDmgScale;
-                    } else if (this.currentWave >= 7 && rnd < 0.82) {
+                    } else if (this.currentWave >= 12 && rnd < 0.82) {
                         type = 'tank';
                         hp = 220 * waveHpScale;
                         speed = 0.04 * this.diffMult;
@@ -2409,7 +2413,7 @@
                         reward = 65;
                         dmgMult = 2.0 * waveDmgScale;
                         armorThreshold = 32;
-                    } else if (this.currentWave >= 8 && rnd < 0.92) {
+                    } else if (this.currentWave >= 14 && rnd < 0.92) {
                         type = 'summoner';
                         hp = 160 * waveHpScale;
                         speed = 0.042 * this.diffMult;
@@ -2417,7 +2421,7 @@
                         color = 0x6b21a8;
                         reward = 80;
                         dmgMult = 1.0 * waveDmgScale;
-                    } else if (this.currentWave >= 3 && (this.money >= 1200 || (this.upgrades && this.upgrades.scavenger >= 2)) && Math.random() < 0.35) {
+                    } else if (this.currentWave >= 6 && this.money >= 50000 && Math.random() < 0.25) {
                         type = 'raider';
                         hp = 55 * waveHpScale;
                         speed = 0.115 * this.diffMult;
@@ -2671,7 +2675,7 @@
                 });
             }
 
-            createExplosion(pos, radius, damage, visualRadius = null, isHeavyBomb = false) {
+            createExplosion(pos, radius, damage, visualRadius = null, isHeavyBomb = false, damageFriendly = false) {
                 if (isHeavyBomb || radius >= 10) {
                     audio.playHeavyBomb();
                 } else {
@@ -2709,6 +2713,61 @@
                             z.userData.hp -= damage * falloff;
                             this.flashZombieHit(z);
                             if (z.userData.hp <= 0) this.killZombie(z);
+                        }
+                    }
+
+                    if (damageFriendly) {
+                        const distPlayer = pos.distanceTo(this.playerGroup.position);
+                        if (distPlayer <= radius) {
+                            const falloff = 1 - (distPlayer / radius) * 0.5;
+                            this.playerHp = Math.max(0, this.playerHp - (damage * 0.6 * falloff));
+                            this.showDamageOverlay();
+                            this._needHudSync = true;
+                            if (this.playerHp <= 0) this.triggerGameOver('player');
+                        }
+
+                        const distBase = pos.distanceTo(this.baseGroup.position);
+                        if (distBase <= radius + 8.5) {
+                            const falloff = 1 - (Math.max(0, distBase - 8.5) / radius) * 0.5;
+                            let baseDmg = damage * 0.45 * falloff;
+                            if (this.baseShield > 0) {
+                                const absorbed = Math.min(this.baseShield, baseDmg);
+                                this.baseShield -= absorbed;
+                                baseDmg -= absorbed;
+                            }
+                            if (baseDmg > 0) {
+                                this.baseHp = Math.max(0, this.baseHp - baseDmg);
+                            }
+                            this._needHudSync = true;
+                            if (this.baseHp <= 0) this.triggerGameOver('base');
+                        }
+
+                        for (let k = this.turrets.length - 1; k >= 0; k--) {
+                            const t = this.turrets[k];
+                            const distT = pos.distanceTo(t.position);
+                            if (distT <= radius) {
+                                const falloff = 1 - (distT / radius) * 0.5;
+                                t.userData.hp -= damage * 1.5 * falloff;
+                                this.createBloodSparks(t.position, 0xf59e0b);
+                                if (t.userData.hp <= 0) {
+                                    audio.playExplosion();
+                                    this.scene.remove(t);
+                                    this.turrets.splice(k, 1);
+                                }
+                            }
+                        }
+
+                        for (let wIdx = this.walls.length - 1; wIdx >= 0; wIdx--) {
+                            const w = this.walls[wIdx];
+                            const distW = pos.distanceTo(w.position);
+                            if (distW <= radius) {
+                                const falloff = 1 - (distW / radius) * 0.5;
+                                w.userData.hp -= damage * 1.5 * falloff;
+                                this.createBloodSparks(w.position, 0xeab308);
+                                if (w.userData.hp <= 0) {
+                                    this.destroyWall(w);
+                                }
+                            }
                         }
                     }
                 }
@@ -3060,6 +3119,10 @@
             killZombie(z) {
                 const idx = this.zombies.indexOf(z);
                 if (idx !== -1) {
+                    if (z.userData.type === 'exploder' && !z.userData.hasExploded) {
+                        z.userData.hasExploded = true;
+                        this.createExplosion(z.position, 3.8, 85 * (z.userData.dmgMult || 1), 3.8, false, true);
+                    }
                     const scavengerLvl = this.upgrades.scavenger || 0;
                     const scavengerMult = Math.pow(1.05, scavengerLvl);
                     this.money += Math.round(z.userData.reward * scavengerMult);
@@ -3788,7 +3851,7 @@
                         title: '💣 KAMIKAZE-BOMBER DETEKTIERT!',
                         subtitle: 'Explodieren bei Tod oder Kontakt!',
                         icon: 'fa-bomb text-orange-500 animate-pulse',
-                        body: 'Kamikaze-Zombies tragen Napalm am Körper. Sie **explodieren bei Tod oder Berührung** in einem Feuerball!'
+                        body: 'Kamikaze-Zombies tragen Napalm am Körper. Sie <strong>explodieren bei Tod oder Berührung</strong> in einem Feuerball!'
                     },
                     shield: {
                         title: '🛡️ SCHILD-ZOMBIES DETEKTIERT!',
@@ -3800,7 +3863,7 @@
                         title: '☣️ SÄURE-SPUCKER DETEKTIERT!',
                         subtitle: 'Toxische Fernkämpfer',
                         icon: 'fa-biohazard text-lime-400',
-                        body: 'Säure-Spucker bleiben auf Distanz und schießen **ätzende Säure-Geschosse** ab!'
+                        body: 'Säure-Spucker bleiben auf Distanz und schießen <strong>ätzende Säure-Geschosse</strong> ab!'
                     },
                     tank: {
                         title: '🧱 PANZER-ZOMBIES DETEKTIERT!',
@@ -3812,13 +3875,13 @@
                         title: '🔮 BESCHWÖRER-ZOMBIES DETEKTIERT!',
                         subtitle: 'Beschwören kontinuierlich Krabbler-Minions',
                         icon: 'fa-wand-magic-sparkles text-purple-400',
-                        body: 'Beschwörer-Zombies nutzen dunkle Magie und **beschwören im Sekundentakt neue Krabbler**. Eliminiere sie schnell!'
+                        body: 'Beschwörer-Zombies nutzen dunkle Magie und <strong>beschwören im Sekundentakt neue Krabbler</strong>. Eliminiere sie schnell!'
                     },
                     raider: {
                         title: '💰 TRESOR-RÄUBER DETEKTIERT!',
                         subtitle: 'Reichtums-Mutanten stehlen dein Vermögen!',
                         icon: 'fa-coins text-amber-400 animate-bounce',
-                        body: 'Dein hohes Vermögen hat **Tresor-Räuber** angelockt! Diese blitzschnellen Mutanten greifen dich & deine Basis an und **stehlen pro Treffer 8% deines Geldes**. Eliminiere sie sofort!'
+                        body: 'Dein hohes Vermögen ($50.000+) hat <strong>Tresor-Räuber</strong> angelockt! Diese blitzschnellen Mutanten greifen dich & deine Basis an und <strong>stehlen pro Treffer 8% deines Geldes</strong>. Eliminiere sie sofort!'
                     },
                     boss: {
                         title: '👹 ENDBOSS-GIGANT DETEKTIERT!',
@@ -4010,6 +4073,19 @@
                     this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, this.playerGroup.position.z + this.cameraOffset.z, 0.08);
                     this.camera.lookAt(this.playerGroup.position);
 
+                    if (this.playerShieldMesh) {
+                        this.playerShieldMesh.visible = (this.playerShield > 0);
+                        if (this.playerShield > 0) {
+                            this.playerShieldMesh.rotation.y += dt * 1.5;
+                        }
+                    }
+                    if (this.baseShieldMesh) {
+                        this.baseShieldMesh.visible = (this.baseShield > 0);
+                        if (this.baseShield > 0) {
+                            this.baseShieldMesh.rotation.y += dt * 0.4;
+                        }
+                    }
+
                     if (this.baseCoreCrystal) this.baseCoreCrystal.rotation.y += 0.02;
 
                     // Re-build Spatial Grid Hash for O(1) Collision Detection
@@ -4057,7 +4133,16 @@
                                 const distToP = b.position.distanceTo(this.playerGroup.position);
                                 if (distToP < 1.3) {
                                     bulletHit = true;
-                                    this.playerHp = Math.max(0, this.playerHp - b.userData.damage);
+                                    let pDmg = b.userData.damage;
+                                    if (this.playerShield > 0) {
+                                        const absorbed = Math.min(this.playerShield, pDmg);
+                                        this.playerShield -= absorbed;
+                                        pDmg -= absorbed;
+                                        this.createBloodSparks(b.position, 0x38bdf8);
+                                    }
+                                    if (pDmg > 0) {
+                                        this.playerHp = Math.max(0, this.playerHp - pDmg);
+                                    }
                                     this.flashZombieHit(this.playerGroup);
                                     this.createBloodSparks(b.position, 0x84cc16);
                                     this.syncHUD();
@@ -4217,10 +4302,16 @@
                             }
                         } else if (hitWallTarget) {
                             z.rotation.y = directAngle;
-                            hitWallTarget.userData.hp -= (35 * z.userData.dmgMult) * dt;
-                            this.createBloodSparks(hitWallTarget.position, 0xeab308);
-                            if (hitWallTarget.userData.hp <= 0) {
-                                this.destroyWall(hitWallTarget);
+                            const isLaserWall = hitWallTarget.userData.typeId === 'laser_wall';
+                            if (isLaserWall && z.userData.type !== 'boss') {
+                                // Non-boss zombies cannot damage plasma barrier
+                            } else {
+                                const wallDmg = z.userData.type === 'boss' ? 300 * z.userData.dmgMult : 35 * z.userData.dmgMult;
+                                hitWallTarget.userData.hp -= wallDmg * dt;
+                                this.createBloodSparks(hitWallTarget.position, 0xeab308);
+                                if (hitWallTarget.userData.hp <= 0) {
+                                    this.destroyWall(hitWallTarget);
+                                }
                             }
                         }
 
@@ -4230,17 +4321,22 @@
                             z.rotation.z = Math.sin(z.userData.walkCycle) * 0.08;
                         }
 
-                        // Zombies attack nearby turrets!
+                        // Zombies attack nearby turrets! Bosses have larger attack range & smash power
                         for (let k = this.turrets.length - 1; k >= 0; k--) {
                             const t = this.turrets[k];
-                            if (z.position.distanceTo(t.position) < 1.8) {
-                                t.userData.hp -= (28 * z.userData.dmgMult) * dt;
-                                this.createBloodSparks(t.position, 0xf59e0b);
+                            const attackRange = 1.8 * (z.userData.type === 'boss' ? (z.userData.scale || 2.4) : 1.0);
+                            if (z.position.distanceTo(t.position) < attackRange) {
+                                const turretDmg = z.userData.type === 'boss' ? 240 * z.userData.dmgMult : 28 * z.userData.dmgMult;
+                                t.userData.hp -= turretDmg * dt;
+                                this.createBloodSparks(t.position, z.userData.type === 'boss' ? 0xef4444 : 0xf59e0b);
                                 if (t.userData.hp <= 0) {
                                     audio.playExplosion();
-                                    this.createExplosion(t.position, 2.5, 0);
+                                    this.createExplosion(t.position, 2.8, 0);
                                     this.scene.remove(t);
                                     this.turrets.splice(k, 1);
+                                    if (z.userData.type === 'boss' && typeof showWarningToast === 'function') {
+                                        showWarningToast('💥 ENDBOSS HAT DEINEN TURM ZERSTÖRT!');
+                                    }
                                 }
                                 break;
                             }
@@ -4303,7 +4399,15 @@
 
                         if (distToPlayer < 1.4 && !this.isInvulnerable) {
                             let pDmg = (0.3 * z.userData.dmgMult) * dt * 60;
-                            this.playerHp = Math.max(0, this.playerHp - pDmg);
+                            if (this.playerShield > 0) {
+                                const absorbed = Math.min(this.playerShield, pDmg);
+                                this.playerShield -= absorbed;
+                                pDmg -= absorbed;
+                                if (Math.random() < 0.15) this.createBloodSparks(this.playerGroup.position, 0x38bdf8);
+                            }
+                            if (pDmg > 0) {
+                                this.playerHp = Math.max(0, this.playerHp - pDmg);
+                            }
                             this._needHudSync = true;
                             if (this.playerHp <= 0) this.handlePlayerDeath();
                         }
@@ -4386,6 +4490,7 @@
                 if (this.playerLives > 1) {
                     this.playerLives--;
                     this.playerHp = this.maxPlayerHp;
+                    this.playerShield = this.maxPlayerShield;
                     this.isInvulnerable = true;
 
                     const playerPos = this.playerGroup.position;
@@ -4428,8 +4533,21 @@
             }
 
             syncHUD() {
-                document.getElementById('hud-player-hp-text').innerText = `${Math.ceil(this.playerHp)}/${this.maxPlayerHp}`;
+                if (this.playerShield > 0) {
+                    document.getElementById('hud-player-hp-text').innerText = `${Math.ceil(this.playerHp)}/${this.maxPlayerHp} (+${Math.ceil(this.playerShield)})`;
+                } else {
+                    document.getElementById('hud-player-hp-text').innerText = `${Math.ceil(this.playerHp)}/${this.maxPlayerHp}`;
+                }
                 document.getElementById('hud-player-hp-bar').style.width = `${(this.playerHp / this.maxPlayerHp) * 100}%`;
+
+                const playerShieldBar = document.getElementById('hud-player-shield-bar');
+                if (playerShieldBar) {
+                    if (this.maxPlayerShield > 0) {
+                        playerShieldBar.style.width = `${(this.playerShield / this.maxPlayerShield) * 100}%`;
+                    } else {
+                        playerShieldBar.style.width = '0%';
+                    }
+                }
 
                 // Render Player Hearts (3 Lives)
                 const heartsContainer = document.getElementById('hud-player-lives-hearts');
@@ -4496,6 +4614,8 @@
                         money: this.money,
                         playerHp: this.playerHp,
                         maxPlayerHp: this.maxPlayerHp,
+                        playerShield: this.playerShield,
+                        maxPlayerShield: this.maxPlayerShield,
                         playerLives: this.playerLives,
                         baseHp: this.baseHp,
                         maxBaseHp: this.maxBaseHp,
@@ -4545,6 +4665,8 @@
                     this.money = data.money !== undefined ? data.money : 450;
                     this.playerHp = data.playerHp !== undefined ? data.playerHp : 200;
                     this.maxPlayerHp = data.maxPlayerHp || 200;
+                    this.playerShield = data.playerShield || 0;
+                    this.maxPlayerShield = data.maxPlayerShield || 0;
                     this.playerLives = data.playerLives !== undefined ? data.playerLives : 3;
                     this.baseHp = data.baseHp !== undefined ? data.baseHp : 1000;
                     this.maxBaseHp = data.maxBaseHp || 1000;
@@ -4918,6 +5040,21 @@
                     this.baseGroup.add(beacon);
                 });
 
+                // 3D Base Plasma Shield Dome Mesh
+                const bShieldMat = new THREE.MeshPhongMaterial({
+                    color: 0x06b6d4,
+                    emissive: 0x0891b2,
+                    emissiveIntensity: 0.5,
+                    transparent: true,
+                    opacity: 0.32,
+                    side: THREE.DoubleSide,
+                    shininess: 90
+                });
+                this.baseShieldMesh = new THREE.Mesh(new THREE.SphereGeometry(8.8, 24, 24, 0, Math.PI * 2, 0, Math.PI / 1.8), bShieldMat);
+                this.baseShieldMesh.position.set(0, 0, 0);
+                this.baseShieldMesh.visible = false;
+                this.baseGroup.add(this.baseShieldMesh);
+
                 this.scene.add(this.baseGroup);
             }
 
@@ -4996,6 +5133,21 @@
                 const visor = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.18, 0.2), visorMat);
                 visor.position.set(0, 2.28, 0.3);
                 this.playerGroup.add(visor);
+
+                // 3D Personal Energy Shield Mesh around Player Character
+                const pShieldMat = new THREE.MeshPhongMaterial({
+                    color: 0x38bdf8,
+                    emissive: 0x0284c7,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.42,
+                    side: THREE.DoubleSide,
+                    shininess: 90
+                });
+                this.playerShieldMesh = new THREE.Mesh(new THREE.SphereGeometry(1.35, 16, 16), pShieldMat);
+                this.playerShieldMesh.position.set(0, 1.3, 0);
+                this.playerShieldMesh.visible = false;
+                this.playerGroup.add(this.playerShieldMesh);
 
                 const gunGroup = new THREE.Group();
                 const gunMetal = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.2 });
@@ -5628,6 +5780,10 @@
                     gameInstance.maxPlayerHp += 30;
                     gameInstance.playerHp += 30;
                 }
+                if (key === 'player_shield') {
+                    gameInstance.maxPlayerShield += 100;
+                    gameInstance.playerShield += 100;
+                }
                 if (key === 'base_hp') {
                     gameInstance.maxBaseHp += 250;
                     gameInstance.baseHp += 250;
@@ -5658,13 +5814,14 @@
 
         function healPlayer() {
             if (!gameInstance) return;
-            if (gameInstance.money >= 80 && gameInstance.playerHp < gameInstance.maxPlayerHp) {
+            if (gameInstance.money >= 80 && (gameInstance.playerHp < gameInstance.maxPlayerHp || gameInstance.playerShield < gameInstance.maxPlayerShield)) {
                 gameInstance.money -= 80;
                 gameInstance.playerHp = gameInstance.maxPlayerHp;
+                gameInstance.playerShield = gameInstance.maxPlayerShield;
                 gameInstance.syncHUD();
                 gameInstance.saveGameSession();
                 renderShopCatalog();
-                showPurchaseToast("Spieler geheilt! (Max HP)");
+                showPurchaseToast("Spieler & Schild vollständig wiederhergestellt!");
             }
         }
 
