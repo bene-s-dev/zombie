@@ -406,6 +406,63 @@ class SoundEngine {
         } catch(e) {}
     }
 
+    playCoin() {
+        if (!Storage.data.sfxEnabled) return;
+        this.init();
+        try {
+            if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
+            if (this.ctx) {
+                const now = this.ctx.currentTime;
+                // Pleasant metallic 2-tone coin chime (B5 -> E6)
+                const osc1 = this.ctx.createOscillator();
+                const gain1 = this.ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(987.77, now);
+                gain1.gain.setValueAtTime(0.45, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                osc1.connect(gain1); gain1.connect(this.ctx.destination);
+                osc1.start(now); osc1.stop(now + 0.08);
+
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(1318.51, now + 0.075);
+                gain2.gain.setValueAtTime(0.55, now + 0.075);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                osc2.connect(gain2); gain2.connect(this.ctx.destination);
+                osc2.start(now + 0.075); osc2.stop(now + 0.28);
+                return;
+            }
+        } catch(e) {}
+        try {
+            const sampleRate = 22050;
+            const dur = 0.28;
+            const n = Math.floor(sampleRate * dur);
+            const ab = new ArrayBuffer(44 + n * 2);
+            const v = new DataView(ab);
+            const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+            ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true);
+            ws(8, 'WAVE'); ws(12, 'fmt '); v.setUint32(16, 16, true);
+            v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+            v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true);
+            v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+            ws(36, 'data'); v.setUint32(40, n * 2, true);
+            for (let i = 0; i < n; i++) {
+                const t = i / sampleRate;
+                let s = 0;
+                if (t < 0.075) s = Math.sin(2 * Math.PI * 987.77 * t) * 0.6 * (1 - t / 0.075);
+                else {
+                    const t2 = t - 0.075;
+                    s = Math.sin(2 * Math.PI * 1318.51 * t2) * 0.75 * Math.exp(-t2 * 12);
+                }
+                v.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, s)) * 32767), true);
+            }
+            const url = URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
+            const el = new Audio(url); el.volume = 0.9; el.play().catch(() => {});
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+        } catch(e) {}
+    }
+
     playConfirmBip() {
         if (!Storage.data.sfxEnabled) return;
         try {
