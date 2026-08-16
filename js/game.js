@@ -240,6 +240,10 @@
                             this.updateGhostPosition(intersects.x, intersects.z);
                         }
                         if (this.isAc130Active && (!e.pointerType || e.pointerType === 'mouse')) {
+                            this.ac130ScreenAim = {
+                                x: THREE.MathUtils.clamp(e.clientX, 35, window.innerWidth - 35),
+                                y: THREE.MathUtils.clamp(e.clientY, 45, window.innerHeight - 45)
+                            };
                             this.ac130AimPos.copy(intersects);
                         }
                     }
@@ -3157,6 +3161,10 @@
                 this.ac130Cooldown = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cooldown) || 80;
                 this.ac130OrbitAngle = 0;
                 this.ac130SelectedWeapon = '40mm';
+                this.ac130ScreenAim = {
+                    x: window.innerWidth * 0.5,
+                    y: window.innerHeight * 0.5
+                };
                 if (this.playerGroup) {
                     this.ac130AimPos.copy(this.playerGroup.position);
                 }
@@ -3507,23 +3515,39 @@
                     const clockEl = document.getElementById('ac130-mw-clock');
                     if (clockEl) clockEl.innerText = new Date().toLocaleTimeString('en-US', { hour12: false });
 
-                    // Joystick Aim Movement during AC-130 mode
-                    if (this.touchJoystick.active) {
-                        const joyAimSpeed = 46.0;
-                        this.ac130AimPos.x += this.touchJoystick.vectorX * joyAimSpeed * dt;
-                        this.ac130AimPos.z += this.touchJoystick.vectorY * joyAimSpeed * dt;
-                        this.ac130AimPos.x = THREE.MathUtils.clamp(this.ac130AimPos.x, -72, 72);
-                        this.ac130AimPos.z = THREE.MathUtils.clamp(this.ac130AimPos.z, -72, 72);
+                    if (!this.ac130ScreenAim) {
+                        this.ac130ScreenAim = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
                     }
 
-                    // Dynamically position AC-130 crosshair from 3D aim target
-                    const aimScreenV = this.ac130AimPos.clone().project(this.camera);
-                    const crossX = (aimScreenV.x * 0.5 + 0.5) * window.innerWidth;
-                    const crossY = (-(aimScreenV.y * 0.5) + 0.5) * window.innerHeight;
+                    // 1:1 Joystick Screen-Space Aiming (Directly coupled to screen view, NEVER distorts or drifts with orbit!)
+                    if (this.touchJoystick.active) {
+                        const joyScreenSpeed = 520.0; // Responsive screen pixels/second
+                        this.ac130ScreenAim.x += this.touchJoystick.vectorX * joyScreenSpeed * dt;
+                        this.ac130ScreenAim.y += this.touchJoystick.vectorY * joyScreenSpeed * dt;
+                    }
+
+                    // Strict Screen-Boundary Clamping (Never leaves the visible screen area)
+                    const padX = 35;
+                    const padY = 45;
+                    this.ac130ScreenAim.x = THREE.MathUtils.clamp(this.ac130ScreenAim.x, padX, window.innerWidth - padX);
+                    this.ac130ScreenAim.y = THREE.MathUtils.clamp(this.ac130ScreenAim.y, padY, window.innerHeight - padY);
+
+                    // Position Crosshair HUD in Screen Coordinates
                     const crosshairEl = document.getElementById('ac130-crosshair-hud');
                     if (crosshairEl) {
-                        crosshairEl.style.left = `${crossX}px`;
-                        crosshairEl.style.top = `${crossY}px`;
+                        crosshairEl.style.left = `${this.ac130ScreenAim.x}px`;
+                        crosshairEl.style.top = `${this.ac130ScreenAim.y}px`;
+                    }
+
+                    // Project from Screen Space directly to 3D Ground World Position
+                    const ndcX = (this.ac130ScreenAim.x / window.innerWidth) * 2 - 1;
+                    const ndcY = -(this.ac130ScreenAim.y / window.innerHeight) * 2 + 1;
+                    this.mousePos.set(ndcX, ndcY);
+                    this.raycaster.setFromCamera(this.mousePos, this.camera);
+                    const intersects = this._v3;
+                    if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                        this.ac130AimPos.copy(intersects);
+                        this.pointerWorldPos.copy(intersects);
                     }
 
                     // Continuous Mouse-Held or Mobile Touch-Held Rapid Firing (e.g. 25mm Gatling stream)
