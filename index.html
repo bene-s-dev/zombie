@@ -160,58 +160,50 @@
         <div id="nuke-flash-overlay" class="pointer-events-none fixed inset-0 z-[100] bg-white opacity-0 transition-opacity duration-300"></div>
 
         <!-- ================= MODERN WARFARE AC-130 DEATH FROM ABOVE OVERLAY ================= -->
-        <div id="ac130-overlay" class="hidden pointer-events-none fixed inset-0 z-[80] select-none overflow-hidden mw-scanlines flex flex-col justify-between p-3 sm:p-7 text-white font-mono text-xs sm:text-sm">
+        <div id="ac130-overlay" class="hidden pointer-events-none fixed inset-0 z-[80] select-none overflow-hidden mw-scanlines flex flex-col justify-between p-2 sm:p-5 text-white font-mono text-[10px] sm:text-xs">
             <!-- Vignette Edge Shadows -->
             <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)]"></div>
 
-            <!-- Top Row HUD Data (Live Real-Time Flight & Combat Telemetry) -->
-            <div class="z-10 flex justify-between items-start text-[10px] sm:text-xs tracking-wider uppercase text-white drop-shadow select-none">
+            <!-- Top Row HUD Data (Live Real-Time Flight & Combat Telemetry - Compact Layout) -->
+            <div class="z-10 flex justify-between items-start tracking-wider uppercase text-white drop-shadow select-none">
                 <!-- Top Left Live Flight Telemetry -->
-                <div class="space-y-0.5 leading-tight font-mono">
-                    <div class="flex items-center space-x-2">
+                <div class="space-y-0.5 leading-tight font-mono text-[9px] sm:text-xs bg-black/50 p-1.5 rounded-lg border border-slate-800">
+                    <div class="flex items-center space-x-1.5">
                         <span class="text-slate-400">ALT:</span>
-                        <span id="ac130-tele-alt" class="font-bold text-white">48.0 M (157 FT)</span>
+                        <span id="ac130-tele-alt" class="font-bold text-white">48.0 M</span>
                     </div>
-                    <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-1.5">
                         <span class="text-slate-400">SPD:</span>
                         <span id="ac130-tele-spd" class="font-bold text-white">245 KTS</span>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-slate-400">BANK:</span>
-                        <span id="ac130-tele-bank" class="font-bold text-white">+8.2°</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-1.5">
                         <span class="text-slate-400">HDG:</span>
                         <span id="ac130-tele-hdg" class="font-bold text-amber-300">084°</span>
                     </div>
-                    <div id="ac130-mw-countdown" class="font-teko text-5xl sm:text-7xl font-bold text-red-600 leading-none mt-1 tracking-tight">40</div>
                 </div>
 
-                <!-- Top Center Mission Clock -->
-                <div class="flex flex-col items-center space-y-1 font-mono">
-                    <div id="ac130-mw-clock" class="text-xs sm:text-sm font-bold tracking-widest text-slate-200">10:42:15</div>
+                <!-- Top Center Mission Countdown & Clock -->
+                <div class="flex flex-col items-center font-mono">
+                    <div id="ac130-mw-countdown" class="font-teko text-4xl sm:text-6xl font-bold text-red-500 leading-none tracking-tight">40</div>
+                    <div id="ac130-mw-clock" class="text-[9px] sm:text-xs font-bold tracking-widest text-slate-300">10:42:15</div>
                 </div>
 
                 <!-- Top Right Live Grid, Hostiles, Sensor Status & Top-Right Pause Button -->
-                <div class="flex items-start space-x-2 sm:space-x-3 pointer-events-auto">
-                    <div class="text-right space-y-0.5 leading-tight font-mono text-[10px] sm:text-xs">
-                        <div class="flex items-center justify-end space-x-1 sm:space-x-2">
-                            <span class="text-slate-400">POS:</span>
-                            <span id="ac130-tele-pos" class="font-bold text-white">34°12'N 118°28'W</span>
-                        </div>
-                        <div class="flex items-center justify-end space-x-1 sm:space-x-2">
+                <div class="flex items-start space-x-2 pointer-events-auto">
+                    <div class="text-right space-y-0.5 leading-tight font-mono text-[9px] sm:text-xs bg-black/50 p-1.5 rounded-lg border border-slate-800 hidden sm:block">
+                        <div class="flex items-center justify-end space-x-1">
                             <span class="text-slate-400">HOSTILES:</span>
-                            <span id="ac130-tele-hostiles" class="font-bold text-red-400">12 DETECTED</span>
+                            <span id="ac130-tele-hostiles" class="font-bold text-red-400">12</span>
                         </div>
-                        <div class="flex items-center justify-end space-x-1 sm:space-x-2">
+                        <div class="flex items-center justify-end space-x-1">
                             <span class="text-slate-400">SENSOR:</span>
-                            <span class="font-bold text-white border border-white/80 px-1 py-0.2 bg-white/20">[WHOT FLIR]</span>
+                            <span class="font-bold text-white">[FLIR]</span>
                         </div>
                     </div>
 
                     <!-- Prominent Top-Right Pause Button -->
-                    <button type="button" id="ac130-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="cursor-pointer pointer-events-auto bg-slate-950/90 hover:bg-slate-800 active:bg-slate-900 border-2 border-amber-400 text-amber-300 hover:text-white px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl flex items-center space-x-1.5 transition active:scale-95 text-xs sm:text-sm shadow-2xl font-bold">
-                        <i class="fa-solid fa-pause text-amber-400 text-xs sm:text-sm"></i>
+                    <button type="button" id="ac130-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="cursor-pointer pointer-events-auto bg-slate-950/90 hover:bg-slate-800 active:bg-slate-900 border-2 border-amber-400 text-amber-300 hover:text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl flex items-center space-x-1 transition active:scale-95 text-xs shadow-2xl font-bold">
+                        <i class="fa-solid fa-pause text-amber-400 text-xs"></i>
                         <span class="hidden sm:inline">PAUSE [ESC]</span>
                         <span class="sm:hidden">PAUSE</span>
                     </button>
@@ -219,51 +211,42 @@
             </div>
 
             <!-- Compact Center Military Crosshair (Clean, Smaller, No Distracting Boxes) -->
-            <div id="ac130-crosshair-hud" class="pointer-events-none fixed w-28 sm:w-48 h-28 sm:h-48 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none" style="top: 50%; left: 50%;">
-                <!-- Center Crosshair Tick Lines with Mils Markers -->
-                <div class="absolute w-24 sm:w-40 h-[1px] bg-white/80"></div>
-                <div class="absolute h-24 sm:h-40 w-[1px] bg-white/80"></div>
+            <div id="ac130-crosshair-hud" class="pointer-events-none fixed w-24 sm:w-40 h-24 sm:h-40 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none" style="top: 50%; left: 50%;">
+                <!-- Center Crosshair Tick Lines -->
+                <div class="absolute w-20 sm:w-36 h-[1px] bg-white/80"></div>
+                <div class="absolute h-20 sm:h-36 w-[1px] bg-white/80"></div>
 
                 <!-- Center Aim Circle & Glowing Dot -->
-                <div class="w-5 h-5 sm:w-7 sm:h-7 rounded-full border border-white/70 flex items-center justify-center">
-                    <div class="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white animate-pulse"></div>
+                <div class="w-4 h-4 sm:w-6 sm:h-6 rounded-full border border-white/70 flex items-center justify-center">
+                    <div class="w-1 h-1 rounded-full bg-white animate-pulse"></div>
                 </div>
             </div>
 
-            <!-- Bottom Row: Weapon Selector & Status -->
-            <div class="z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-3 text-[11px] sm:text-xs">
-                <!-- Bottom Left Weapon Loadout & Hotkey Controls -->
-                <div class="pointer-events-auto flex flex-col space-y-1 leading-tight select-none bg-black/70 p-2 sm:p-2.5 rounded-xl border border-slate-700">
-                    <div class="text-[9px] sm:text-[10px] text-amber-300 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-between">
-                        <span><i class="fa-solid fa-crosshairs mr-1"></i> WAFFE WÄHLEN [1, 2, 3 / MAUSRAD]:</span>
-                        <span class="text-slate-400 font-mono text-[9px]">LMB = Feuern</span>
-                    </div>
-                    <div class="flex items-center space-x-1 sm:space-x-1.5">
-                        <!-- [1] 25mm Gatling -->
-                        <button id="ac130-weap-btn-25mm" onclick="gameInstance && gameInstance.selectAc130Weapon('25mm')" class="px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95">
-                            <span class="bg-slate-800 px-1 py-0.2 rounded text-[9px] font-bold text-amber-400 border border-slate-600">1</span>
-                            <span class="font-bold text-[10px] sm:text-xs">25mm GATLING</span>
-                        </button>
+            <!-- Right Edge: 3 Weapon Selection Icon Buttons (Minigun, Granate, Rakete - No Text) -->
+            <div class="fixed right-2 sm:right-4 top-1/2 -translate-y-1/2 flex flex-col space-y-2 sm:space-y-3 z-30 pointer-events-auto select-none">
+                <!-- [1] 25mm Gatling / Minigun -->
+                <button id="ac130-weap-btn-25mm" onclick="gameInstance && gameInstance.selectAc130Weapon('25mm')" title="25mm Minigun" class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl border border-slate-700 bg-black/80 text-slate-400 hover:text-white transition flex items-center justify-center active:scale-95 shadow-xl">
+                    <i class="fa-solid fa-gun text-base sm:text-xl"></i>
+                </button>
 
-                        <!-- [2] 40mm Bofors -->
-                        <button id="ac130-weap-btn-40mm" onclick="gameInstance && gameInstance.selectAc130Weapon('40mm')" class="px-2 sm:px-2.5 py-1 rounded border-2 border-white bg-white/20 text-white font-bold transition flex items-center space-x-1 shadow-lg active:scale-95">
-                            <span class="bg-slate-800 px-1 py-0.2 rounded text-[9px] font-bold text-amber-400 border border-slate-600">2</span>
-                            <span class="font-bold text-[10px] sm:text-xs">40mm BOFORS</span>
-                        </button>
+                <!-- [2] 40mm Bofors / Granate -->
+                <button id="ac130-weap-btn-40mm" onclick="gameInstance && gameInstance.selectAc130Weapon('40mm')" title="40mm Granate" class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl border-2 border-white bg-white/25 text-white shadow-2xl flex items-center justify-center transition active:scale-95 scale-105">
+                    <i class="fa-solid fa-bomb text-base sm:text-xl"></i>
+                </button>
 
-                        <!-- [3] AGM-114 Hellfire Rakete -->
-                        <button id="ac130-weap-btn-105mm" onclick="gameInstance && gameInstance.selectAc130Weapon('105mm')" class="px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95">
-                            <span class="bg-slate-800 px-1 py-0.2 rounded text-[9px] font-bold text-amber-400 border border-slate-600">3</span>
-                            <span class="font-bold text-[10px] sm:text-xs text-red-400"><i class="fa-solid fa-rocket mr-0.5"></i> AGM-114 RAKETE</span>
-                        </button>
-                    </div>
-                </div>
+                <!-- [3] AGM-114 Hellfire / Rakete -->
+                <button id="ac130-weap-btn-105mm" onclick="gameInstance && gameInstance.selectAc130Weapon('105mm')" title="AGM-114 Rakete" class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl border border-slate-700 bg-black/80 text-slate-400 hover:text-white transition flex items-center justify-center active:scale-95 shadow-xl">
+                    <i class="fa-solid fa-rocket text-base sm:text-xl"></i>
+                </button>
+            </div>
 
+            <!-- Bottom Row: Status & Big Fire Button -->
+            <div class="z-10 flex justify-end items-end gap-2 text-[10px] sm:text-xs">
                 <!-- Bottom Right Weapon Status & Mobile Touch Fire Trigger -->
-                <div class="flex flex-col items-end space-y-1.5 pointer-events-auto">
-                    <div class="text-right space-y-0.5 leading-tight bg-black/60 px-2.5 py-1 rounded border border-slate-800">
-                        <div id="ac130-status-40mm-mw" class="text-white font-bold text-[10px] sm:text-xs">40 MM READY</div>
-                        <div id="ac130-status-105mm-mw" class="text-emerald-400 font-bold text-[10px] sm:text-xs">RAKETE READY</div>
+                <div class="flex flex-col items-end space-y-1 pointer-events-auto">
+                    <div class="text-right space-y-0.5 leading-tight bg-black/60 px-2 py-0.5 rounded border border-slate-800 text-[9px] sm:text-[10px]">
+                        <div id="ac130-status-40mm-mw" class="text-white font-bold">40MM READY</div>
+                        <div id="ac130-status-105mm-mw" class="text-emerald-400 font-bold">RAKETE READY</div>
                     </div>
 
                     <!-- Big Touch Fire Button (for mobile devices) -->
@@ -274,9 +257,9 @@
                             ontouchstart="gameInstance && gameInstance.startAc130Firing(); event.stopPropagation();" 
                             ontouchend="gameInstance && gameInstance.stopAc130Firing(); event.stopPropagation();" 
                             ontouchcancel="gameInstance && gameInstance.stopAc130Firing(); event.stopPropagation();" 
-                            class="bg-gradient-to-tr from-red-700 via-red-600 to-amber-600 active:from-red-800 active:to-red-700 text-white font-black px-6 py-3.5 sm:px-8 sm:py-4.5 rounded-2xl shadow-2xl text-sm sm:text-base font-mono active:scale-95 border-2 border-red-300 flex items-center justify-center space-x-2 min-w-[120px] sm:min-w-[150px] min-h-[58px] sm:min-h-[70px] tracking-wider select-none">
-                        <i class="fa-solid fa-crosshairs text-xl sm:text-2xl animate-pulse"></i>
-                        <span class="font-bold tracking-widest text-base sm:text-lg">FEUER</span>
+                            class="bg-gradient-to-tr from-red-700 via-red-600 to-amber-600 active:from-red-800 active:to-red-700 text-white font-black px-5 py-3 sm:px-7 sm:py-4 rounded-2xl shadow-2xl text-xs sm:text-sm font-mono active:scale-95 border-2 border-red-300 flex items-center justify-center space-x-1.5 min-w-[105px] sm:min-w-[140px] min-h-[50px] sm:min-h-[64px] tracking-wider select-none">
+                        <i class="fa-solid fa-crosshairs text-base sm:text-xl animate-pulse"></i>
+                        <span class="font-bold tracking-widest text-sm sm:text-base">FEUER</span>
                     </button>
                 </div>
             </div>

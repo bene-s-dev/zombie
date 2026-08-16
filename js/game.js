@@ -239,36 +239,11 @@
                         if (this.isPlacementMode && this.ghostMesh) {
                             this.updateGhostPosition(intersects.x, intersects.z);
                         }
-                        if (this.isAc130Active) {
+                        if (this.isAc130Active && (!e.pointerType || e.pointerType === 'mouse')) {
                             this.ac130AimPos.copy(intersects);
-                            const crosshairEl = document.getElementById('ac130-crosshair-hud');
-                            if (crosshairEl) {
-                                crosshairEl.style.left = `${e.clientX}px`;
-                                crosshairEl.style.top = `${e.clientY}px`;
-                            }
                         }
                     }
                 };
-
-                window.addEventListener('touchmove', (e) => {
-                    if (this.isAc130Active && e.touches.length > 0) {
-                        const touch = e.touches[0];
-                        const aimX = touch.clientX;
-                        const aimY = Math.max(20, touch.clientY - 80);
-                        this.mousePos.x = (aimX / window.innerWidth) * 2 - 1;
-                        this.mousePos.y = -(aimY / window.innerHeight) * 2 + 1;
-                        this.raycaster.setFromCamera(this.mousePos, this.camera);
-                        const intersects = this._v3;
-                        if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
-                            this.ac130AimPos.copy(intersects);
-                            const crosshairEl = document.getElementById('ac130-crosshair-hud');
-                            if (crosshairEl) {
-                                crosshairEl.style.left = `${aimX}px`;
-                                crosshairEl.style.top = `${aimY}px`;
-                            }
-                        }
-                    }
-                }, { passive: true });
 
                 const handleSelection = (clientX, clientY) => {
                     if (this.isPaused && !this.isPlacementMode) return;
@@ -340,7 +315,7 @@
                     }
                     if (this.isPaused || this.isGameOver) return;
 
-                    // Direct Touch Crosshair Aiming during AC-130 mode (No joystick!)
+                    // Virtual Joystick Aiming during AC-130 mode
                     if (this.isAc130Active) {
                         let acTouchHandled = false;
                         for (let i = 0; i < e.changedTouches.length; i++) {
@@ -348,22 +323,20 @@
                             const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
                             if (targetEl && targetEl.closest('button, input, #pause-modal, #shop-modal, #game-over-modal')) continue;
 
-                            acTouchHandled = true;
-                            this.ac130TouchAimId = touch.identifier;
-                            const aimX = touch.clientX;
-                            const aimY = Math.max(20, touch.clientY - 80);
-                            this.mousePos.x = (aimX / window.innerWidth) * 2 - 1;
-                            this.mousePos.y = -(aimY / window.innerHeight) * 2 + 1;
-                            this.raycaster.setFromCamera(this.mousePos, this.camera);
-                            const intersects = this._v3;
-                            if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
-                                this.ac130AimPos.copy(intersects);
-                                this.pointerWorldPos.copy(intersects);
-                            }
-                            const crosshairEl = document.getElementById('ac130-crosshair-hud');
-                            if (crosshairEl) {
-                                crosshairEl.style.left = `${aimX}px`;
-                                crosshairEl.style.top = `${aimY}px`;
+                            if (!this.touchJoystick.active) {
+                                acTouchHandled = true;
+                                this.touchJoystick.active = true;
+                                this.touchJoystick.touchId = touch.identifier;
+                                this.touchJoystick.startX = touch.clientX;
+                                this.touchJoystick.startY = touch.clientY;
+
+                                const container = document.getElementById('joystick-container');
+                                if (container) {
+                                    container.style.left = `${touch.clientX}px`;
+                                    container.style.top = `${touch.clientY}px`;
+                                    container.classList.remove('hidden');
+                                }
+                                this.updateJoystickKnob(0, 0);
                             }
                         }
                         if (acTouchHandled && e.cancelable) e.preventDefault();
@@ -439,27 +412,26 @@
                     }
                     if (this.isPaused || this.isGameOver) return;
 
-                    // Direct Touch Drag Aiming during AC-130 mode (with 80px finger elevation offset)
+                    // Virtual Joystick Aim Movement during AC-130 mode
                     if (this.isAc130Active) {
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
-                            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-                            if (targetEl && targetEl.closest('button, input, #pause-modal, #shop-modal, #game-over-modal')) continue;
+                            if (this.touchJoystick.active && touch.identifier === this.touchJoystick.touchId) {
+                                const dx = touch.clientX - this.touchJoystick.startX;
+                                const dy = touch.clientY - this.touchJoystick.startY;
+                                const dist = Math.hypot(dx, dy);
+                                const maxRadius = 50;
 
-                            const aimX = touch.clientX;
-                            const aimY = Math.max(20, touch.clientY - 80);
-                            this.mousePos.x = (aimX / window.innerWidth) * 2 - 1;
-                            this.mousePos.y = -(aimY / window.innerHeight) * 2 + 1;
-                            this.raycaster.setFromCamera(this.mousePos, this.camera);
-                            const intersects = this._v3;
-                            if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
-                                this.ac130AimPos.copy(intersects);
-                                this.pointerWorldPos.copy(intersects);
-                            }
-                            const crosshairEl = document.getElementById('ac130-crosshair-hud');
-                            if (crosshairEl) {
-                                crosshairEl.style.left = `${aimX}px`;
-                                crosshairEl.style.top = `${aimY}px`;
+                                const clampDist = Math.min(dist, maxRadius);
+                                const angle = Math.atan2(dy, dx);
+
+                                const knobX = Math.cos(angle) * clampDist;
+                                const knobY = Math.sin(angle) * clampDist;
+
+                                this.updateJoystickKnob(knobX, knobY);
+
+                                this.touchJoystick.vectorX = (knobX / maxRadius);
+                                this.touchJoystick.vectorY = (knobY / maxRadius);
                             }
                         }
                         if (e.cancelable) e.preventDefault();
@@ -3130,32 +3102,17 @@
                     audio.playClick();
                 }
 
-                // Update UI Button Highlights
+                // Update UI Button Highlights (3 Icon Buttons on Right Screen Edge)
                 const btn25 = document.getElementById('ac130-weap-btn-25mm');
                 const btn40 = document.getElementById('ac130-weap-btn-40mm');
                 const btn105 = document.getElementById('ac130-weap-btn-105mm');
 
-                if (btn25) {
-                    if (type === '25mm') {
-                        btn25.className = "px-2 sm:px-2.5 py-1 rounded border-2 border-white bg-white/25 text-white font-bold transition flex items-center space-x-1 shadow-lg active:scale-95";
-                    } else {
-                        btn25.className = "px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95";
-                    }
-                }
-                if (btn40) {
-                    if (type === '40mm') {
-                        btn40.className = "px-2 sm:px-2.5 py-1 rounded border-2 border-white bg-white/25 text-white font-bold transition flex items-center space-x-1 shadow-lg active:scale-95";
-                    } else {
-                        btn40.className = "px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95";
-                    }
-                }
-                if (btn105) {
-                    if (type === '105mm') {
-                        btn105.className = "px-2 sm:px-2.5 py-1 rounded border-2 border-red-400 bg-red-950/40 text-red-300 font-bold transition flex items-center space-x-1 shadow-lg active:scale-95";
-                    } else {
-                        btn105.className = "px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95";
-                    }
-                }
+                const activeClass = "w-11 h-11 sm:w-14 sm:h-14 rounded-2xl border-2 border-white bg-white/25 text-white shadow-2xl flex items-center justify-center transition active:scale-90 ring-2 ring-white/40 scale-105";
+                const inactiveClass = "w-11 h-11 sm:w-14 sm:h-14 rounded-2xl border border-slate-700 bg-black/80 text-slate-400 hover:text-white transition flex items-center justify-center active:scale-95 shadow-xl";
+
+                if (btn25) btn25.className = type === '25mm' ? activeClass : inactiveClass;
+                if (btn40) btn40.className = type === '40mm' ? activeClass : inactiveClass;
+                if (btn105) btn105.className = type === '105mm' ? "w-11 h-11 sm:w-14 sm:h-14 rounded-2xl border-2 border-red-400 bg-red-950/50 text-red-300 shadow-2xl flex items-center justify-center transition active:scale-90 ring-2 ring-red-400/40 scale-105" : inactiveClass;
             }
 
             fireAc130Current() {
@@ -3549,6 +3506,25 @@
                     // Update Live Clock in HUD
                     const clockEl = document.getElementById('ac130-mw-clock');
                     if (clockEl) clockEl.innerText = new Date().toLocaleTimeString('en-US', { hour12: false });
+
+                    // Joystick Aim Movement during AC-130 mode
+                    if (this.touchJoystick.active) {
+                        const joyAimSpeed = 46.0;
+                        this.ac130AimPos.x += this.touchJoystick.vectorX * joyAimSpeed * dt;
+                        this.ac130AimPos.z += this.touchJoystick.vectorY * joyAimSpeed * dt;
+                        this.ac130AimPos.x = THREE.MathUtils.clamp(this.ac130AimPos.x, -72, 72);
+                        this.ac130AimPos.z = THREE.MathUtils.clamp(this.ac130AimPos.z, -72, 72);
+                    }
+
+                    // Dynamically position AC-130 crosshair from 3D aim target
+                    const aimScreenV = this.ac130AimPos.clone().project(this.camera);
+                    const crossX = (aimScreenV.x * 0.5 + 0.5) * window.innerWidth;
+                    const crossY = (-(aimScreenV.y * 0.5) + 0.5) * window.innerHeight;
+                    const crosshairEl = document.getElementById('ac130-crosshair-hud');
+                    if (crosshairEl) {
+                        crosshairEl.style.left = `${crossX}px`;
+                        crosshairEl.style.top = `${crossY}px`;
+                    }
 
                     // Continuous Mouse-Held or Mobile Touch-Held Rapid Firing (e.g. 25mm Gatling stream)
                     if ((this.isMouseDown || this.isAc130TouchFiring) && !this.isPaused && !this.isGameOver) {
