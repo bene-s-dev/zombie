@@ -193,96 +193,204 @@ class SoundEngine {
         } catch(e) {}
     }
 
+    playMinigunShot() {
+        if (!Storage.data.sfxEnabled) return;
+        this.init();
+        if (!this.ctx || !this._noiseBuffer) return;
+        try {
+            const now = this.ctx.currentTime;
+            
+            // High-velocity rotary minigun kinetic crack
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = this._noiseBuffer;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(2400 + Math.random() * 400, now);
+            filter.Q.setValueAtTime(1.5, now);
+            
+            const noiseGain = this.ctx.createGain();
+            noiseGain.gain.setValueAtTime(0.35, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+            
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(this.ctx.destination);
+            noise.start(now);
+            noise.stop(now + 0.035);
+
+            // Fast mechanical rotary clack
+            const osc = this.ctx.createOscillator();
+            const oscGain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320 + Math.random() * 60, now);
+            osc.frequency.exponentialRampToValueAtTime(90, now + 0.03);
+            oscGain.gain.setValueAtTime(0.3, now);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+            
+            osc.connect(oscGain);
+            oscGain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.03);
+        } catch(e) {}
+    }
+
+    playGatlingImpact() {
+        if (!Storage.data.sfxEnabled) return;
+        this.init();
+        if (!this.ctx || !this._noiseBuffer) return;
+        try {
+            const now = this.ctx.currentTime;
+            // High-velocity bullet kinetic dirt thud & ricochet snap (NO bomb explosion!)
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = this._noiseBuffer;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(750 + Math.random() * 250, now);
+            filter.frequency.exponentialRampToValueAtTime(60, now + 0.05);
+            
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            noise.start(now);
+            noise.stop(now + 0.05);
+        } catch(e) {}
+    }
+
     playExplosion() {
         if (!Storage.data.sfxEnabled) return;
         this.init();
         try {
             if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
-            if (this.ctx && this._noiseBuffer) {
+            if (this.ctx) {
                 const now = this.ctx.currentTime;
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = this._noiseBuffer;
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(650, now);
-                filter.frequency.exponentialRampToValueAtTime(45, now + 0.45);
-                const noiseGain = this.ctx.createGain();
-                noiseGain.gain.setValueAtTime(0.7, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
-                noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(this.ctx.destination);
-                noise.start(now);
-                noise.stop(now + 0.45);
+                
+                // 1. Sharp Supersonic Shockwave Crack Transient
+                const snapBuffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.12), this.ctx.sampleRate);
+                const snapData = snapBuffer.getChannelData(0);
+                for (let i = 0; i < snapData.length; i++) snapData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.02));
+                const snapSource = this.ctx.createBufferSource();
+                snapSource.buffer = snapBuffer;
+                const snapFilter = this.ctx.createBiquadFilter();
+                snapFilter.type = 'bandpass';
+                snapFilter.frequency.setValueAtTime(1100, now);
+                snapFilter.Q.setValueAtTime(1.8, now);
+                const snapGain = this.ctx.createGain();
+                snapGain.gain.setValueAtTime(0.75, now);
+                snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                snapSource.connect(snapFilter);
+                snapFilter.connect(snapGain);
+                snapGain.connect(this.ctx.destination);
+                snapSource.start(now);
 
-                const osc = this.ctx.createOscillator();
-                const oscGain = this.ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(130, now);
-                osc.frequency.exponentialRampToValueAtTime(20, now + 0.35);
-                oscGain.gain.setValueAtTime(0.75, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-                osc.connect(oscGain); oscGain.connect(this.ctx.destination);
-                osc.start(now); osc.stop(now + 0.35);
+                // 2. Heavy Subterranean Seismic Blast Rumble (Deep Ground Shock - NO pitch slide!)
+                const subOsc = this.ctx.createOscillator();
+                const subGain = this.ctx.createGain();
+                subOsc.type = 'triangle';
+                subOsc.frequency.setValueAtTime(42, now); // Steady seismic sub-bass
+                const subFilter = this.ctx.createBiquadFilter();
+                subFilter.type = 'lowpass';
+                subFilter.frequency.setValueAtTime(95, now);
+                subGain.gain.setValueAtTime(0.9, now);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+                subOsc.connect(subFilter);
+                subFilter.connect(subGain);
+                subGain.connect(this.ctx.destination);
+                subOsc.start(now);
+                subOsc.stop(now + 0.9);
+
+                // 3. Rolling Blast Debris & Shockwave Tail
+                const tailBuffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 1.1), this.ctx.sampleRate);
+                const tailData = tailBuffer.getChannelData(0);
+                for (let i = 0; i < tailData.length; i++) tailData[i] = Math.random() * 2 - 1;
+                const tailSource = this.ctx.createBufferSource();
+                tailSource.buffer = tailBuffer;
+                const tailFilter = this.ctx.createBiquadFilter();
+                tailFilter.type = 'lowpass';
+                tailFilter.frequency.setValueAtTime(420, now);
+                tailFilter.frequency.exponentialRampToValueAtTime(40, now + 1.1);
+                const tailGain = this.ctx.createGain();
+                tailGain.gain.setValueAtTime(0.65, now);
+                tailGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+                tailSource.connect(tailFilter);
+                tailFilter.connect(tailGain);
+                tailGain.connect(this.ctx.destination);
+                tailSource.start(now);
+                tailSource.stop(now + 1.15);
                 return;
             }
-        } catch(e) {}
-        try {
-            const sampleRate = 22050;
-            const dur = 0.4;
-            const n = Math.floor(sampleRate * dur);
-            const ab = new ArrayBuffer(44 + n * 2);
-            const v = new DataView(ab);
-            const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-            ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true);
-            ws(8, 'WAVE'); ws(12, 'fmt '); v.setUint32(16, 16, true);
-            v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-            v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true);
-            v.setUint16(32, 2, true); v.setUint16(34, 16, true);
-            ws(36, 'data'); v.setUint32(40, n * 2, true);
-            for (let i = 0; i < n; i++) {
-                const t = i / sampleRate;
-                const env = Math.exp(-t * 8);
-                const noise = (Math.random() * 2 - 1) * 0.8 * env;
-                const boom = Math.sin(2 * Math.PI * (120 - t * 200) * t) * 0.7 * env;
-                v.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, noise + boom)) * 32767), true);
-            }
-            const url = URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
-            const el = new Audio(url); el.volume = 0.9; el.play().catch(() => {});
-            setTimeout(() => URL.revokeObjectURL(url), 2000);
         } catch(e) {}
     }
 
     playHeavyBomb() {
         if (!Storage.data.sfxEnabled) return;
+        this.init();
         try {
-            if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
+            if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
             if (this.ctx) {
                 const now = this.ctx.currentTime;
-                const bufferSize = Math.floor(this.ctx.sampleRate * 0.85);
-                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                const output = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
 
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = buffer;
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(1200, now);
-                filter.frequency.exponentialRampToValueAtTime(35, now + 0.85);
-                const noiseGain = this.ctx.createGain();
-                noiseGain.gain.setValueAtTime(2.2, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.85);
-                noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(this.ctx.destination);
-                noise.start(now);
+                // 1. Massive Initial Shockwave Snap
+                const snapBuffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.18), this.ctx.sampleRate);
+                const snapData = snapBuffer.getChannelData(0);
+                for (let i = 0; i < snapData.length; i++) snapData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.03));
+                const snapSource = this.ctx.createBufferSource();
+                snapSource.buffer = snapBuffer;
+                const snapFilter = this.ctx.createBiquadFilter();
+                snapFilter.type = 'bandpass';
+                snapFilter.frequency.setValueAtTime(1400, now);
+                snapFilter.Q.setValueAtTime(1.5, now);
+                const snapGain = this.ctx.createGain();
+                snapGain.gain.setValueAtTime(1.2, now);
+                snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                snapSource.connect(snapFilter);
+                snapFilter.connect(snapGain);
+                snapGain.connect(this.ctx.destination);
+                snapSource.start(now);
 
-                const osc = this.ctx.createOscillator();
-                const oscGain = this.ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(180, now);
-                osc.frequency.exponentialRampToValueAtTime(18, now + 0.65);
-                oscGain.gain.setValueAtTime(2.0, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.005, now + 0.65);
-                osc.connect(oscGain); oscGain.connect(this.ctx.destination);
-                osc.start(now); osc.stop(now + 0.65);
+                // 2. Earth-Shaking Sub-Bass Detonation Core (34 Hz & 48 Hz dual seismic thud - NO drum pitch drops!)
+                const subOsc1 = this.ctx.createOscillator();
+                const subOsc2 = this.ctx.createOscillator();
+                const subGain = this.ctx.createGain();
+                subOsc1.type = 'triangle';
+                subOsc2.type = 'sine';
+                subOsc1.frequency.setValueAtTime(34, now);
+                subOsc2.frequency.setValueAtTime(48, now);
+                const subFilter = this.ctx.createBiquadFilter();
+                subFilter.type = 'lowpass';
+                subFilter.frequency.setValueAtTime(110, now);
+                subGain.gain.setValueAtTime(1.4, now);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+                subOsc1.connect(subFilter);
+                subOsc2.connect(subFilter);
+                subFilter.connect(subGain);
+                subGain.connect(this.ctx.destination);
+                subOsc1.start(now);
+                subOsc2.start(now);
+                subOsc1.stop(now + 1.85);
+                subOsc2.stop(now + 1.85);
+
+                // 3. Extended Rolling Thunder Echo & Debris Collapse (1.9s)
+                const tailBuffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 1.9), this.ctx.sampleRate);
+                const tailData = tailBuffer.getChannelData(0);
+                for (let i = 0; i < tailData.length; i++) tailData[i] = Math.random() * 2 - 1;
+                const tailSource = this.ctx.createBufferSource();
+                tailSource.buffer = tailBuffer;
+                const tailFilter = this.ctx.createBiquadFilter();
+                tailFilter.type = 'lowpass';
+                tailFilter.frequency.setValueAtTime(550, now);
+                tailFilter.frequency.exponentialRampToValueAtTime(35, now + 1.9);
+                const tailGain = this.ctx.createGain();
+                tailGain.gain.setValueAtTime(1.1, now);
+                tailGain.gain.exponentialRampToValueAtTime(0.001, now + 1.9);
+                tailSource.connect(tailFilter);
+                tailFilter.connect(tailGain);
+                tailGain.connect(this.ctx.destination);
+                tailSource.start(now);
+                tailSource.stop(now + 1.95);
                 return;
             }
         } catch(e) {}
@@ -518,7 +626,245 @@ class SoundEngine {
         } catch(e) {}
     }
 
-    playRadioChatter() {}
+    playRadioSquelch() {
+        if (!Storage.data.sfxEnabled) return;
+        try {
+            if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
+            if (this.ctx) {
+                const now = this.ctx.currentTime;
+                // 1. Radio Static Squelch burst
+                const bufferSize = Math.floor(this.ctx.sampleRate * 0.08);
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.4));
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 2500;
+                filter.Q.value = 3.5;
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start(now);
+
+                // 2. Military Chirp Beep
+                const osc = this.ctx.createOscillator();
+                const beepGain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1750, now + 0.04);
+                osc.frequency.exponentialRampToValueAtTime(850, now + 0.09);
+                beepGain.gain.setValueAtTime(0.35, now + 0.04);
+                beepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                osc.connect(beepGain);
+                beepGain.connect(this.ctx.destination);
+                osc.start(now + 0.04);
+                osc.stop(now + 0.09);
+            }
+        } catch(e) {}
+    }
+
+    playAc130RadioChatter(text) {
+        // Voice chatter removed as requested
+    }
+
+    startAc130EngineSound() {
+        if (!Storage.data.sfxEnabled) return;
+        this.init();
+        try {
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume().catch(() => {});
+            }
+            if (!this.ctx) return;
+
+            this.stopAc130EngineSound();
+
+            const now = this.ctx.currentTime;
+            this.ac130EngineNodes = [];
+
+            // Master Engine Gain Node with smooth cinematic fade-in
+            const masterGain = this.ctx.createGain();
+            masterGain.gain.setValueAtTime(0.01, now);
+            masterGain.gain.linearRampToValueAtTime(0.60, now + 0.4);
+            masterGain.connect(this.ctx.destination);
+            this.ac130EngineMasterGain = masterGain;
+
+            // 4 Turboprop Engine Frequencies (Allison T56 turboprop 4-blade harmonic phasing)
+            const freqs = [55, 58, 62, 65, 116, 124];
+            freqs.forEach((freq, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = idx % 2 === 0 ? 'sawtooth' : 'triangle';
+                osc.frequency.setValueAtTime(freq, now);
+
+                // Low-pass filter for deep muffled aircraft cabin rumble
+                const lp = this.ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.frequency.value = 240 + idx * 35;
+                lp.Q.value = 2.5;
+
+                gain.gain.value = 0.35 / freqs.length;
+
+                osc.connect(lp);
+                lp.connect(gain);
+                gain.connect(masterGain);
+
+                osc.start(now);
+                this.ac130EngineNodes.push(osc);
+            });
+
+            // Sub-bass heavy vibration rumble (~38 Hz)
+            const subOsc = this.ctx.createOscillator();
+            const subGain = this.ctx.createGain();
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(38, now);
+            subGain.gain.value = 0.45;
+            subOsc.connect(subGain);
+            subGain.connect(masterGain);
+            subOsc.start(now);
+            this.ac130EngineNodes.push(subOsc);
+
+            // Propeller Blade Churning / Air Chopping Noise modulated by an LFO
+            const bufferSize = this.ctx.sampleRate * 2;
+            const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            const whiteNoise = this.ctx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+            whiteNoise.loop = true;
+
+            const noiseFilter = this.ctx.createBiquadFilter();
+            noiseFilter.type = 'bandpass';
+            noiseFilter.frequency.value = 160;
+            noiseFilter.Q.value = 1.9;
+
+            const noiseGain = this.ctx.createGain();
+            noiseGain.gain.value = 0.28;
+
+            // LFO for propeller blade pulsation (13.8 Hz prop chop)
+            const lfo = this.ctx.createOscillator();
+            const lfoGain = this.ctx.createGain();
+            lfo.type = 'sine';
+            lfo.frequency.setValueAtTime(13.8, now);
+            lfoGain.gain.setValueAtTime(0.14, now);
+
+            lfo.connect(noiseGain.gain);
+            whiteNoise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(masterGain);
+
+            whiteNoise.start(now);
+            lfo.start(now);
+            this.ac130EngineNodes.push(whiteNoise, lfo);
+        } catch(e) {}
+    }
+
+    stopAc130EngineSound() {
+        try {
+            if (this.ac130EngineMasterGain && this.ctx) {
+                const now = this.ctx.currentTime;
+                this.ac130EngineMasterGain.gain.linearRampToValueAtTime(0.001, now + 0.8);
+                setTimeout(() => {
+                    if (this.ac130EngineNodes) {
+                        this.ac130EngineNodes.forEach(node => {
+                            try { node.stop(); } catch(e) {}
+                            try { node.disconnect(); } catch(e) {}
+                        });
+                        this.ac130EngineNodes = [];
+                    }
+                }, 900);
+            }
+        } catch(e) {}
+    }
+
+    pauseAc130EngineSound() {
+        try {
+            if (this.ac130EngineMasterGain && this.ctx) {
+                const now = this.ctx.currentTime;
+                this.ac130EngineMasterGain.gain.setValueAtTime(this.ac130EngineMasterGain.gain.value, now);
+                this.ac130EngineMasterGain.gain.linearRampToValueAtTime(0.001, now + 0.1);
+            }
+        } catch(e) {}
+    }
+
+    resumeAc130EngineSound() {
+        try {
+            if (this.ac130EngineMasterGain && this.ctx) {
+                const now = this.ctx.currentTime;
+                this.ac130EngineMasterGain.gain.setValueAtTime(0.001, now);
+                this.ac130EngineMasterGain.gain.linearRampToValueAtTime(0.60, now + 0.2);
+            }
+        } catch(e) {}
+    }
+
+    playMissileLaunch() {
+        if (!Storage.data.sfxEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+            const now = this.ctx.currentTime;
+            
+            // 1. Heavy Rocket Motor Ignition & Supersonic Thruster Hiss
+            const bufferSize = Math.floor(this.ctx.sampleRate * 1.6);
+            const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+            
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(650, now);
+            filter.frequency.exponentialRampToValueAtTime(320, now + 1.5);
+            
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(0.01, now);
+            gain.gain.linearRampToValueAtTime(0.70, now + 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            noise.start(now);
+            noise.stop(now + 1.55);
+            
+            // 2. Steady Low-Frequency Combustion Drone (56 Hz steady burner tone)
+            const osc = this.ctx.createOscillator();
+            const oscGain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(56, now);
+            
+            const oscFilter = this.ctx.createBiquadFilter();
+            oscFilter.type = 'lowpass';
+            oscFilter.frequency.setValueAtTime(140, now);
+            
+            oscGain.gain.setValueAtTime(0.01, now);
+            oscGain.gain.linearRampToValueAtTime(0.45, now + 0.08);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+            
+            osc.connect(oscFilter);
+            oscFilter.connect(oscGain);
+            oscGain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 1.45);
+        } catch(e) {}
+    }
+
+    playRadioSquelch() {
+        // Disabled radio sound
+    }
+
+    playRadioChatter() {
+        // Disabled radio sound
+    }
 
     playRadioVoice(onCompleteCallback) {
         if (!Storage.data.sfxEnabled) {

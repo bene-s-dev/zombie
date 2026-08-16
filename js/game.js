@@ -41,10 +41,22 @@
                 this.maxBaseHp = 2500;
                 this.baseShield = 0;
                 this.maxBaseShield = 0;
+                this.baseLives = 3;
+                this.isBaseInvulnerable = false;
                 this.currentWave = 1;
                 this.zombiesLeftToSpawn = 12;
                 this.gameSeconds = 0;
                 this.totalKills = 0;
+
+                // Modern Warfare AC-130 Gunship State
+                this.ac130Cooldown = 0;
+                this.isAc130Active = false;
+                this.ac130MissionTimer = 0;
+                this.ac130OrbitAngle = 0;
+                this.ac130Last40mm = 0;
+                this.ac130Last105mm = 0;
+                this.ac130AimPos = new THREE.Vector3(0, 0, 0);
+                this.ac130Projectiles = [];
 
                 this.unlockedWeapons = ['pistol'];
                 this.weaponLevels = { pistol: 1, smg: 1, shotgun: 1, rifle: 1, sniper: 1, rpg: 1, minigun: 1, plasma: 1 };
@@ -139,7 +151,26 @@
                 window.addEventListener('keydown', (e) => {
                     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
                     this.keys[e.code] = true;
-                    if (e.code === 'Space') e.preventDefault();
+                    if (e.code === 'Space') {
+                        if (this.isAc130Active) {
+                            this.fireAc130Current();
+                        }
+                        e.preventDefault();
+                    }
+                    if (e.code === 'KeyV') {
+                        this.triggerAc130();
+                    }
+                    if (this.isAc130Active) {
+                        if (e.code === 'Digit1' || e.code === 'Numpad1') {
+                            this.selectAc130Weapon('25mm');
+                        }
+                        if (e.code === 'Digit2' || e.code === 'Numpad2') {
+                            this.selectAc130Weapon('40mm');
+                        }
+                        if (e.code === 'Digit3' || e.code === 'Numpad3') {
+                            this.selectAc130Weapon('105mm');
+                        }
+                    }
                     if (e.code === 'KeyE') {
                         this.triggerAirstrike();
                     }
@@ -164,6 +195,39 @@
                     this.keys[e.code] = false;
                 });
 
+                window.addEventListener('wheel', (e) => {
+                    if (this.isAc130Active) {
+                        const list = ['25mm', '40mm', '105mm'];
+                        let curIdx = list.indexOf(this.ac130SelectedWeapon || '40mm');
+                        if (e.deltaY > 0) curIdx = (curIdx + 1) % list.length;
+                        else curIdx = (curIdx - 1 + list.length) % list.length;
+                        this.selectAc130Weapon(list[curIdx]);
+                    }
+                }, { passive: true });
+
+                window.addEventListener('contextmenu', (e) => {
+                    if (this.isAc130Active) e.preventDefault();
+                });
+
+                window.addEventListener('mousedown', (e) => {
+                    this.isMouseDown = true;
+                    this.mouseButton = e.button;
+                    if (this.isAc130Active) {
+                        const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+                        if (targetEl && targetEl.closest('button, input, #main-menu, #pause-modal')) return;
+                        if (e.button === 0) {
+                            this.fireAc130Current();
+                        } else if (e.button === 2) {
+                            e.preventDefault();
+                            this.fireAc130_105mm();
+                        }
+                    }
+                });
+
+                window.addEventListener('mouseup', () => {
+                    this.isMouseDown = false;
+                });
+
                 const onPointerMove = (e) => {
                     this.mousePos.x = (e.clientX / window.innerWidth) * 2 - 1;
                     this.mousePos.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -175,8 +239,34 @@
                         if (this.isPlacementMode && this.ghostMesh) {
                             this.updateGhostPosition(intersects.x, intersects.z);
                         }
+                        if (this.isAc130Active) {
+                            this.ac130AimPos.copy(intersects);
+                            const crosshairEl = document.getElementById('ac130-crosshair-hud');
+                            if (crosshairEl) {
+                                crosshairEl.style.left = `${e.clientX}px`;
+                                crosshairEl.style.top = `${e.clientY}px`;
+                            }
+                        }
                     }
                 };
+
+                window.addEventListener('touchmove', (e) => {
+                    if (this.isAc130Active && e.touches.length > 0) {
+                        const touch = e.touches[0];
+                        this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                        this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                        this.raycaster.setFromCamera(this.mousePos, this.camera);
+                        const intersects = this._v3;
+                        if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                            this.ac130AimPos.copy(intersects);
+                            const crosshairEl = document.getElementById('ac130-crosshair-hud');
+                            if (crosshairEl) {
+                                crosshairEl.style.left = `${touch.clientX}px`;
+                                crosshairEl.style.top = `${touch.clientY}px`;
+                            }
+                        }
+                    }
+                }, { passive: true });
 
                 const handleSelection = (clientX, clientY) => {
                     if (this.isPaused && !this.isPlacementMode) return;
@@ -685,6 +775,16 @@
                     bodyMaterials: bodyMaterials
                 };
 
+                if (this.isAc130Active) {
+                    if (!this.whiteHotMat) this.whiteHotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                    zombieGroup.traverse((child) => {
+                        if (child.isMesh) {
+                            if (!child.userData.ac130OrigMat) child.userData.ac130OrigMat = child.material;
+                            child.material = this.whiteHotMat;
+                        }
+                    });
+                }
+
                 this.zombies.push(zombieGroup);
                 this.scene.add(zombieGroup);
             }
@@ -728,6 +828,16 @@
                     armorThreshold: 0,
                     walkCycle: Math.random() * Math.PI * 2
                 };
+
+                if (this.isAc130Active) {
+                    if (!this.whiteHotMat) this.whiteHotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                    zombieGroup.traverse((child) => {
+                        if (child.isMesh) {
+                            if (!child.userData.ac130OrigMat) child.userData.ac130OrigMat = child.material;
+                            child.material = this.whiteHotMat;
+                        }
+                    });
+                }
 
                 this.zombies.push(zombieGroup);
                 this.scene.add(zombieGroup);
@@ -895,7 +1005,7 @@
 
                         const baseRadPlus = radius + 8.5;
                         const distBaseSq = pos.distanceToSquared(this.baseGroup.position);
-                        if (distBaseSq <= baseRadPlus * baseRadPlus) {
+                        if (!this.isBaseInvulnerable && distBaseSq <= baseRadPlus * baseRadPlus) {
                             const distBase = Math.sqrt(distBaseSq);
                             const falloff = 1 - (Math.max(0, distBase - 8.5) / radius) * 0.5;
                             let baseDmg = damage * 0.45 * falloff;
@@ -909,7 +1019,7 @@
                                 this.triggerBaseAlarm();
                             }
                             this._needHudSync = true;
-                            if (this.baseHp <= 0) this.triggerGameOver('base');
+                            if (this.baseHp <= 0) this.handleBaseDeath();
                         }
 
                         for (let k = this.turrets.length - 1; k >= 0; k--) {
@@ -2513,12 +2623,12 @@
                         if (this.airstrikeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 px-2 py-1 sm:px-2.5 rounded-lg opacity-80 cursor-not-allowed flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
                         } else {
                             const isMobile = window.matchMedia('(pointer: coarse)').matches;
                             if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[E] BEREIT";
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-amber-400 airstrike-ready-blink";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 px-2 py-1 sm:px-2.5 rounded-lg shadow-lg transition active:scale-95 flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
                         }
                     }
                 } else if (this._lastAirstrikeCdSec !== 0) {
@@ -2639,44 +2749,61 @@
                         this.isNukeActive = false;
                         return;
                     }
-                    audio.playSlowJetFlyover();
+                    
+                    // Launch heavy nuclear stealth bomber
                     this.spawnNukeJet();
                 }, 5000);
             }
 
             spawnNukeJet() {
+                audio.playNukeJetSound();
+
                 const jetGroup = new THREE.Group();
-                // Bright high-visibility metallic stealth pearl titanium finish
+                // Dark matte stealth composite fuselage
                 const jetMat = new THREE.MeshStandardMaterial({ 
-                    color: 0xf8fafc, 
-                    metalness: 0.6, 
-                    roughness: 0.2,
-                    emissive: 0x475569,
-                    emissiveIntensity: 0.4
+                    color: 0x09090b, 
+                    metalness: 0.8, 
+                    roughness: 0.3,
+                    emissive: 0x18181b,
+                    emissiveIntensity: 0.2
                 });
                 const wingMat = new THREE.MeshStandardMaterial({ 
-                    color: 0xe2e8f0, 
-                    metalness: 0.7, 
-                    roughness: 0.25,
-                    emissive: 0x334155,
-                    emissiveIntensity: 0.35
+                    color: 0x18181b, 
+                    metalness: 0.9, 
+                    roughness: 0.2,
+                    emissive: 0x09090b,
+                    emissiveIntensity: 0.1
                 });
 
-                // Giant Swept Stealth Bomber Wings
-                const wings = new THREE.Mesh(new THREE.BoxGeometry(14.0, 0.28, 4.5), wingMat);
-                wings.rotation.y = Math.PI / 8;
-                jetGroup.add(wings);
-
-                // Main Fuselage
-                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.6, 9.0, 8), jetMat);
+                // Giant Supersonic Heavy Stealth Fuselage
+                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.4, 9.5, 8), jetMat);
                 fuselage.rotation.x = Math.PI / 2;
                 jetGroup.add(fuselage);
 
-                // Glowing Amber Nuclear Cockpit Visor
-                const visorMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
-                const visor = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 2.0), visorMat);
-                visor.position.set(0, 0.8, 1.2);
-                jetGroup.add(visor);
+                // Cockpit Canopy (Dark Amber / Gold Reflective Glass)
+                const canopyMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+                const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.75, 2.8, 8), canopyMat);
+                canopy.rotation.x = Math.PI / 2;
+                canopy.position.set(0, 0.65, 0.8);
+                canopy.scale.set(0.7, 1, 0.5);
+                jetGroup.add(canopy);
+
+                // Massive Delta Stealth Flying Wings
+                const wings = new THREE.Mesh(new THREE.BoxGeometry(13.6, 0.2, 3.8), wingMat);
+                wings.position.set(0, 0, -1.0);
+                jetGroup.add(wings);
+
+                // Twin Canting Tail Fins
+                const tailGeo = new THREE.BoxGeometry(0.15, 2.4, 1.8);
+                const tailL = new THREE.Mesh(tailGeo, wingMat);
+                tailL.position.set(-1.8, 1.0, -3.2);
+                tailL.rotation.z = -0.35;
+                jetGroup.add(tailL);
+
+                const tailR = new THREE.Mesh(tailGeo, wingMat);
+                tailR.position.set(1.8, 1.0, -3.2);
+                tailR.rotation.z = 0.35;
+                jetGroup.add(tailR);
 
                 // === POSITIONS- & ATOM-WARNLICHTER ===
                 // 1. Linke Tragflächenspitze: ROTES Positionslicht
@@ -2724,7 +2851,10 @@
                     speed: 65,
                     bombDropped: false,
                     nukeBombMesh: null,
-                    beacons: [beaconL, beaconR]
+                    bombSpeedY: 0,
+                    exploded: false,
+                    beaconL: beaconL,
+                    beaconR: beaconR
                 };
             }
 
@@ -2743,17 +2873,19 @@
                         const maxCd = 90.0;
                         const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.nukeCooldown) / maxCd) * 100)));
 
-                        if (progressFill) progressFill.style.width = `${fillPct}%`;
+                        if (progressFill) {
+                            progressFill.style.width = `${fillPct}%`;
+                        }
 
                         if (this.nukeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 px-2 py-1 sm:px-2.5 rounded-lg opacity-80 cursor-not-allowed flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
                         } else {
                             const isMobile = window.matchMedia('(pointer: coarse)').matches;
                             if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[Q] BEREIT";
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-red-500 animate-spin";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-red-500/60 text-red-400 px-2 py-1 sm:px-2.5 rounded-lg shadow-lg transition active:scale-95 flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-red-500/60 text-red-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
                         }
                     }
                 } else if (this._lastNukeCdSec !== 0) {
@@ -2920,6 +3052,533 @@
                 }
             }
 
+            selectAc130Weapon(type) {
+                if (!['25mm', '40mm', '105mm'].includes(type)) return;
+                this.ac130SelectedWeapon = type;
+                if (typeof audio !== 'undefined' && audio.playClick) {
+                    audio.playClick();
+                }
+
+                // Update UI Button Highlights
+                const btn25 = document.getElementById('ac130-weap-btn-25mm');
+                const btn40 = document.getElementById('ac130-weap-btn-40mm');
+                const btn105 = document.getElementById('ac130-weap-btn-105mm');
+
+                if (btn25) {
+                    if (type === '25mm') {
+                        btn25.className = "px-2 sm:px-2.5 py-1 rounded border-2 border-white bg-white/25 text-white font-bold transition flex items-center space-x-1 shadow-lg active:scale-95";
+                    } else {
+                        btn25.className = "px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95";
+                    }
+                }
+                if (btn40) {
+                    if (type === '40mm') {
+                        btn40.className = "px-2 sm:px-2.5 py-1 rounded border-2 border-white bg-white/25 text-white font-bold transition flex items-center space-x-1 shadow-lg active:scale-95";
+                    } else {
+                        btn40.className = "px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95";
+                    }
+                }
+                if (btn105) {
+                    if (type === '105mm') {
+                        btn105.className = "px-2 sm:px-2.5 py-1 rounded border-2 border-red-400 bg-red-950/40 text-red-300 font-bold transition flex items-center space-x-1 shadow-lg active:scale-95";
+                    } else {
+                        btn105.className = "px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95";
+                    }
+                }
+            }
+
+            fireAc130Current() {
+                if (!this.isAc130Active) return;
+                const wp = this.ac130SelectedWeapon || '40mm';
+                if (wp === '25mm') this.fireAc130_25mm();
+                else if (wp === '40mm') this.fireAc130_40mm();
+                else if (wp === '105mm') this.fireAc130_105mm();
+            }
+
+            triggerAc130() {
+                if (this.isPaused || this.isGameOver) return;
+                if (this.isAc130Active) return;
+                if (this.ac130Cooldown > 0) {
+                    if (typeof showWarningToast === 'function') {
+                        showWarningToast(`✈️ AC-130 lädt nach: noch ${Math.ceil(this.ac130Cooldown)}s!`);
+                    }
+                    return;
+                }
+
+                this.isAc130Active = true;
+                this.ac130MissionTimer = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.duration) || 40;
+                this.ac130Cooldown = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cooldown) || 80;
+                this.ac130OrbitAngle = 0;
+                this.ac130SelectedWeapon = '40mm';
+                if (this.playerGroup) {
+                    this.ac130AimPos.copy(this.playerGroup.position);
+                }
+
+                // 1. Authentic High-Altitude Gunship Flight Position
+                this.camera.position.set(0, 48, 44);
+                this.camera.lookAt(0, 0, 0);
+
+                // 2. Authentic FLIR "White-Hot" Thermal Heat Signature Material Swap
+                if (!this.whiteHotMat) {
+                    this.whiteHotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                }
+
+                // Turn all living zombies into glowing White-Hot silhouettes
+                for (let z of this.zombies) {
+                    z.traverse((child) => {
+                        if (child.isMesh) {
+                            if (!child.userData.ac130OrigMat) child.userData.ac130OrigMat = child.material;
+                            child.material = this.whiteHotMat;
+                        }
+                    });
+                }
+                if (this.playerGroup) {
+                    this.playerGroup.traverse((child) => {
+                        if (child.isMesh) {
+                            if (!child.userData.ac130OrigMat) child.userData.ac130OrigMat = child.material;
+                            child.material = this.whiteHotMat;
+                        }
+                    });
+                }
+                if (this.dogGroup) {
+                    this.dogGroup.traverse((child) => {
+                        if (child.isMesh) {
+                            if (!child.userData.ac130OrigMat) child.userData.ac130OrigMat = child.material;
+                            child.material = this.whiteHotMat;
+                        }
+                    });
+                }
+
+                // Cleanly Hide Normal Gameplay HUD to prevent overlapping
+                const gameHud = document.getElementById('game-hud');
+                if (gameHud) gameHud.classList.add('hidden');
+
+                // Open AC-130 Modern Warfare Overlay & Enable Thermal Filter
+                const overlay = document.getElementById('ac130-overlay');
+                if (overlay) overlay.classList.remove('hidden');
+                document.body.classList.add('thermal-active');
+
+                // Start Continuous AC-130 Turboprop 4-Engine Drone Sound
+                if (typeof audio !== 'undefined' && audio.startAc130EngineSound) {
+                    audio.startAc130EngineSound();
+                } else if (typeof audio !== 'undefined' && audio.playHeavyBomb) {
+                    audio.playHeavyBomb();
+                }
+
+                this.selectAc130Weapon('40mm');
+
+                if (typeof showWarningToast === 'function') {
+                    showWarningToast('✈️ AC-130 GUNSHIP WSO THERMAL-MODUS AKTIV (40s)!');
+                }
+                this.syncHUD();
+            }
+
+            fireAc130_25mm() {
+                if (!this.isAc130Active || this.isGameOver || this.isPaused) return;
+                const now = performance.now();
+                const rate = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cannon25mm && AC130_CONFIG.cannon25mm.firerate) || 35;
+                if (now - this.ac130Last25mm < rate) return;
+                this.ac130Last25mm = now;
+
+                const targetPos = this.ac130AimPos.clone();
+                targetPos.x += (Math.random() - 0.5) * 1.8;
+                targetPos.z += (Math.random() - 0.5) * 1.8;
+
+                // High-Velocity Minigun Rotary Vulcan Sound
+                if (typeof audio !== 'undefined' && audio.playMinigunShot) {
+                    audio.playMinigunShot();
+                } else if (typeof audio !== 'undefined' && audio.playShoot) {
+                    audio.playShoot(0.04);
+                }
+
+                // Spawn 25mm Tracers 26m down along ray towards ground so they NEVER blind or block the camera lens
+                const dir = targetPos.clone().sub(this.camera.position).normalize();
+                const startPos = this.camera.position.clone().add(dir.clone().multiplyScalar(26));
+                startPos.x += (Math.random() - 0.5) * 1.2;
+                startPos.z += (Math.random() - 0.5) * 1.2;
+
+                const projMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.12, 4, 4),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff })
+                );
+                projMesh.position.copy(startPos);
+                this.scene.add(projMesh);
+
+                const dmg = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cannon25mm && AC130_CONFIG.cannon25mm.damage) || 110;
+                const rad = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cannon25mm && AC130_CONFIG.cannon25mm.splashRadius) || 3.5;
+
+                this.ac130Projectiles.push({
+                    mesh: projMesh,
+                    startPos: startPos,
+                    targetPos: targetPos,
+                    type: '25mm',
+                    progress: 0,
+                    speed: 8.5,
+                    damage: dmg,
+                    radius: rad
+                });
+            }
+
+            fireAc130_40mm() {
+                if (!this.isAc130Active || this.isGameOver || this.isPaused) return;
+                const now = performance.now();
+                const rate = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cannon40mm.firerate) || 280;
+                if (now - this.ac130Last40mm < rate) return;
+                this.ac130Last40mm = now;
+
+                const targetPos = this.ac130AimPos.clone();
+                targetPos.x += (Math.random() - 0.5) * 1.5;
+                targetPos.z += (Math.random() - 0.5) * 1.5;
+
+                if (typeof audio !== 'undefined' && audio.playShoot) {
+                    audio.playShoot(0.12);
+                }
+
+                // Spawn 40mm Tracers 20m down along ray
+                const dir = targetPos.clone().sub(this.camera.position).normalize();
+                const startPos = this.camera.position.clone().add(dir.clone().multiplyScalar(20));
+
+                const projMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.24, 6, 6),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff })
+                );
+                projMesh.position.copy(startPos);
+                this.scene.add(projMesh);
+
+                const dmg = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cannon40mm.damage) || 260;
+                const rad = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cannon40mm.splashRadius) || 7.0;
+
+                this.ac130Projectiles.push({
+                    mesh: projMesh,
+                    startPos: startPos,
+                    targetPos: targetPos,
+                    type: '40mm',
+                    progress: 0,
+                    speed: 5.5,
+                    damage: dmg,
+                    radius: rad
+                });
+            }
+
+            fireAc130_105mm() {
+                if (!this.isAc130Active || this.isGameOver || this.isPaused) return;
+                const now = performance.now();
+                const rate = (typeof AC130_CONFIG !== 'undefined' && (AC130_CONFIG.missile?.firerate || AC130_CONFIG.cannon105mm?.firerate)) || 2800;
+                if (now - this.ac130Last105mm < rate) return;
+                this.ac130Last105mm = now;
+
+                const targetPos = this.ac130AimPos.clone();
+
+                // Play Steady Rocket Motor Launch Sound
+                if (typeof audio !== 'undefined' && audio.playMissileLaunch) {
+                    audio.playMissileLaunch();
+                } else if (typeof audio !== 'undefined' && audio.playHeavyBomb) {
+                    audio.playHeavyBomb();
+                }
+
+                // Spawn Detailed AGM-114 Hellfire Air-to-Ground Missile
+                const dir = targetPos.clone().sub(this.camera.position).normalize();
+                const startPos = this.camera.position.clone().add(dir.clone().multiplyScalar(15)).add(new THREE.Vector3(-2.5, -2, 0));
+
+                const missileGroup = new THREE.Group();
+
+                // Rocket Fuselage (Long Sleek Body)
+                const bodyGeo = new THREE.CylinderGeometry(0.22, 0.22, 1.8, 8);
+                const bodyMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+                bodyMesh.position.y = 0;
+                missileGroup.add(bodyMesh);
+
+                // Rocket Nose Cone
+                const coneGeo = new THREE.ConeGeometry(0.22, 0.6, 8);
+                const coneMesh = new THREE.Mesh(coneGeo, bodyMat);
+                coneMesh.position.y = 1.2;
+                missileGroup.add(coneMesh);
+
+                // 4 Stabilizer Fins at Tail
+                const finMat = new THREE.MeshBasicMaterial({ color: 0xd4d4d8 });
+                const finGeo = new THREE.BoxGeometry(0.04, 0.4, 0.35);
+                const fin1 = new THREE.Mesh(finGeo, finMat);
+                fin1.position.set(0, -0.7, 0.22);
+                const fin2 = new THREE.Mesh(finGeo, finMat);
+                fin2.position.set(0, -0.7, -0.22);
+                const fin3 = new THREE.Mesh(finGeo, finMat);
+                fin3.rotation.y = Math.PI / 2;
+                fin3.position.set(0.22, -0.7, 0);
+                const fin4 = new THREE.Mesh(finGeo, finMat);
+                fin4.rotation.y = Math.PI / 2;
+                fin4.position.set(-0.22, -0.7, 0);
+                missileGroup.add(fin1, fin2, fin3, fin4);
+
+                // Blazing Rocket Flame Thruster at Exhaust
+                const flameGeo = new THREE.ConeGeometry(0.24, 0.9, 6);
+                const flameMat = new THREE.MeshBasicMaterial({ color: 0xffea00 });
+                const flameMesh = new THREE.Mesh(flameGeo, flameMat);
+                flameMesh.rotation.x = Math.PI;
+                flameMesh.position.y = -1.25;
+                missileGroup.add(flameMesh);
+
+                // Orient missile toward target
+                missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+                missileGroup.position.copy(startPos);
+                this.scene.add(missileGroup);
+
+                const dmg = (typeof AC130_CONFIG !== 'undefined' && (AC130_CONFIG.missile?.damage || AC130_CONFIG.cannon105mm?.damage)) || 1500;
+                const rad = (typeof AC130_CONFIG !== 'undefined' && (AC130_CONFIG.missile?.splashRadius || AC130_CONFIG.cannon105mm?.splashRadius)) || 18.0;
+
+                this.ac130Projectiles.push({
+                    mesh: missileGroup,
+                    startPos: startPos,
+                    targetPos: targetPos,
+                    type: 'missile',
+                    progress: 0,
+                    speed: 0.80, // Takes ~1.25s for a majestic, cinematic rocket dive
+                    damage: dmg,
+                    radius: rad
+                });
+            }
+
+            updateAc130(dt) {
+                // Cooldown countdown & HUD update
+                if (this.ac130Cooldown > 0) {
+                    this.ac130Cooldown = Math.max(0, this.ac130Cooldown - dt);
+                    const cdSec = Math.ceil(this.ac130Cooldown);
+
+                    if (this._lastAc130CdSec !== cdSec) {
+                        this._lastAc130CdSec = cdSec;
+                        const statusText = document.getElementById('ac130-status-text');
+                        const btnIcon = document.getElementById('ac130-icon');
+                        const btn = document.getElementById('hud-ac130-btn');
+                        const progressFill = document.getElementById('ac130-progress-fill');
+
+                        const maxCd = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cooldown) || 80.0;
+                        const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.ac130Cooldown) / maxCd) * 100)));
+
+                        if (progressFill) progressFill.style.width = `${fillPct}%`;
+
+                        if (this.ac130Cooldown > 0) {
+                            if (statusText) statusText.innerText = `${cdSec}s`;
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-slate-500 opacity-60";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
+                        } else {
+                            const isMobile = window.matchMedia('(pointer: coarse)').matches;
+                            if (statusText) statusText.innerText = isMobile ? "BEREIT" : "BEREIT [V]";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-cyan-400";
+                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-cyan-500/60 text-cyan-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
+                        }
+                    }
+                } else if (this._lastAc130CdSec !== 0) {
+                    this._lastAc130CdSec = 0;
+                    const progressFill = document.getElementById('ac130-progress-fill');
+                    if (progressFill) progressFill.style.width = "0%";
+                }
+
+                // Update Flying Projectiles (25mm, 40mm and AGM-114 Missile)
+                if (this.ac130Projectiles && this.ac130Projectiles.length > 0) {
+                    for (let pIdx = this.ac130Projectiles.length - 1; pIdx >= 0; pIdx--) {
+                        const proj = this.ac130Projectiles[pIdx];
+                        proj.progress += dt * proj.speed;
+
+                        if (proj.progress >= 1.0) {
+                            // Hit Ground!
+                            this.scene.remove(proj.mesh);
+                            this.ac130Projectiles.splice(pIdx, 1);
+
+                            const hitPos = proj.targetPos;
+
+                            if (proj.type === 'missile' || proj.type === '105mm') {
+                                // Huge AGM-114 Hellfire detonation with 18m kill radius
+                                this.createExplosion(hitPos, proj.radius, proj.damage, proj.radius, true);
+                                this.createBloodSparks(hitPos, 0xffffff);
+
+                                // Impact screen shake
+                                this.shakeScreen(0.4);
+
+                                // Wipe zombies in 18m radius
+                                for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                                    const z = this.zombies[zi];
+                                    if (z.userData.isDead) continue;
+                                    const dist = Math.hypot(z.position.x - hitPos.x, z.position.z - hitPos.z);
+                                    if (dist <= proj.radius) {
+                                        z.userData.hp -= proj.damage * (1 - (dist / proj.radius) * 0.35);
+                                        this.createBloodSparks(z.position, 0xef4444);
+                                        if (z.userData.hp <= 0) this.killZombie(z);
+                                    }
+                                }
+                            } else if (proj.type === '25mm') {
+                                // High-Velocity 25mm Minigun Bullet Impact (Kinetic hit & dust snap, NO bomb explosion!)
+                                if (typeof audio !== 'undefined' && audio.playGatlingImpact) {
+                                    audio.playGatlingImpact();
+                                }
+                                this.createBloodSparks(hitPos, 0xfacc15);
+
+                                for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                                    const z = this.zombies[zi];
+                                    if (z.userData.isDead) continue;
+                                    const dist = Math.hypot(z.position.x - hitPos.x, z.position.z - hitPos.z);
+                                    if (dist <= proj.radius) {
+                                        z.userData.hp -= proj.damage * (1 - (dist / proj.radius) * 0.25);
+                                        this.createBloodSparks(z.position, 0xf59e0b);
+                                        if (z.userData.hp <= 0) this.killZombie(z);
+                                    }
+                                }
+                            } else {
+                                // 40mm Bofors Auto-Cannon Blast
+                                this.createExplosion(hitPos, proj.radius, proj.damage, proj.radius, false);
+                                this.createBloodSparks(hitPos, 0xffffff);
+
+                                for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                                    const z = this.zombies[zi];
+                                    if (z.userData.isDead) continue;
+                                    const dist = Math.hypot(z.position.x - hitPos.x, z.position.z - hitPos.z);
+                                    if (dist <= proj.radius) {
+                                        z.userData.hp -= proj.damage * (1 - (dist / proj.radius) * 0.35);
+                                        this.createBloodSparks(z.position, 0xf59e0b);
+                                        if (z.userData.hp <= 0) this.killZombie(z);
+                                    }
+                                }
+                            }
+                        } else {
+                            // Interpolate position along arc
+                            proj.mesh.position.lerpVectors(proj.startPos, proj.targetPos, proj.progress);
+                            if (proj.type === 'missile' && Math.random() < 0.35) {
+                                this.createBloodSparks(proj.mesh.position, 0xffffff);
+                            }
+                        }
+                    }
+                }
+
+                // Active AC-130 Gunship State
+                if (this.isAc130Active) {
+                    this.ac130MissionTimer = Math.max(0, this.ac130MissionTimer - dt);
+
+                    // Update UI Countdown (e.g. Red "40", "39", ...)
+                    const timerEl = document.getElementById('ac130-mw-countdown');
+                    if (timerEl) timerEl.innerText = Math.ceil(this.ac130MissionTimer).toString();
+
+                    // Update Live Clock in HUD
+                    const clockEl = document.getElementById('ac130-mw-clock');
+                    if (clockEl) clockEl.innerText = new Date().toLocaleTimeString('en-US', { hour12: false });
+
+                    // Continuous Mouse-Held Rapid Firing (e.g. 25mm Gatling stream)
+                    if (this.isMouseDown && !this.isPaused && !this.isGameOver) {
+                        if (this.mouseButton === 0) {
+                            this.fireAc130Current();
+                        } else if (this.mouseButton === 2) {
+                            this.fireAc130_105mm();
+                        }
+                    }
+
+                    // Update Live Flight Telemetry (Speed, Altitude, Bank, Heading, GPS, Hostiles)
+                    const teleAlt = document.getElementById('ac130-tele-alt');
+                    if (teleAlt) {
+                        const curAltM = (58.0 + Math.sin(this.ac130OrbitAngle * 3) * 0.4).toFixed(1);
+                        const curAltFt = Math.round(curAltM * 3.28084);
+                        teleAlt.innerText = `${curAltM} M (${curAltFt} FT)`;
+                    }
+
+                    const teleSpd = document.getElementById('ac130-tele-spd');
+                    if (teleSpd) {
+                        const curSpd = 242 + Math.round(Math.sin(this.ac130OrbitAngle * 2) * 5);
+                        teleSpd.innerText = `${curSpd} KTS`;
+                    }
+
+                    const teleBank = document.getElementById('ac130-tele-bank');
+                    if (teleBank) {
+                        const curBank = (8.5 + Math.sin(this.ac130OrbitAngle) * 1.4).toFixed(1);
+                        teleBank.innerText = `+${curBank}°`;
+                    }
+
+                    const teleHdg = document.getElementById('ac130-tele-hdg');
+                    if (teleHdg) {
+                        const deg = Math.round(((this.ac130OrbitAngle % (Math.PI * 2)) / (Math.PI * 2)) * 360);
+                        teleHdg.innerText = `${deg.toString().padStart(3, '0')}°`;
+                    }
+
+                    const telePos = document.getElementById('ac130-tele-pos');
+                    if (telePos) {
+                        const latSec = (30 + Math.sin(this.ac130OrbitAngle * 8).toFixed(0)).padStart(2, '0');
+                        const lonSec = (15 + Math.cos(this.ac130OrbitAngle * 8).toFixed(0)).padStart(2, '0');
+                        telePos.innerText = `34°12'${latSec}"N 118°28'${lonSec}"W`;
+                    }
+
+                    const teleHostiles = document.getElementById('ac130-tele-hostiles');
+                    if (teleHostiles) {
+                        const hostilesCount = this.zombies.filter(z => !z.userData.isDead).length;
+                        teleHostiles.innerText = `${hostilesCount} DETECTED`;
+                    }
+
+                    // Update AGM-114 Missile Status
+                    const now = performance.now();
+                    const rate105 = (typeof AC130_CONFIG !== 'undefined' && (AC130_CONFIG.missile?.firerate || AC130_CONFIG.cannon105mm?.firerate)) || 2800;
+                    const st105 = document.getElementById('ac130-status-105mm-mw');
+                    if (st105) {
+                        if (now - this.ac130Last105mm < rate105) {
+                            const rem = ((rate105 - (now - this.ac130Last105mm)) / 1000).toFixed(1);
+                            st105.innerText = `RAKETE RELOAD (${rem}s)`;
+                            st105.className = "text-[11px] sm:text-xs text-red-400 font-bold";
+                        } else {
+                            st105.innerText = "RAKETE READY";
+                            st105.className = "text-[11px] sm:text-xs text-emerald-400 font-bold";
+                        }
+                    }
+
+                    // Continuous Majestic Wide Orbital Flight: 64m Radius, 58m Altitude, Panoramic Arena View
+                    this.ac130OrbitAngle += dt * 0.09;
+                    const camX = Math.sin(this.ac130OrbitAngle) * 64;
+                    const camZ = Math.cos(this.ac130OrbitAngle) * 64;
+                    const camY = 58;
+
+                    this.camera.position.set(camX, camY, camZ);
+                    this.camera.lookAt(0, 0, 0);
+
+                    // Mission Over after 40 Seconds
+                    if (this.ac130MissionTimer <= 0) {
+                        this.isAc130Active = false;
+                        const overlay = document.getElementById('ac130-overlay');
+                        if (overlay) overlay.classList.add('hidden');
+                        document.body.classList.remove('thermal-active');
+
+                        // Restore Normal Gameplay HUD
+                        const gameHud = document.getElementById('game-hud');
+                        if (gameHud) gameHud.classList.remove('hidden');
+
+                        // Restore original materials to zombies, player & dog
+                        for (let z of this.zombies) {
+                            z.traverse((child) => {
+                                if (child.isMesh && child.userData.ac130OrigMat) {
+                                    child.material = child.userData.ac130OrigMat;
+                                }
+                            });
+                        }
+                        if (this.playerGroup) {
+                            this.playerGroup.traverse((child) => {
+                                if (child.isMesh && child.userData.ac130OrigMat) {
+                                    child.material = child.userData.ac130OrigMat;
+                                }
+                            });
+                        }
+                        if (this.dogGroup) {
+                            this.dogGroup.traverse((child) => {
+                                if (child.isMesh && child.userData.ac130OrigMat) {
+                                    child.material = child.userData.ac130OrigMat;
+                                }
+                            });
+                        }
+
+                        // Stop Continuous AC-130 Turboprop Sound
+                        if (typeof audio !== 'undefined' && audio.stopAc130EngineSound) {
+                            audio.stopAc130EngineSound();
+                        }
+
+                        this.updateCameraSettings();
+                        if (typeof showPurchaseToast === 'function') {
+                            showPurchaseToast('✈️ AC-130 Gunship: Treibstoff verbraucht, Rückkehr zur Basis!');
+                        }
+                    }
+                }
+            }
+
             showTacticalIntel(type) {
                 if (!this.intelShown) this.intelShown = {};
                 if (this.intelShown[type]) return;
@@ -3037,74 +3696,142 @@
                     this.updateDog(dt);
                     this.updateAirstrike(dt);
                     this.updateNuke(dt);
+                    this.updateAc130(dt);
                     this.updateRepairDrones(dt);
                     let moveX = 0, moveZ = 0;
 
-                    if (this.keys['KeyW'] || this.keys['ArrowUp']) moveZ -= 1;
-                    if (this.keys['KeyS'] || this.keys['ArrowDown']) moveZ += 1;
-                    if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
-                    if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
+                    if (this.isAc130Active) {
+                        // Autonomous Ground Combat AI while Player commands AC-130 from the sky
+                        let nearestZombie = null;
+                        let minDistSq = 900.0; // 30 meters search radius
+                        for (let zi = 0; zi < this.zombies.length; zi++) {
+                            const z = this.zombies[zi];
+                            if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                            const distSq = this.playerGroup.position.distanceToSquared(z.position);
+                            if (distSq < minDistSq) {
+                                minDistSq = distSq;
+                                nearestZombie = z;
+                            }
+                        }
 
-                    if (this.touchJoystick.active) {
-                        moveX = this.touchJoystick.vectorX;
-                        moveZ = this.touchJoystick.vectorY;
-                    }
+                        if (nearestZombie) {
+                            const dist = Math.sqrt(minDistSq);
+                            const targetAimAngle = Math.atan2(
+                                nearestZombie.position.x - this.playerGroup.position.x,
+                                nearestZombie.position.z - this.playerGroup.position.z
+                            );
+                            
+                            // Smooth aim rotation towards target
+                            let diff = targetAimAngle - this.playerGroup.rotation.y;
+                            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                            this.playerGroup.rotation.y += diff * 16.0 * dt;
 
-                    const isFiring = !isShopOpen && (this.keys['Space'] || this.isTouchFiring);
+                            // Shoot equipped weapon automatically
+                            this.tryShoot();
 
-                    // Smart Aim Assist: Lock onto nearest zombie when firing, break lock if out of range
-                    if (isFiring && this.zombies.length > 0) {
-                        const AIM_LOCK_RANGE_SQ = 100.0;   // lock-on max distance (10 meters)
-                        const AIM_BREAK_RANGE_SQ = 196.0;  // auto-break lock if zombie drifts further
+                            // Natural tactical movement:
+                            // If too close (< 6.5m), back away/kite
+                            // If too far (> 14m), advance
+                            // Otherwise strafe around the target
+                            if (dist < 6.5) {
+                                moveX = -Math.sin(targetAimAngle);
+                                moveZ = -Math.cos(targetAimAngle);
+                            } else if (dist > 14.0) {
+                                moveX = Math.sin(targetAimAngle) * 0.75;
+                                moveZ = Math.cos(targetAimAngle) * 0.75;
+                            } else {
+                                const strafeDir = Math.sin(now * 0.0025) > 0 ? 1 : -1;
+                                moveX = Math.sin(targetAimAngle + (Math.PI / 2) * strafeDir) * 0.7;
+                                moveZ = Math.cos(targetAimAngle + (Math.PI / 2) * strafeDir) * 0.7;
+                            }
+                        } else {
+                            // No zombies: Patrol around the base smoothly
+                            const patrolAngle = (now * 0.0008);
+                            const targetPatrolX = Math.sin(patrolAngle) * 11.5;
+                            const targetPatrolZ = Math.cos(patrolAngle) * 11.5;
+                            const pdx = targetPatrolX - this.playerGroup.position.x;
+                            const pdz = targetPatrolZ - this.playerGroup.position.z;
+                            if (Math.hypot(pdx, pdz) > 1.5) {
+                                moveX = pdx;
+                                moveZ = pdz;
+                                const pAimAngle = Math.atan2(pdx, pdz);
+                                let pDiff = pAimAngle - this.playerGroup.rotation.y;
+                                pDiff = Math.atan2(Math.sin(pDiff), Math.cos(pDiff));
+                                this.playerGroup.rotation.y += pDiff * 8.0 * dt;
+                            }
+                        }
+                    } else {
+                        // Manual player controls when NOT in AC-130 mode
+                        if (this.keys['KeyW'] || this.keys['ArrowUp']) moveZ -= 1;
+                        if (this.keys['KeyS'] || this.keys['ArrowDown']) moveZ += 1;
+                        if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
+                        if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
 
-                        // Check if locked target is still valid & within break range
-                        if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0 && !this.lockedAimTarget.userData.isDead) {
-                            const lockedDistSq = this.playerGroup.position.distanceToSquared(this.lockedAimTarget.position);
-                            if (lockedDistSq > AIM_BREAK_RANGE_SQ) {
-                                this.lockedAimTarget = null; // break lock — zombie too far
+                        if (this.touchJoystick.active) {
+                            moveX = this.touchJoystick.vectorX;
+                            moveZ = this.touchJoystick.vectorY;
+                        }
+
+                        const isFiring = !isShopOpen && (this.keys['Space'] || this.isTouchFiring);
+
+                        // Smart Aim Assist: Lock onto nearest zombie when firing, break lock if out of range
+                        if (isFiring && this.zombies.length > 0) {
+                            const AIM_LOCK_RANGE_SQ = 100.0;   // lock-on max distance (10 meters)
+                            const AIM_BREAK_RANGE_SQ = 196.0;  // auto-break lock if zombie drifts further
+
+                            // Check if locked target is still valid & within break range
+                            if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0 && !this.lockedAimTarget.userData.isDead) {
+                                const lockedDistSq = this.playerGroup.position.distanceToSquared(this.lockedAimTarget.position);
+                                if (lockedDistSq > AIM_BREAK_RANGE_SQ) {
+                                    this.lockedAimTarget = null; // break lock — zombie too far
+                                }
+                            } else {
+                                this.lockedAimTarget = null;
+                            }
+
+                            // If no lock, find new nearest within lock range
+                            if (!this.lockedAimTarget) {
+                                let nearestZombie = null;
+                                let minDistSq = AIM_LOCK_RANGE_SQ;
+                                for (let zi = 0; zi < this.zombies.length; zi++) {
+                                    const z = this.zombies[zi];
+                                    if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                                    const distSq = this.playerGroup.position.distanceToSquared(z.position);
+                                    if (distSq < minDistSq) {
+                                        minDistSq = distSq;
+                                        nearestZombie = z;
+                                    }
+                                }
+                                this.lockedAimTarget = nearestZombie;
+                            }
+
+                            if (this.lockedAimTarget) {
+                                const targetAimAngle = Math.atan2(
+                                    this.lockedAimTarget.position.x - this.playerGroup.position.x,
+                                    this.lockedAimTarget.position.z - this.playerGroup.position.z
+                                );
+                                let diff = targetAimAngle - this.playerGroup.rotation.y;
+                                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                                this.playerGroup.rotation.y += diff * 18.0 * dt;
+                            } else if (moveX !== 0 || moveZ !== 0) {
+                                // No valid target in range — rotate toward movement direction
+                                const targetAngle = Math.atan2(moveX, moveZ);
+                                let diff = targetAngle - this.playerGroup.rotation.y;
+                                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                                this.playerGroup.rotation.y += diff * 12.0 * dt;
                             }
                         } else {
                             this.lockedAimTarget = null;
-                        }
-
-                        // If no lock, find new nearest within lock range
-                        if (!this.lockedAimTarget) {
-                            let nearestZombie = null;
-                            let minDistSq = AIM_LOCK_RANGE_SQ;
-                            for (let zi = 0; zi < this.zombies.length; zi++) {
-                                const z = this.zombies[zi];
-                                if (z.userData.hp <= 0 || z.userData.isDead) continue;
-                                const distSq = this.playerGroup.position.distanceToSquared(z.position);
-                                if (distSq < minDistSq) {
-                                    minDistSq = distSq;
-                                    nearestZombie = z;
-                                }
+                            if (moveX !== 0 || moveZ !== 0) {
+                                const targetAngle = Math.atan2(moveX, moveZ);
+                                let diff = targetAngle - this.playerGroup.rotation.y;
+                                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                                this.playerGroup.rotation.y += diff * 12.0 * dt;
                             }
-                            this.lockedAimTarget = nearestZombie;
                         }
 
-                        if (this.lockedAimTarget) {
-                            const targetAimAngle = Math.atan2(
-                                this.lockedAimTarget.position.x - this.playerGroup.position.x,
-                                this.lockedAimTarget.position.z - this.playerGroup.position.z
-                            );
-                            let diff = targetAimAngle - this.playerGroup.rotation.y;
-                            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                            this.playerGroup.rotation.y += diff * 18.0 * dt;
-                        } else if (moveX !== 0 || moveZ !== 0) {
-                            // No valid target in range — rotate toward movement direction
-                            const targetAngle = Math.atan2(moveX, moveZ);
-                            let diff = targetAngle - this.playerGroup.rotation.y;
-                            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                            this.playerGroup.rotation.y += diff * 12.0 * dt;
-                        }
-                    } else {
-                        this.lockedAimTarget = null;
-                        if (moveX !== 0 || moveZ !== 0) {
-                            const targetAngle = Math.atan2(moveX, moveZ);
-                            let diff = targetAngle - this.playerGroup.rotation.y;
-                            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                            this.playerGroup.rotation.y += diff * 12.0 * dt;
+                        if (isFiring) {
+                            this.tryShoot();
                         }
                     }
 
@@ -3113,7 +3840,7 @@
                         const rawMag = Math.hypot(moveX, moveZ);
 
                         let inputMagnitude = 1.0;
-                        if (this.touchJoystick.active) {
+                        if (this.touchJoystick.active && !this.isAc130Active) {
                             const deadzone = 0.15;
                             if (rawMag < deadzone) {
                                 inputMagnitude = 0;
@@ -3160,14 +3887,12 @@
                         if (this.rightLegWrap) this.rightLegWrap.rotation.x = THREE.MathUtils.lerp(this.rightLegWrap.rotation.x, 0, 0.1);
                     }
 
-                    if (isFiring) {
-                        this.tryShoot();
+                    if (!this.isAc130Active) {
+                        this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, this.playerGroup.position.x + this.cameraOffset.x, 0.08);
+                        this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, this.playerGroup.position.y + this.cameraOffset.y, 0.08);
+                        this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, this.playerGroup.position.z + this.cameraOffset.z, 0.08);
+                        this.camera.lookAt(this.playerGroup.position);
                     }
-
-                    this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, this.playerGroup.position.x + this.cameraOffset.x, 0.08);
-                    this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, this.playerGroup.position.y + this.cameraOffset.y, 0.08);
-                    this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, this.playerGroup.position.z + this.cameraOffset.z, 0.08);
-                    this.camera.lookAt(this.playerGroup.position);
 
                     if (this.playerShieldMesh) {
                         this.playerShieldMesh.visible = (this.playerShield > 0);
@@ -3253,7 +3978,7 @@
                                 // Enemy projectile hits base
                                 const dbx = b.position.x - this.baseGroup.position.x;
                                 const dbz = b.position.z - this.baseGroup.position.z;
-                                if (!bulletHit && (dbx * dbx + dbz * dbz < 27.04)) {
+                                if (!this.isBaseInvulnerable && !bulletHit && (dbx * dbx + dbz * dbz < 27.04)) {
                                     bulletHit = true;
                                     let bDmg = b.userData.damage;
                                     if (this.baseShield > 0) {
@@ -3267,7 +3992,7 @@
                                         this.triggerBaseAlarm();
                                     }
                                     this.syncHUD();
-                                    if (this.baseHp <= 0) this.triggerGameOver('base');
+                                    if (this.baseHp <= 0) this.handleBaseDeath();
                                 }
                             } else {
                                 // Player/turret bullets hit zombies via Spatial Grid Hashing (Query 3x3 cells)
@@ -3407,26 +4132,28 @@
                                 z.position.x = basePos.x + dirX * BASE_RADIUS;
                                 z.position.z = basePos.z + dirZ * BASE_RADIUS;
 
-                                let dmg = (0.22 * z.userData.dmgMult) * dt * 60;
+                                if (!this.isBaseInvulnerable) {
+                                    let dmg = (0.22 * z.userData.dmgMult) * dt * 60;
 
-                                if (this.baseShield > 0) {
-                                    const absorbed = Math.min(this.baseShield, dmg);
-                                    this.baseShield -= absorbed;
-                                    dmg -= absorbed;
-                                }
-                                if (dmg > 0) {
-                                    this.baseHp = Math.max(0, this.baseHp - dmg);
-                                    this.triggerBaseAlarm();
-                                }
+                                    if (this.baseShield > 0) {
+                                        const absorbed = Math.min(this.baseShield, dmg);
+                                        this.baseShield -= absorbed;
+                                        dmg -= absorbed;
+                                    }
+                                    if (dmg > 0) {
+                                        this.baseHp = Math.max(0, this.baseHp - dmg);
+                                        this.triggerBaseAlarm();
+                                    }
 
-                                if (this.upgrades.base_spikes > 0) {
-                                    const spikeDmg = (this.upgrades.base_spikes * 18) * dt;
-                                    z.userData.hp -= spikeDmg;
-                                    if (z.userData.hp <= 0) this.killZombie(z);
-                                }
+                                    if (this.upgrades.base_spikes > 0) {
+                                        const spikeDmg = (this.upgrades.base_spikes * 18) * dt;
+                                        z.userData.hp -= spikeDmg;
+                                        if (z.userData.hp <= 0) this.killZombie(z);
+                                    }
 
-                                this._needHudSync = true;
-                                if (this.baseHp <= 0) this.triggerGameOver('base');
+                                    this._needHudSync = true;
+                                    if (this.baseHp <= 0) this.handleBaseDeath();
+                                }
                             } else {
                                 z.position.x = nextX;
                                 z.position.z = nextZ;
@@ -3676,6 +4403,63 @@
                 }
             }
 
+            handleBaseDeath() {
+                if (this.isBaseInvulnerable) return;
+
+                if (this.baseLives > 1) {
+                    this.baseLives--;
+                    this.baseHp = this.maxBaseHp;
+                    this.baseShield = this.maxBaseShield;
+                    this.isBaseInvulnerable = true;
+
+                    const basePos = this.baseGroup.position;
+
+                    // 1. Massive Core Shockwave Blast: Eliminate all zombies around base in 22-meter radius!
+                    this.createExplosion(basePos, 22.0, 99999, 22.0, true);
+
+                    for (let i = this.zombies.length - 1; i >= 0; i--) {
+                        const z = this.zombies[i];
+                        const distToBase = Math.hypot(z.position.x - basePos.x, z.position.z - basePos.z);
+                        if (distToBase < 22.0) {
+                            this.createBloodSparks(z.position, 0x38bdf8);
+                            this.killZombie(z);
+                        }
+                    }
+
+                    // 2. Base Core Overload Feedback & Forcefield Shield (2.4 seconds)
+                    if (this.baseShieldMesh) {
+                        this.baseShieldMesh.visible = true;
+                        this.baseShieldMesh.scale.set(1.4, 1.4, 1.4);
+                    }
+
+                    let flashes = 0;
+                    const invulnInterval = setInterval(() => {
+                        flashes++;
+                        if (this.baseGroup) {
+                            this.baseGroup.visible = !this.baseGroup.visible;
+                        }
+                        if (flashes >= 12) {
+                            clearInterval(invulnInterval);
+                            if (this.baseGroup) this.baseGroup.visible = true;
+                            if (this.baseShieldMesh) this.baseShieldMesh.scale.set(1, 1, 1);
+                            this.isBaseInvulnerable = false;
+                        }
+                    }, 120);
+
+                    if (typeof audio !== 'undefined' && audio.playHeavyBomb) {
+                        audio.playHeavyBomb();
+                    }
+                    if (typeof showWarningToast === 'function') {
+                        showWarningToast(`⚡ BASIS-KERN ÜBERLADUNG! ${this.baseLives} LEBEN VERBLEIBEND!`);
+                    }
+                    this.syncHUD();
+                } else {
+                    this.baseLives = 0;
+                    this.syncHUD();
+                    this.triggerGameOver('base');
+                }
+            }
+
             syncHUD() {
                 if (this.playerShield > 0) {
                     document.getElementById('hud-player-hp-text').innerText = `${Math.ceil(this.playerHp)}/${this.maxPlayerHp} (🛡️${Math.ceil(this.playerShield)})`;
@@ -3724,6 +4508,21 @@
                     heartsContainer.innerHTML = heartsHtml;
                 }
 
+                // Render Base Hearts/Shields (3 Lives)
+                const baseHeartsContainer = document.getElementById('hud-base-lives-hearts');
+                if (baseHeartsContainer) {
+                    let baseHeartsHtml = '';
+                    const bLives = this.baseLives !== undefined ? this.baseLives : 3;
+                    for (let i = 0; i < 3; i++) {
+                        if (i < bLives) {
+                            baseHeartsHtml += '<i class="fa-solid fa-heart text-sky-400"></i>';
+                        } else {
+                            baseHeartsHtml += '<i class="fa-solid fa-heart text-slate-700 opacity-40"></i>';
+                        }
+                    }
+                    baseHeartsContainer.innerHTML = baseHeartsHtml;
+                }
+
                 document.getElementById('hud-money').innerText = `$ ${this.money}`;
                 document.getElementById('shop-money-display').innerText = `$ ${this.money}`;
 
@@ -3767,6 +4566,8 @@
                         playerShield: this.playerShield,
                         maxPlayerShield: this.maxPlayerShield,
                         playerLives: this.playerLives,
+                        baseLives: this.baseLives !== undefined ? this.baseLives : 3,
+                        ac130Cooldown: this.ac130Cooldown || 0,
                         baseHp: this.baseHp,
                         maxBaseHp: this.maxBaseHp,
                         baseShield: this.baseShield,
@@ -3818,6 +4619,8 @@
                     this.playerShield = data.playerShield || 0;
                     this.maxPlayerShield = data.maxPlayerShield || 0;
                     this.playerLives = data.playerLives !== undefined ? data.playerLives : 3;
+                    this.baseLives = data.baseLives !== undefined ? data.baseLives : 3;
+                    this.ac130Cooldown = data.ac130Cooldown || 0;
                     this.baseHp = data.baseHp !== undefined ? data.baseHp : 2500;
                     this.maxBaseHp = data.maxBaseHp || 2500;
                     this.baseShield = data.baseShield || 0;

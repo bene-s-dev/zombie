@@ -600,6 +600,13 @@ let isShopOpen = false;
             updateMusicDucking();
         }
 
+        function triggerAc130() {
+            if (gameInstance) {
+                gameInstance.triggerAc130();
+                gameInstance.saveGameSession();
+            }
+        }
+
         function triggerAirstrike() {
             if (gameInstance) {
                 gameInstance.triggerAirstrike();
@@ -653,6 +660,9 @@ let isShopOpen = false;
 
             const modal = document.getElementById('pause-modal');
             if (isPauseModalOpen) {
+                if (gameInstance.isAc130Active && typeof audio !== 'undefined' && audio.pauseAc130EngineSound) {
+                    audio.pauseAc130EngineSound();
+                }
                 gameInstance.saveGameSession();
                 updatePauseSaveStatus();
                 document.getElementById('pause-toggle-music').checked = Storage.data.musicEnabled;
@@ -662,6 +672,9 @@ let isShopOpen = false;
                 setTimeout(() => { initCameraPreview(); }, 50);
             } else {
                 modal.classList.add('hidden');
+                if (gameInstance.isAc130Active && typeof audio !== 'undefined' && audio.resumeAc130EngineSound) {
+                    audio.resumeAc130EngineSound();
+                }
             }
             updateMusicDucking();
         }
@@ -735,7 +748,7 @@ let isShopOpen = false;
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'shop-purchase-toast';
-                toast.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-slate-950 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-1.5 transition-all duration-300 transform -translate-y-4 opacity-0 pointer-events-none';
+                toast.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-[150] bg-emerald-500 text-slate-950 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-1.5 transition-all duration-300 transform -translate-y-4 opacity-0 pointer-events-none';
                 document.body.appendChild(toast);
             }
 
@@ -755,7 +768,7 @@ let isShopOpen = false;
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'game-warning-toast';
-                toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-rose-600 text-white px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-1.5 transition-all duration-300 transform -translate-y-4 opacity-0 pointer-events-none';
+                toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-[150] bg-rose-600 text-white px-4 py-2 rounded-xl font-bold text-xs sm:text-sm shadow-2xl flex items-center space-x-1.5 transition-all duration-300 transform -translate-y-4 opacity-0 pointer-events-none';
                 document.body.appendChild(toast);
             }
             toast.innerHTML = `<i class="fa-solid fa-coins text-base animate-bounce"></i> <span>${msg}</span>`;

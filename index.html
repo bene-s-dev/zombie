@@ -126,6 +126,15 @@
         .airstrike-ready-blink {
             animation: airstrike-ready 0.7s ease-in-out infinite;
         }
+
+        /* Modern Warfare AC-130 Authentic FLIR Thermal Screen */
+        .thermal-active #three-container {
+            filter: grayscale(100%) contrast(120%) brightness(105%);
+        }
+        .mw-scanlines {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 255, 255, 0.015), rgba(0, 0, 0, 0.02));
+            background-size: 100% 4px, 4px 100%;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col justify-center items-center bg-slate-950 overflow-hidden">
@@ -149,6 +158,125 @@
 
         <!-- FULLSCREEN ATOMIC WHITE FLASH OVERLAY -->
         <div id="nuke-flash-overlay" class="pointer-events-none fixed inset-0 z-[100] bg-white opacity-0 transition-opacity duration-300"></div>
+
+        <!-- ================= MODERN WARFARE AC-130 DEATH FROM ABOVE OVERLAY ================= -->
+        <div id="ac130-overlay" class="hidden pointer-events-none fixed inset-0 z-[80] select-none overflow-hidden mw-scanlines flex flex-col justify-between p-3 sm:p-7 text-white font-mono text-xs sm:text-sm">
+            <!-- Vignette Edge Shadows -->
+            <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)]"></div>
+
+            <!-- Top Row HUD Data (Live Real-Time Flight & Combat Telemetry) -->
+            <div class="z-10 flex justify-between items-start text-[10px] sm:text-xs tracking-wider uppercase text-white drop-shadow select-none">
+                <!-- Top Left Live Flight Telemetry -->
+                <div class="space-y-0.5 leading-tight font-mono">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-slate-400">ALT:</span>
+                        <span id="ac130-tele-alt" class="font-bold text-white">48.0 M (157 FT)</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-slate-400">SPD:</span>
+                        <span id="ac130-tele-spd" class="font-bold text-white">245 KTS</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-slate-400">BANK:</span>
+                        <span id="ac130-tele-bank" class="font-bold text-white">+8.2°</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-slate-400">HDG:</span>
+                        <span id="ac130-tele-hdg" class="font-bold text-amber-300">084°</span>
+                    </div>
+                    <div id="ac130-mw-countdown" class="font-teko text-5xl sm:text-7xl font-bold text-red-600 leading-none mt-1 tracking-tight">40</div>
+                </div>
+
+                <!-- Top Center Mission Clock & Prominent Pause Button -->
+                <div class="flex flex-col items-center space-y-1 font-mono pointer-events-auto">
+                    <div id="ac130-mw-clock" class="text-xs sm:text-sm font-bold tracking-widest text-slate-200">10:42:15</div>
+                    <button type="button" id="ac130-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="cursor-pointer pointer-events-auto bg-slate-950/90 hover:bg-slate-800 active:bg-slate-900 border-2 border-amber-400 text-amber-300 hover:text-white px-4 py-1.5 rounded-xl flex items-center space-x-2 transition active:scale-95 text-xs sm:text-sm shadow-2xl font-bold">
+                        <i class="fa-solid fa-pause text-amber-400 text-sm"></i>
+                        <span>PAUSE [ESC]</span>
+                    </button>
+                </div>
+
+                <!-- Top Right Live Grid, Hostiles & Sensor Status -->
+                <div class="text-right space-y-0.5 leading-tight font-mono">
+                    <div class="flex items-center justify-end space-x-2">
+                        <span class="text-slate-400">POS:</span>
+                        <span id="ac130-tele-pos" class="font-bold text-white">34°12'N 118°28'W</span>
+                    </div>
+                    <div class="flex items-center justify-end space-x-2">
+                        <span class="text-slate-400">HOSTILES:</span>
+                        <span id="ac130-tele-hostiles" class="font-bold text-red-400">12 DETECTED</span>
+                    </div>
+                    <div class="flex items-center justify-end space-x-2">
+                        <span class="text-slate-400">SENSOR:</span>
+                        <span class="font-bold text-white border border-white/80 px-1 py-0.2 bg-white/20">[WHOT FLIR]</span>
+                    </div>
+                    <div class="text-[9px] text-emerald-400 font-bold">LINK: ALLTV / DIRCM ACTIVE</div>
+                </div>
+            </div>
+
+            <!-- Authentic Center Military Crosshair (Clean, No Distracting Boxes) -->
+            <div id="ac130-crosshair-hud" class="pointer-events-none fixed w-48 sm:w-64 h-48 sm:h-64 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none" style="top: 50%; left: 50%;">
+                <!-- Center Crosshair Tick Lines with Mils Markers -->
+                <div class="absolute w-40 sm:w-52 h-[1px] bg-white/80"></div>
+                <div class="absolute h-40 sm:h-52 w-[1px] bg-white/80"></div>
+
+                <!-- Center Aim Circle & Glowing Dot -->
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-white/70 flex items-center justify-center">
+                    <div class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
+                </div>
+
+                <!-- Flight Horizon & Banking Angle Indicator on Right side -->
+                <div class="absolute -right-14 sm:-right-18 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                    <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-full border border-white/60 flex items-center justify-center relative">
+                        <div class="absolute w-full h-[1px] bg-white/50"></div>
+                        <div class="w-2.5 h-1 border-t border-l border-r border-white"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Weapon Selector & Status -->
+            <div class="z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-3 text-[11px] sm:text-xs">
+                <!-- Bottom Left Weapon Loadout & Hotkey Controls -->
+                <div class="pointer-events-auto flex flex-col space-y-1 leading-tight select-none bg-black/70 p-2 sm:p-2.5 rounded-xl border border-slate-700">
+                    <div class="text-[9px] sm:text-[10px] text-amber-300 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                        <span><i class="fa-solid fa-crosshairs mr-1"></i> WAFFE WÄHLEN [1, 2, 3 / MAUSRAD]:</span>
+                        <span class="text-slate-400 font-mono text-[9px]">LMB = Feuern</span>
+                    </div>
+                    <div class="flex items-center space-x-1 sm:space-x-1.5">
+                        <!-- [1] 25mm Gatling -->
+                        <button id="ac130-weap-btn-25mm" onclick="gameInstance && gameInstance.selectAc130Weapon('25mm')" class="px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95">
+                            <span class="bg-slate-800 px-1 py-0.2 rounded text-[9px] font-bold text-amber-400 border border-slate-600">1</span>
+                            <span class="font-bold text-[10px] sm:text-xs">25mm GATLING</span>
+                        </button>
+
+                        <!-- [2] 40mm Bofors -->
+                        <button id="ac130-weap-btn-40mm" onclick="gameInstance && gameInstance.selectAc130Weapon('40mm')" class="px-2 sm:px-2.5 py-1 rounded border-2 border-white bg-white/20 text-white font-bold transition flex items-center space-x-1 shadow-lg active:scale-95">
+                            <span class="bg-slate-800 px-1 py-0.2 rounded text-[9px] font-bold text-amber-400 border border-slate-600">2</span>
+                            <span class="font-bold text-[10px] sm:text-xs">40mm BOFORS</span>
+                        </button>
+
+                        <!-- [3] AGM-114 Hellfire Rakete -->
+                        <button id="ac130-weap-btn-105mm" onclick="gameInstance && gameInstance.selectAc130Weapon('105mm')" class="px-2 sm:px-2.5 py-1 rounded border border-slate-600 bg-black/80 text-slate-300 hover:border-white transition flex items-center space-x-1 active:scale-95">
+                            <span class="bg-slate-800 px-1 py-0.2 rounded text-[9px] font-bold text-amber-400 border border-slate-600">3</span>
+                            <span class="font-bold text-[10px] sm:text-xs text-red-400"><i class="fa-solid fa-rocket mr-0.5"></i> AGM-114 RAKETE</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bottom Right Weapon Status & Mobile Touch Fire Trigger -->
+                <div class="flex flex-col items-end space-y-1.5 pointer-events-auto">
+                    <div class="text-right space-y-0.5 leading-tight bg-black/60 px-2.5 py-1 rounded border border-slate-800">
+                        <div id="ac130-status-40mm-mw" class="text-white font-bold text-[10px] sm:text-xs">40 MM READY</div>
+                        <div id="ac130-status-105mm-mw" class="text-emerald-400 font-bold text-[10px] sm:text-xs">RAKETE READY</div>
+                    </div>
+
+                    <!-- Touch Fire Button (for mobile devices) -->
+                    <button id="ac130-btn-fire-touch" onmousedown="gameInstance && gameInstance.fireAc130Current()" ontouchstart="gameInstance && gameInstance.fireAc130Current(); event.stopPropagation();" class="bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold px-4 py-2 rounded-xl shadow-xl text-xs font-mono active:scale-95 border border-red-300">
+                        <i class="fa-solid fa-crosshairs mr-1"></i> FEUER
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- ================= PRE-GAME LOADING SCREEN OVERLAY ================= -->
         <div id="loading-screen" class="hidden absolute inset-0 z-[90] bg-slate-950/95 backdrop-blur-lg flex flex-col items-center justify-center p-6 text-center select-none transition-opacity duration-300">
@@ -206,9 +334,9 @@
         </div>
 
         <!-- ================= BASE ATTACK ALARM HUD BANNER ================= -->
-        <div id="hud-base-alarm" class="hidden absolute top-14 sm:top-16 left-1/2 transform -translate-x-1/2 z-40 bg-gradient-to-r from-rose-600 via-red-600 to-rose-600 border-2 border-red-300 text-white font-teko text-lg sm:text-2xl px-5 py-1 sm:py-1.5 rounded-full shadow-2xl animate-bounce flex items-center space-x-2 pointer-events-none tracking-wider uppercase">
-            <i class="fa-solid fa-triangle-exclamation text-amber-300 text-xl animate-spin"></i>
-            <span class="drop-shadow-md">⚠️ Basis wird angegriffen!</span>
+        <div id="hud-base-alarm" class="hidden absolute top-14 sm:top-16 left-1/2 transform -translate-x-1/2 z-40 bg-gradient-to-r from-rose-600 via-red-600 to-rose-600 border-2 border-red-300 text-white font-teko text-lg sm:text-2xl px-5 py-1 sm:py-1.5 rounded-full shadow-2xl flex items-center space-x-2 pointer-events-none tracking-wider uppercase">
+            <i class="fa-solid fa-triangle-exclamation text-amber-300 text-xl"></i>
+            <span class="drop-shadow-md">Basis wird angegriffen!</span>
         </div>
 
         <!-- ================= STRUCTURE INSPECT / UPGRADE / SELL MODAL ================= -->
@@ -372,27 +500,40 @@
                 </div>
 
                 <!-- Top-Right Controls: Transparent background, uniform height h-10 sm:h-11, fixed-size x2 speed button stacked under Pause button -->
-                <div class="flex items-start space-x-1.5 sm:space-x-2">
-                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" ontouchstart="triggerAirstrike(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 px-2 py-1 sm:px-2.5 rounded-lg shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto animate-pulse" title="Luftschlag [E]">
+                <div class="flex items-start space-x-1 sm:space-x-1.5">
+                    <!-- AC-130 Gunship Button [V] -->
+                    <button id="hud-ac130-btn" onclick="triggerAc130()" ontouchstart="triggerAc130(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-cyan-500/60 text-cyan-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] pointer-events-auto animate-pulse" title="AC-130 Gunship [V]">
+                        <div id="ac130-progress-fill" class="absolute top-0 left-0 bottom-0 bg-cyan-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
+                        <div id="ac130-icon" class="relative z-10 flex items-center text-cyan-400">
+                            <i class="fa-solid fa-crosshairs text-[10px] sm:text-xs"></i>
+                        </div>
+                        <div class="relative z-10 flex flex-col text-left">
+                            <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase leading-none tracking-tight">AC-130</span>
+                            <span id="ac130-status-text" class="font-mono text-[8px] sm:text-[9px] font-bold text-cyan-400 leading-tight">BEREIT [V]</span>
+                        </div>
+                    </button>
+
+                    <!-- Luftschlag Button [E] -->
+                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" ontouchstart="triggerAirstrike(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] pointer-events-auto animate-pulse" title="Luftschlag [E]">
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="airstrike-icon" class="relative z-10 flex items-center text-amber-400 airstrike-ready-blink">
                             <i class="fa-solid fa-plane-up text-[10px] sm:text-xs"></i>
                         </div>
                         <div class="relative z-10 flex flex-col text-left">
-                            <span class="text-[8px] sm:text-[9px] text-slate-400 font-bold uppercase leading-none tracking-tight">Luftschlag</span>
-                            <span id="airstrike-status-text" class="font-mono text-[9px] sm:text-[10px] font-bold text-amber-400 leading-tight">BEREIT</span>
+                            <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase leading-none tracking-tight">Luftschlag</span>
+                            <span id="airstrike-status-text" class="font-mono text-[8px] sm:text-[9px] font-bold text-amber-400 leading-tight">BEREIT</span>
                         </div>
                     </button>
 
-                    <!-- Nuke Ultimate Button -->
-                    <button id="hud-nuke-btn" onclick="triggerNuke()" ontouchstart="triggerNuke(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-red-500/60 text-red-400 px-2 py-1 sm:px-2.5 rounded-lg shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center space-x-1 sm:space-x-1.5 h-9 sm:h-10 pointer-events-auto animate-pulse" title="Atombombe [Q]">
+                    <!-- Nuke Ultimate Button [Q] -->
+                    <button id="hud-nuke-btn" onclick="triggerNuke()" ontouchstart="triggerNuke(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-red-500/60 text-red-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] pointer-events-auto animate-pulse" title="Atombombe [Q]">
                         <div id="nuke-progress-fill" class="absolute top-0 left-0 bottom-0 bg-red-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="nuke-icon" class="relative z-10 flex items-center text-red-500 animate-spin">
-                            <i class="fa-solid fa-radiation text-red-500 text-[10px] sm:text-xs"></i>
+                            <i class="fa-solid fa-radiation text-[10px] sm:text-xs"></i>
                         </div>
                         <div class="relative z-10 flex flex-col text-left">
-                            <span class="text-[8px] sm:text-[9px] text-slate-400 font-bold uppercase leading-none tracking-tight">Atombombe</span>
-                            <span id="nuke-status-text" class="font-mono text-[9px] sm:text-[10px] font-bold text-red-400 leading-tight">BEREIT</span>
+                            <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase leading-none tracking-tight">Atombombe</span>
+                            <span id="nuke-status-text" class="font-mono text-[8px] sm:text-[9px] font-bold text-red-400 leading-tight">BEREIT</span>
                         </div>
                     </button>
 
@@ -441,9 +582,10 @@
                 </div>
 
                 <div class="bg-slate-950/85 border border-slate-800 p-2 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[100px] sm:min-w-[140px] pointer-events-auto">
-                    <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1">
-                        <span class="text-slate-300"><i class="fa-solid fa-building-shield text-sky-400 mr-1"></i> BASIS</span>
-                        <span id="hud-base-hp-text" class="text-sky-400 font-mono">1000/1000</span>
+                    <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1 items-center">
+                        <span class="text-slate-300 flex items-center"><i class="fa-solid fa-building-shield text-sky-400 mr-1"></i> BASIS</span>
+                        <div id="hud-base-lives-hearts" class="flex items-center space-x-0.5 text-xs text-sky-400 mr-1"></div>
+                        <span id="hud-base-hp-text" class="text-sky-400 font-mono">2500/2500</span>
                     </div>
                     <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
                         <div id="hud-base-hp-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 100%;"></div>
@@ -454,7 +596,7 @@
         </div>
 
         <!-- ================= PAUSE & SETTINGS MODAL ================= -->
-        <div id="pause-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md">
+        <div id="pause-modal" class="hidden absolute inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md">
             <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl sm:max-w-4xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <div class="flex items-center space-x-2.5">
@@ -544,7 +686,7 @@
         </div>
 
         <!-- ================= SHOP & BASE BUILDING MODAL ================= -->
-        <div id="shop-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+        <div id="shop-modal" class="hidden absolute inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
             <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-3xl p-6 shadow-2xl flex flex-col max-h-[92vh]">
                 <!-- Shop Header -->
                 <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
@@ -615,7 +757,7 @@
         </div>
 
         <!-- ================= GAME OVER / VICTORY OVERLAY ================= -->
-        <div id="game-over-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-lg">
+        <div id="game-over-modal" class="hidden absolute inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-lg">
             <div class="bg-slate-900 border border-red-900/50 w-full max-w-lg rounded-2xl p-3 sm:p-6 shadow-2xl">
 
                 <!-- Header: icon + title always side by side -->
@@ -677,7 +819,7 @@
         </div>
 
         <!-- Tactical Intel Threat Alert Modal -->
-        <div id="intel-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+        <div id="intel-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
             <div class="bg-slate-900 border border-amber-500/60 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
                 <div class="flex items-center space-x-3.5 border-b border-slate-800 pb-3">
                     <i id="intel-icon" class="fa-solid fa-shield-halved text-sky-400 text-3xl"></i>

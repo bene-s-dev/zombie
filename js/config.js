@@ -16,20 +16,20 @@ const TURRET_TYPES = {
     cannon: { id: 'cannon', name: 'Artillerie-Kanonenturm', cost: 520, range: 32, damage: 125, firerate: 1000, isExplosive: true, splashRadius: 5.2, hp: 550, maxHp: 550, desc: 'Schwere Artillerie. Flächenschaden gegen Zombie-Horden!' },
     tesla: { id: 'tesla', name: 'Tesla-Schockspule', cost: 720, range: 22, damage: 65, firerate: 750, isTesla: true, hp: 450, maxHp: 450, desc: 'Schockspule. Schockt & verlangsamt mehrere Feinde gleichzeitig!' },
     rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 980, range: 36, damage: 185, firerate: 1400, isExplosive: true, splashRadius: 6.2, hp: 500, maxHp: 500, desc: 'Fernkampf-Flak. Verheerender Flächenschaden!' },
-    drone_hangar: { 
-        id: 'drone_hangar', 
-        name: 'Reparatur-Drohnen-Hangar', 
-        cost: 650, 
-        range: 60, 
-        damage: 0, 
-        firerate: 0, 
-        hp: 99999, 
-        maxHp: 99999, 
+    drone_hangar: {
+        id: 'drone_hangar',
+        name: 'Reparatur-Drohnen-Hangar',
+        cost: 650,
+        range: 60,
+        damage: 0,
+        firerate: 0,
+        hp: 99999,
+        maxHp: 99999,
         isIndestructible: true,
         isHangar: true,
         droneLaunchCost: 160,
         droneDuration: 60,
-        desc: 'Unzerstörbare High-Tech Drohnenstation. Sendet autonome Reparatur-Drohnengeschwader aus, die beschädigte Geschütztürme im Feld anfliegen und reparieren (1 Min. Einsatz).' 
+        desc: 'Unzerstörbare High-Tech Drohnenstation. Sendet autonome Reparatur-Drohnengeschwader aus, die beschädigte Geschütztürme im Feld anfliegen und reparieren (1 Min. Einsatz).'
     }
 };
 
@@ -47,19 +47,48 @@ const WALL_TYPES = {
 const UPGRADES = {
     // CATEGORY: PLAYER
     player_hp: { category: 'player', name: 'Kampfweste & Max HP', level: 0, maxLevel: Infinity, costBase: 200, desc: 'Erhöht maximale Spieler-Gesundheit um +30 HP' },
-    player_shield: { category: 'player', name: '🛡️ Spieler-Körperschild (Generator & Max HP)', level: 0, maxLevel: Infinity, costBase: 350, desc: 'Schutzfeld für die Spielfigur (+100 Schild-HP pro Stufe). Absorbiert 100% des Schadens (Spieler-HP erleidet 0 Schaden).' },
+    player_shield: { category: 'player', name: 'Spieler-Körperschild (Generator & Max HP)', level: 0, maxLevel: Infinity, costBase: 350, desc: 'Schutzfeld für die Spielfigur (+100 Schild-HP pro Stufe). Absorbiert 100% des Schadens (Spieler-HP erleidet 0 Schaden).' },
     player_speed: { category: 'player', name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 150, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
     crit_chance: { category: 'player', name: 'Kritische Treffer', level: 0, maxLevel: 5, costBase: 300, desc: 'Gewährt +10% Chance auf doppeltem Waffenschaden' },
     scavenger: { category: 'player', name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 150, desc: 'Erhöht erbeutetes Geld pro Zombie um 5% multiplikativ pro Stufe' },
 
     // CATEGORY: HQ / BASE
     base_hp: { category: 'hq', name: 'Basis-Panzerung', level: 0, maxLevel: Infinity, costBase: 250, desc: 'Erhöht maximale Basis-Gesundheit massiv um +500 HP' },
-    base_shield: { category: 'hq', name: '🛡️ Basis-Kraftfeld (Generator & Max HP)', level: 0, maxLevel: Infinity, costBase: 400, desc: 'Kraftfeld für die Hauptbasis (+200 Schild-HP pro Stufe). Fängt 100% aller Zombie-Angriffe & Explosionen ab.' },
+    base_shield: { category: 'hq', name: 'Basis-Kraftfeld (Generator & Max HP)', level: 0, maxLevel: Infinity, costBase: 400, desc: 'Kraftfeld für die Hauptbasis (+200 Schild-HP pro Stufe). Fängt 100% aller Zombie-Angriffe & Explosionen ab.' },
     auto_repair: { category: 'hq', name: 'Nano-Reparatur-Drohnen', level: 0, maxLevel: 5, costBase: 500, desc: 'Repariert die Basis kontinuierlich im Kampf (+5 HP/Sek)' },
     base_spikes: { category: 'hq', name: 'Dornen-Perimeter', level: 0, maxLevel: 5, costBase: 350, desc: 'Fügt Zombies Schaden zu, die die Basis-Grenze angreifen' },
 
     // CATEGORY: COMPANIONS
-    companion_dog: { category: 'companion', name: '🐕 K9-Kampfhund Training', level: 1, maxLevel: 5, costBase: 350, desc: 'Verbessert deinen aktiven K9-Begleiter! Erhöht Angriffsschaden, Sprintgeschwindigkeit, Angriffstempo und Verlangsamungseffekte.' },
+    companion_dog: { category: 'companion', name: 'Hundeschule', level: 1, maxLevel: 5, costBase: 350, desc: 'Verbessert deinen aktiven K9-Begleiter! Erhöht Angriffsschaden, Sprintgeschwindigkeit, Angriffstempo und Verlangsamungseffekte.' },
     combat_drone: { category: 'companion', name: 'Begleit-Kampfdrohne', level: 0, maxLevel: 5, costBase: 750, desc: 'Schaltet eine schwebende 3D-Drohne frei, die über dir fliegt und automatisch Zombies beschießt!' }
+};
+
+const AC130_CONFIG = {
+    duration: 40,
+    cooldown: 80,
+    cannon25mm: {
+        damage: 110,
+        firerate: 35,
+        splashRadius: 4.0,
+        name: '25mm GATLING'
+    },
+    cannon40mm: {
+        damage: 260,
+        firerate: 280,
+        splashRadius: 7.0,
+        name: '40mm BOFORS'
+    },
+    missile: {
+        damage: 1500,
+        firerate: 2800,
+        splashRadius: 18.0,
+        name: 'AGM-114 RAKETE'
+    },
+    cannon105mm: {
+        damage: 1500,
+        firerate: 2800,
+        splashRadius: 18.0,
+        name: 'AGM-114 RAKETE'
+    }
 };
 
