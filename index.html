@@ -270,9 +270,17 @@
                         <div id="ac130-status-105mm-mw" class="text-emerald-400 font-bold text-[10px] sm:text-xs">RAKETE READY</div>
                     </div>
 
-                    <!-- Touch Fire Button (for mobile devices) -->
-                    <button id="ac130-btn-fire-touch" onmousedown="gameInstance && gameInstance.fireAc130Current()" ontouchstart="gameInstance && gameInstance.fireAc130Current(); event.stopPropagation();" class="bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold px-4 py-2 rounded-xl shadow-xl text-xs font-mono active:scale-95 border border-red-300">
-                        <i class="fa-solid fa-crosshairs mr-1"></i> FEUER
+                    <!-- Big Touch Fire Button (for mobile devices) -->
+                    <button id="ac130-btn-fire-touch" 
+                            onmousedown="gameInstance && gameInstance.startAc130Firing()" 
+                            onmouseup="gameInstance && gameInstance.stopAc130Firing()" 
+                            onmouseleave="gameInstance && gameInstance.stopAc130Firing()"
+                            ontouchstart="gameInstance && gameInstance.startAc130Firing(); event.stopPropagation();" 
+                            ontouchend="gameInstance && gameInstance.stopAc130Firing(); event.stopPropagation();" 
+                            ontouchcancel="gameInstance && gameInstance.stopAc130Firing(); event.stopPropagation();" 
+                            class="bg-gradient-to-tr from-red-700 via-red-600 to-amber-600 active:from-red-800 active:to-red-700 text-white font-black px-6 py-3.5 sm:px-8 sm:py-4.5 rounded-2xl shadow-2xl text-sm sm:text-base font-mono active:scale-95 border-2 border-red-300 flex items-center justify-center space-x-2 min-w-[120px] sm:min-w-[150px] min-h-[58px] sm:min-h-[70px] tracking-wider select-none">
+                        <i class="fa-solid fa-crosshairs text-xl sm:text-2xl animate-pulse"></i>
+                        <span class="font-bold tracking-widest text-base sm:text-lg">FEUER</span>
                     </button>
                 </div>
             </div>

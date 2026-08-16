@@ -337,6 +337,35 @@
                         }
                     }
                     if (this.isPaused || this.isGameOver) return;
+
+                    // Direct Touch Crosshair Aiming during AC-130 mode (No joystick!)
+                    if (this.isAc130Active) {
+                        let acTouchHandled = false;
+                        for (let i = 0; i < e.changedTouches.length; i++) {
+                            const touch = e.changedTouches[i];
+                            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                            if (targetEl && targetEl.closest('button, input, #pause-modal, #shop-modal, #game-over-modal')) continue;
+
+                            acTouchHandled = true;
+                            this.ac130TouchAimId = touch.identifier;
+                            this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                            this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                            this.raycaster.setFromCamera(this.mousePos, this.camera);
+                            const intersects = this._v3;
+                            if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                                this.ac130AimPos.copy(intersects);
+                                this.pointerWorldPos.copy(intersects);
+                            }
+                            const crosshairEl = document.getElementById('ac130-crosshair-hud');
+                            if (crosshairEl) {
+                                crosshairEl.style.left = `${touch.clientX}px`;
+                                crosshairEl.style.top = `${touch.clientY}px`;
+                            }
+                        }
+                        if (acTouchHandled && e.cancelable) e.preventDefault();
+                        return;
+                    }
+
                     let touchHandled = false;
                     for (let i = 0; i < e.changedTouches.length; i++) {
                         const touch = e.changedTouches[i];
@@ -405,6 +434,32 @@
                         }
                     }
                     if (this.isPaused || this.isGameOver) return;
+
+                    // Direct Touch Drag Aiming during AC-130 mode
+                    if (this.isAc130Active) {
+                        for (let i = 0; i < e.changedTouches.length; i++) {
+                            const touch = e.changedTouches[i];
+                            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                            if (targetEl && targetEl.closest('button, input, #pause-modal, #shop-modal, #game-over-modal')) continue;
+
+                            this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                            this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                            this.raycaster.setFromCamera(this.mousePos, this.camera);
+                            const intersects = this._v3;
+                            if (this.raycaster.ray.intersectPlane(this.groundPlane, intersects)) {
+                                this.ac130AimPos.copy(intersects);
+                                this.pointerWorldPos.copy(intersects);
+                            }
+                            const crosshairEl = document.getElementById('ac130-crosshair-hud');
+                            if (crosshairEl) {
+                                crosshairEl.style.left = `${touch.clientX}px`;
+                                crosshairEl.style.top = `${touch.clientY}px`;
+                            }
+                        }
+                        if (e.cancelable) e.preventDefault();
+                        return;
+                    }
+
                     for (let i = 0; i < e.changedTouches.length; i++) {
                         const touch = e.changedTouches[i];
                         if (this.touchJoystick.active && touch.identifier === this.touchJoystick.touchId) {
@@ -444,6 +499,16 @@
                 };
 
                 const onTouchEnd = (e) => {
+                    if (this.isAc130Active) {
+                        for (let i = 0; i < e.changedTouches.length; i++) {
+                            const touch = e.changedTouches[i];
+                            if (touch.identifier === this.ac130TouchAimId) {
+                                this.ac130TouchAimId = null;
+                            }
+                        }
+                        return;
+                    }
+
                     if (this.isPlacementMode) {
                         if (this.placementJustStarted) return;
                         for (let i = 0; i < e.changedTouches.length; i++) {
@@ -3095,6 +3160,15 @@
                 else if (wp === '105mm') this.fireAc130_105mm();
             }
 
+            startAc130Firing() {
+                this.isAc130TouchFiring = true;
+                this.fireAc130Current();
+            }
+
+            stopAc130Firing() {
+                this.isAc130TouchFiring = false;
+            }
+
             triggerAc130() {
                 if (this.isPaused || this.isGameOver) return;
                 if (this.isAc130Active) return;
@@ -3104,6 +3178,16 @@
                     }
                     return;
                 }
+
+                // Reset and hide mobile touch joystick completely in AC-130 mode
+                this.touchJoystick.active = false;
+                this.touchJoystick.touchId = null;
+                this.touchJoystick.vectorX = 0;
+                this.touchJoystick.vectorY = 0;
+                const joystickContainer = document.getElementById('joystick-container');
+                if (joystickContainer) joystickContainer.classList.add('hidden');
+                const fireFeedback = document.getElementById('fire-touch-feedback');
+                if (fireFeedback) fireFeedback.classList.add('hidden');
 
                 this.isAc130Active = true;
                 this.ac130MissionTimer = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.duration) || 40;
@@ -3460,9 +3544,9 @@
                     const clockEl = document.getElementById('ac130-mw-clock');
                     if (clockEl) clockEl.innerText = new Date().toLocaleTimeString('en-US', { hour12: false });
 
-                    // Continuous Mouse-Held Rapid Firing (e.g. 25mm Gatling stream)
-                    if (this.isMouseDown && !this.isPaused && !this.isGameOver) {
-                        if (this.mouseButton === 0) {
+                    // Continuous Mouse-Held or Mobile Touch-Held Rapid Firing (e.g. 25mm Gatling stream)
+                    if ((this.isMouseDown || this.isAc130TouchFiring) && !this.isPaused && !this.isGameOver) {
+                        if (this.mouseButton === 0 || this.isAc130TouchFiring) {
                             this.fireAc130Current();
                         } else if (this.mouseButton === 2) {
                             this.fireAc130_105mm();
