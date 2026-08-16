@@ -37,8 +37,8 @@
                 this.maxPlayerShield = 0;
                 this.playerLives = 3;
                 this.isInvulnerable = false;
-                this.baseHp = 1000;
-                this.maxBaseHp = 1000;
+                this.baseHp = 2500;
+                this.maxBaseHp = 2500;
                 this.baseShield = 0;
                 this.maxBaseShield = 0;
                 this.currentWave = 1;
@@ -119,15 +119,20 @@
 
             updateCameraSettings() {
                 const zoom = Storage.data.cameraZoom || 1.0;
-                const angle = Storage.data.cameraAngle || 0.5;
+                const angle = Storage.data.cameraAngle !== undefined ? Storage.data.cameraAngle : 0.5;
                 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
                 
-                const baseZ = isMobile ? 15.3 : 25.2;
-                const baseY = isMobile ? 8.5 : 14;
+                // Base viewing distance
+                const baseDist = (isMobile ? 17.5 : 28.0) * zoom;
+
+                // Pitch angle from 28° (flach/isometrisch) bis 90° (absolute Vogelperspektive)
+                const pitchDeg = 28.0 + (angle * 62.0); // 0.0 -> 28°, 1.0 -> 90°
+                const pitchRad = (pitchDeg * Math.PI) / 180;
 
                 this.cameraOffset.x = 0;
-                this.cameraOffset.y = baseY * zoom * (0.3 + angle);
-                this.cameraOffset.z = baseZ * zoom * (1.2 - angle * 0.5);
+                this.cameraOffset.y = baseDist * Math.sin(pitchRad);
+                // Keep minimal epsilon for z so camera up vector and lookAt remain perfectly stable
+                this.cameraOffset.z = Math.max(0.001, baseDist * Math.cos(pitchRad));
             }
 
             setupControls() {
@@ -901,6 +906,7 @@
                             }
                             if (baseDmg > 0) {
                                 this.baseHp = Math.max(0, this.baseHp - baseDmg);
+                                this.triggerBaseAlarm();
                             }
                             this._needHudSync = true;
                             if (this.baseHp <= 0) this.triggerGameOver('base');
@@ -908,6 +914,7 @@
 
                         for (let k = this.turrets.length - 1; k >= 0; k--) {
                             const t = this.turrets[k];
+                            if (t.userData.isIndestructible) continue;
                             const distTSq = pos.distanceToSquared(t.position);
                             if (distTSq <= radiusSq) {
                                 const distT = Math.sqrt(distTSq);
@@ -939,6 +946,21 @@
                 }
             }
 
+            triggerBaseAlarm() {
+                const now = performance.now();
+                if (now - (this._lastBaseAlarmTime || 0) < 1500) return;
+                this._lastBaseAlarmTime = now;
+
+                const alarmEl = document.getElementById('hud-base-alarm');
+                if (alarmEl) {
+                    alarmEl.classList.remove('hidden');
+                    if (this._baseAlarmTimeout) clearTimeout(this._baseAlarmTimeout);
+                    this._baseAlarmTimeout = setTimeout(() => {
+                        alarmEl.classList.add('hidden');
+                    }, 2200);
+                }
+            }
+
             startPlacementMode(kind, specId) {
                 const spec = kind === 'turret' ? TURRET_TYPES[specId] : WALL_TYPES[specId];
                 if (!spec || this.money < spec.cost) return;
@@ -957,7 +979,7 @@
                 const materials = [];
 
                 if (kind === 'turret') {
-                    const radius = spec.radius || 1.2;
+                    const radius = spec.radius || (spec.id === 'drone_hangar' ? 1.8 : 1.2);
                     const ringGeo = new THREE.RingGeometry(radius * 0.8, radius, 32);
                     ringGeo.rotateX(-Math.PI / 2);
                     const ringMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
@@ -965,10 +987,15 @@
                     ring.position.y = 0.05;
                     this.ghostMesh.add(ring);
 
-                    const bodyGeo = new THREE.CylinderGeometry(1.1, 1.4, 1.2, 8);
+                    let bodyGeo;
+                    if (spec.id === 'drone_hangar') {
+                        bodyGeo = new THREE.CylinderGeometry(1.6, 1.8, 0.45, 8);
+                    } else {
+                        bodyGeo = new THREE.CylinderGeometry(1.1, 1.4, 1.2, 8);
+                    }
                     const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.5 });
                     const body = new THREE.Mesh(bodyGeo, bodyMat);
-                    body.position.y = 0.6;
+                    body.position.y = spec.id === 'drone_hangar' ? 0.25 : 0.6;
                     this.ghostMesh.add(body);
 
                     materials.push(ringMat, bodyMat);
@@ -1094,17 +1121,110 @@
                 turretGroup.position.set(x, 0, z);
                 turretGroup.rotation.y = rot;
 
+                // Invisible Touch HitBox genau in der Größe des Turmes für präzises Antippen
+                const hitBoxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
+                const hitBoxRadius = spec.id === 'drone_hangar' ? 1.8 : 1.4;
+                const hitBox = new THREE.Mesh(new THREE.CylinderGeometry(hitBoxRadius, hitBoxRadius, 2.2, 8), hitBoxMat);
+                hitBox.position.y = 1.1;
+                turretGroup.add(hitBox);
+
+                if (spec.id === 'drone_hangar') {
+                    // Octagonal landing platform base
+                    const padMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.3 });
+                    const padMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 0.45, 8), padMat);
+                    padMesh.position.y = 0.22;
+                    padMesh.castShadow = true;
+                    turretGroup.add(padMesh);
+
+                    // Neon Green Ring Border
+                    const borderMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+                    const borderMesh = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.06, 8, 8), borderMat);
+                    borderMesh.rotation.x = Math.PI / 2;
+                    borderMesh.position.y = 0.46;
+                    turretGroup.add(borderMesh);
+
+                    // Central Landing Hangar Hatch
+                    const hatchMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, metalness: 0.9 });
+                    const hatchMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.08, 16), hatchMat);
+                    hatchMesh.position.y = 0.48;
+                    turretGroup.add(hatchMesh);
+
+                    // 4 Corner Antenna Beacon Lights
+                    for (let a = 0; a < 4; a++) {
+                        const ang = (a * Math.PI) / 2 + Math.PI / 4;
+                        const px = Math.sin(ang) * 1.35;
+                        const pz = Math.cos(ang) * 1.35;
+                        const poleMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 });
+                        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6), poleMat);
+                        pole.position.set(px, 0.7, pz);
+                        turretGroup.add(pole);
+
+                        const lightMat = new THREE.MeshBasicMaterial({ color: 0x34d399 });
+                        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), lightMat);
+                        bulb.position.set(px, 1.02, pz);
+                        turretGroup.add(bulb);
+                    }
+
+                    // 3 Docked Mini Drones on pad
+                    const dockedDronesGroup = new THREE.Group();
+                    dockedDronesGroup.position.y = 0.52;
+                    for (let d = 0; d < 3; d++) {
+                        const dAng = (d * Math.PI * 2) / 3;
+                        const dx = Math.sin(dAng) * 0.55;
+                        const dz = Math.cos(dAng) * 0.55;
+                        const miniD = new THREE.Group();
+                        miniD.position.set(dx, 0, dz);
+                        const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.28), new THREE.MeshStandardMaterial({ color: 0x047857 }));
+                        const light = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0x10b981 }));
+                        light.position.y = 0.06;
+                        miniD.add(body);
+                        miniD.add(light);
+                        dockedDronesGroup.add(miniD);
+                    }
+                    turretGroup.add(dockedDronesGroup);
+
+                    // Holographic Rotating Cross / Tool Icon
+                    const holoMat = new THREE.MeshBasicMaterial({ color: 0x34d399, transparent: true, opacity: 0.8 });
+                    const holoBar1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.06), holoMat);
+                    const holoBar2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.5, 0.06), holoMat);
+                    const holoGroup = new THREE.Group();
+                    holoGroup.add(holoBar1);
+                    holoGroup.add(holoBar2);
+                    holoGroup.position.set(0, 1.6, 0);
+                    turretGroup.add(holoGroup);
+
+                    turretGroup.userData = {
+                        isTurret: true,
+                        isHangar: true,
+                        isIndestructible: true,
+                        turretTypeId: spec.id,
+                        typeId: spec.id,
+                        name: spec.name,
+                        hitBox: hitBox,
+                        holoMesh: holoGroup,
+                        dockedDrones: dockedDronesGroup,
+                        range: spec.range,
+                        damage: 0,
+                        firerate: 0,
+                        hp: 99999,
+                        maxHp: 99999,
+                        level: 1,
+                        totalInvested: spec.cost,
+                        dronesActive: false,
+                        droneTimer: 0,
+                        activeDronesList: [],
+                        lastFired: 0
+                    };
+                    this.turrets.push(turretGroup);
+                    this.scene.add(turretGroup);
+                    return turretGroup;
+                }
+
                 const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
                 const baseMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 1.2, 8), baseMat);
                 baseMesh.position.y = 0.6;
                 baseMesh.castShadow = true;
                 turretGroup.add(baseMesh);
-
-                // Invisible Touch HitBox genau in der Größe des Turmes für präzises Antippen
-                const hitBoxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
-                const hitBox = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 2.2, 8), hitBoxMat);
-                hitBox.position.y = 1.1;
-                turretGroup.add(hitBox);
 
                 const headGroup = new THREE.Group();
                 headGroup.position.y = 1.4;
@@ -1256,6 +1376,189 @@
                 return wallGroup;
             }
 
+            launchRepairDrones(hangarTurret) {
+                if (!hangarTurret || !hangarTurret.userData) return;
+                const ud = hangarTurret.userData;
+                ud.dronesActive = true;
+                ud.droneTimer = (TURRET_TYPES.drone_hangar && TURRET_TYPES.drone_hangar.droneDuration) || 60;
+                if (ud.dockedDrones) ud.dockedDrones.visible = false;
+
+                // Create 3 flying repair drones if not already present
+                if (!ud.activeDronesList || ud.activeDronesList.length === 0) {
+                    ud.activeDronesList = [];
+                    for (let i = 0; i < 3; i++) {
+                        const droneGroup = new THREE.Group();
+                        droneGroup.position.copy(hangarTurret.position);
+                        droneGroup.position.y = 1.2;
+
+                        // Quadcopter Body
+                        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x065f46, metalness: 0.8, roughness: 0.2 });
+                        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.5), bodyMat);
+                        droneGroup.add(body);
+
+                        // Core Light
+                        const coreLight = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: 0x34d399 }));
+                        coreLight.position.y = 0.08;
+                        droneGroup.add(coreLight);
+
+                        // Rotors
+                        const rotorMat = new THREE.MeshBasicMaterial({ color: 0xa7f3d0, transparent: true, opacity: 0.7 });
+                        const rotors = [];
+                        const rotorOffsets = [
+                            [-0.28, 0.1, -0.28],
+                            [0.28, 0.1, -0.28],
+                            [-0.28, 0.1, 0.28],
+                            [0.28, 0.1, 0.28]
+                        ];
+                        rotorOffsets.forEach(pos => {
+                            const r = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.02, 0.04), rotorMat);
+                            r.position.set(pos[0], pos[1], pos[2]);
+                            droneGroup.add(r);
+                            rotors.push(r);
+                        });
+
+                        // Laser Line (for repair beam)
+                        const laserGeo = new THREE.BufferGeometry().setFromPoints([
+                            new THREE.Vector3(0, 0, 0),
+                            new THREE.Vector3(0, -1, 0)
+                        ]);
+                        const laserMat = new THREE.LineBasicMaterial({ color: 0x10b981, linewidth: 2 });
+                        const laserLine = new THREE.Line(laserGeo, laserMat);
+                        laserLine.visible = false;
+                        droneGroup.add(laserLine);
+
+                        droneGroup.userData = {
+                            rotors: rotors,
+                            laserLine: laserLine,
+                            droneIdx: i,
+                            orbitAngle: (i * Math.PI * 2) / 3,
+                            repairTarget: null,
+                            lastSparks: 0
+                        };
+
+                        this.scene.add(droneGroup);
+                        ud.activeDronesList.push(droneGroup);
+                    }
+                }
+            }
+
+            updateRepairDrones(dt) {
+                const now = performance.now();
+                for (let ti = 0; ti < this.turrets.length; ti++) {
+                    const t = this.turrets[ti];
+                    if (!t || !t.userData) continue;
+                    const ud = t.userData;
+
+                    if (ud.isHangar) {
+                        if (ud.holoMesh) {
+                            ud.holoMesh.rotation.y += dt * 1.5;
+                        }
+
+                        if (ud.dronesActive) {
+                            ud.droneTimer = Math.max(0, ud.droneTimer - dt);
+
+                            // Live UI countdown update if currently inspected
+                            if (this.selectedStructure === t) {
+                                const timerEl = document.getElementById('inspect-drone-timer');
+                                if (timerEl) timerEl.innerText = `${Math.ceil(ud.droneTimer)}s`;
+                            }
+
+                            if (ud.droneTimer <= 0) {
+                                // 1 Minute expired: Drones return & dock
+                                ud.dronesActive = false;
+                                if (ud.activeDronesList) {
+                                    ud.activeDronesList.forEach(d => {
+                                        this.scene.remove(d);
+                                    });
+                                    ud.activeDronesList = [];
+                                }
+                                if (ud.dockedDrones) ud.dockedDrones.visible = true;
+
+                                if (this.selectedStructure === t) {
+                                    this.inspectStructure(t);
+                                }
+                                if (typeof showPurchaseToast === 'function') {
+                                    showPurchaseToast('🛸 Reparatur-Drohnen zum Hangar zurückgekehrt!');
+                                }
+                            } else {
+                                // Find damaged turrets
+                                const damagedTurrets = this.turrets.filter(turret => 
+                                    turret !== t && !turret.userData.isIndestructible && turret.userData.hp < turret.userData.maxHp
+                                );
+
+                                if (ud.activeDronesList) {
+                                    ud.activeDronesList.forEach((drone, idx) => {
+                                        // Spin rotors
+                                        if (drone.userData.rotors) {
+                                            drone.userData.rotors.forEach(r => { r.rotation.y += 0.4; });
+                                        }
+
+                                        let targetTurret = null;
+                                        if (damagedTurrets.length > 0) {
+                                            targetTurret = damagedTurrets[idx % damagedTurrets.length];
+                                        }
+
+                                        if (targetTurret) {
+                                            // Hover target position above turret with offset per drone
+                                            const offAng = (idx * Math.PI * 2) / 3;
+                                            const targetX = targetTurret.position.x + Math.sin(offAng) * 0.8;
+                                            const targetZ = targetTurret.position.z + Math.cos(offAng) * 0.8;
+                                            const targetY = 3.2 + Math.sin(now * 0.005 + idx) * 0.2;
+
+                                            drone.position.x += (targetX - drone.position.x) * (dt * 3.5);
+                                            drone.position.z += (targetZ - drone.position.z) * (dt * 3.5);
+                                            drone.position.y += (targetY - drone.position.y) * (dt * 3.5);
+
+                                            // Check distance for repair
+                                            const distToTarget = Math.hypot(targetTurret.position.x - drone.position.x, targetTurret.position.z - drone.position.z);
+                                            if (distToTarget < 3.2) {
+                                                // Repair turret
+                                                targetTurret.userData.hp = Math.min(targetTurret.userData.maxHp, targetTurret.userData.hp + (50 * dt));
+                                                this.updateTurretHpBar(targetTurret);
+
+                                                // Laser beam to turret
+                                                if (drone.userData.laserLine) {
+                                                    drone.userData.laserLine.visible = true;
+                                                    const localTarget = new THREE.Vector3(
+                                                        targetTurret.position.x - drone.position.x,
+                                                        (targetTurret.position.y + 1.2) - drone.position.y,
+                                                        targetTurret.position.z - drone.position.z
+                                                    );
+                                                    drone.userData.laserLine.geometry.setFromPoints([
+                                                        new THREE.Vector3(0, 0, 0),
+                                                        localTarget
+                                                    ]);
+                                                }
+
+                                                // Spawn green sparks
+                                                if (now - (drone.userData.lastSparks || 0) > 180) {
+                                                    drone.userData.lastSparks = now;
+                                                    this.createBloodSparks(targetTurret.position, 0x22c55e);
+                                                }
+                                            } else {
+                                                if (drone.userData.laserLine) drone.userData.laserLine.visible = false;
+                                            }
+                                        } else {
+                                            // No damaged turrets: orbit above hangar
+                                            if (drone.userData.laserLine) drone.userData.laserLine.visible = false;
+                                            drone.userData.orbitAngle += dt * 1.8;
+                                            const orbitR = 2.4;
+                                            const targetX = t.position.x + Math.sin(drone.userData.orbitAngle) * orbitR;
+                                            const targetZ = t.position.z + Math.cos(drone.userData.orbitAngle) * orbitR;
+                                            const targetY = 3.6 + Math.sin(now * 0.004 + idx) * 0.3;
+
+                                            drone.position.x += (targetX - drone.position.x) * (dt * 3.0);
+                                            drone.position.z += (targetZ - drone.position.z) * (dt * 3.0);
+                                            drone.position.y += (targetY - drone.position.y) * (dt * 3.0);
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             inspectStructure(structureGroup) {
                 this.selectedStructure = structureGroup;
                 const ud = structureGroup.userData;
@@ -1265,12 +1568,47 @@
                 const title = document.getElementById('inspect-title');
                 const subtitle = document.getElementById('inspect-subtitle');
                 const stats = document.getElementById('inspect-stats');
+                const hangarBox = document.getElementById('inspect-hangar-box');
+                const stdActions = document.getElementById('inspect-standard-actions');
                 const upgradeBtn = document.getElementById('inspect-upgrade-btn');
                 const repairBtn = document.getElementById('inspect-repair-btn');
 
                 title.innerText = ud.name;
 
-                if (ud.isTurret) {
+                if (ud.isHangar) {
+                    subtitle.innerText = `Unzerstörbare Drohnenstation`;
+                    stats.innerHTML = `
+                        <div>• Drohnengeschwader: <strong class="text-emerald-400">3x Autonome Reparaturdrohnen</strong></div>
+                        <div>• Reparatur-Fokus: <strong class="text-sky-400">Beschädigte Geschütztürme</strong></div>
+                        <div>• Reparaturleistung: <strong class="text-emerald-400">~150 HP / Sekunde</strong></div>
+                        <div>• Einsatzdauer: <strong class="text-amber-400">60 Sekunden pro Mission</strong></div>
+                        <div>• Panzerung: <strong class="text-teal-300">100% (UNZERSTÖRBAR)</strong></div>
+                    `;
+
+                    if (hangarBox) {
+                        hangarBox.classList.remove('hidden');
+                        const launchBtn = document.getElementById('inspect-drone-launch-btn');
+                        const statusBox = document.getElementById('inspect-drone-status');
+                        const timerEl = document.getElementById('inspect-drone-timer');
+                        const launchCost = (TURRET_TYPES.drone_hangar && TURRET_TYPES.drone_hangar.droneLaunchCost) || 160;
+
+                        if (ud.dronesActive) {
+                            if (launchBtn) launchBtn.classList.add('hidden');
+                            if (statusBox) statusBox.classList.remove('hidden');
+                            if (timerEl) timerEl.innerText = `${Math.ceil(ud.droneTimer)}s`;
+                        } else {
+                            if (launchBtn) {
+                                launchBtn.classList.remove('hidden');
+                                document.getElementById('inspect-drone-launch-text').innerText = `Reparatur-Drohnen starten (60s) - $${launchCost}`;
+                            }
+                            if (statusBox) statusBox.classList.add('hidden');
+                        }
+                    }
+                    if (stdActions) stdActions.classList.add('hidden');
+                } else if (ud.isTurret) {
+                    if (hangarBox) hangarBox.classList.add('hidden');
+                    if (stdActions) stdActions.classList.remove('hidden');
+
                     subtitle.innerText = `Lvl ${ud.level} Geschützturm`;
                     stats.innerHTML = `
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
@@ -1287,6 +1625,9 @@
                     upgradeBtn.classList.remove('hidden');
                     repairBtn.classList.remove('hidden');
                 } else {
+                    if (hangarBox) hangarBox.classList.add('hidden');
+                    if (stdActions) stdActions.classList.remove('hidden');
+
                     subtitle.innerText = `Schutzmauer Barriere`;
                     stats.innerHTML = `
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
@@ -2696,6 +3037,7 @@
                     this.updateDog(dt);
                     this.updateAirstrike(dt);
                     this.updateNuke(dt);
+                    this.updateRepairDrones(dt);
                     let moveX = 0, moveZ = 0;
 
                     if (this.keys['KeyW'] || this.keys['ArrowUp']) moveZ -= 1;
@@ -2922,6 +3264,7 @@
                                     }
                                     if (bDmg > 0) {
                                         this.baseHp = Math.max(0, this.baseHp - bDmg);
+                                        this.triggerBaseAlarm();
                                     }
                                     this.syncHUD();
                                     if (this.baseHp <= 0) this.triggerGameOver('base');
@@ -3064,7 +3407,7 @@
                                 z.position.x = basePos.x + dirX * BASE_RADIUS;
                                 z.position.z = basePos.z + dirZ * BASE_RADIUS;
 
-                                let dmg = (0.35 * z.userData.dmgMult) * dt * 60;
+                                let dmg = (0.22 * z.userData.dmgMult) * dt * 60;
 
                                 if (this.baseShield > 0) {
                                     const absorbed = Math.min(this.baseShield, dmg);
@@ -3073,6 +3416,7 @@
                                 }
                                 if (dmg > 0) {
                                     this.baseHp = Math.max(0, this.baseHp - dmg);
+                                    this.triggerBaseAlarm();
                                 }
 
                                 if (this.upgrades.base_spikes > 0) {
@@ -3111,6 +3455,7 @@
                         // Zombies attack nearby turrets! Bosses have larger attack range & smash power
                         for (let k = this.turrets.length - 1; k >= 0; k--) {
                             const t = this.turrets[k];
+                            if (t.userData.isIndestructible) continue; // Unzerstörbarer Hangar wird nicht von Zombies beschädigt
                             const attackRange = 1.8 * (z.userData.type === 'boss' ? (z.userData.scale || 2.4) : 1.0);
                             if (z.position.distanceToSquared(t.position) < attackRange * attackRange) {
                                 const turretDmg = z.userData.type === 'boss' ? 240 * z.userData.dmgMult : 28 * z.userData.dmgMult;
@@ -3473,8 +3818,8 @@
                     this.playerShield = data.playerShield || 0;
                     this.maxPlayerShield = data.maxPlayerShield || 0;
                     this.playerLives = data.playerLives !== undefined ? data.playerLives : 3;
-                    this.baseHp = data.baseHp !== undefined ? data.baseHp : 1000;
-                    this.maxBaseHp = data.maxBaseHp || 1000;
+                    this.baseHp = data.baseHp !== undefined ? data.baseHp : 2500;
+                    this.maxBaseHp = data.maxBaseHp || 2500;
                     this.baseShield = data.baseShield || 0;
                     this.maxBaseShield = data.maxBaseShield || 0;
                     this.currentWave = data.currentWave || 1;
@@ -3503,7 +3848,7 @@
                                     turret.userData.totalInvested = tData.totalInvested || spec.cost;
                                     turret.userData.hp = tData.hp !== undefined ? tData.hp : spec.hp;
                                     turret.userData.maxHp = tData.maxHp || spec.maxHp;
-                                    if (tData.level && tData.level > 1) {
+                                    if (tData.level && tData.level > 1 && !turret.userData.isHangar) {
                                         applyTurretLevelUpgrades(turret, tData.level);
                                     }
                                 }

@@ -49,19 +49,31 @@ let isShopOpen = false;
 
         let _camSaveTimeout = null;
         function updateCameraPreview() {
-            const zoom = parseFloat(document.getElementById('cam-zoom').value);
-            const angle = parseFloat(document.getElementById('cam-angle').value);
+            const zoomEl = document.getElementById('cam-zoom');
+            const angleEl = document.getElementById('cam-angle');
+            if (!zoomEl || !angleEl) return;
+
+            const zoom = parseFloat(zoomEl.value);
+            const angle = parseFloat(angleEl.value);
             
             Storage.data.cameraZoom = zoom;
             Storage.data.cameraAngle = angle;
+
+            const label = document.getElementById('cam-angle-label');
+            if (label) {
+                if (angle >= 0.98) label.innerText = '90° Vogelpersp.';
+                else if (angle <= 0.02) label.innerText = '28° 3D Flach';
+                else label.innerText = `${Math.round(28 + angle * 62)}°`;
+            }
             
             if (_camSaveTimeout) clearTimeout(_camSaveTimeout);
             _camSaveTimeout = setTimeout(() => { Storage.save(); }, 300);
 
             if (previewCamera && previewRenderer) {
-                const baseZ = 12;
-                const baseY = 8;
-                previewCamera.position.set(0, baseY * zoom * (0.3 + angle), baseZ * zoom * (1.2 - angle * 0.5));
+                const dist = 14 * zoom;
+                const pitchDeg = 28.0 + (angle * 62.0);
+                const pitchRad = (pitchDeg * Math.PI) / 180;
+                previewCamera.position.set(0, dist * Math.sin(pitchRad), Math.max(0.001, dist * Math.cos(pitchRad)));
                 previewCamera.lookAt(0, 0, 0);
                 previewRenderer.render(previewScene, previewCamera);
             }
@@ -201,88 +213,38 @@ let isShopOpen = false;
                 });
             }
 
+            let activeUpgradeCategory = window.activeUpgradeCategory || 'all';
+
+            function setUpgradeCategory(cat) {
+                window.activeUpgradeCategory = cat;
+                ['all', 'player', 'hq', 'companion'].forEach(c => {
+                    const btn = document.getElementById(`upg-cat-${c}`);
+                    if (!btn) return;
+                    if (c === cat) {
+                        btn.className = "upg-cat-btn flex-1 min-w-[70px] py-1.5 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold bg-amber-600 text-white transition flex items-center justify-center space-x-1 shadow-md shadow-amber-950/40";
+                    } else {
+                        btn.className = "upg-cat-btn flex-1 min-w-[70px] py-1.5 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center justify-center space-x-1";
+                    }
+                });
+                renderShopCatalog();
+            }
+            window.setUpgradeCategory = setUpgradeCategory;
+
             const upgradesContainer = document.getElementById('shop-upgrades-container');
             if (upgradesContainer) {
                 upgradesContainer.innerHTML = '';
+                const cat = window.activeUpgradeCategory || 'all';
 
-                // --- 1. SCHILDE & KRAFTFELDER (EINDEUTIGE TRENNUNG SPIELER & BASIS SCHILD) ---
-                const playerShieldMax = gameInstance.maxPlayerShield || 0;
-                const playerShieldCurrent = gameInstance.playerShield || 0;
-                const playerShieldPct = playerShieldMax > 0 ? Math.min(100, Math.round((playerShieldCurrent / playerShieldMax) * 100)) : 0;
-                const playerShieldCost = Math.round(40 + (playerShieldMax * 0.25));
-                const canRefillPlayerShield = playerShieldMax > 0 && playerShieldCurrent < playerShieldMax;
+                // Helper to create Section Headers
+                const createSectionHeader = (icon, title, colorClass) => {
+                    const h = document.createElement('div');
+                    h.className = `col-span-1 sm:col-span-2 text-xs font-bold ${colorClass} uppercase tracking-wider flex items-center space-x-2 border-b border-slate-800 pb-1.5 pt-2`;
+                    h.innerHTML = `<i class="${icon}"></i><span>${title}</span>`;
+                    return h;
+                };
 
-                const pShieldCard = document.createElement('div');
-                pShieldCard.className = "p-4 rounded-2xl border bg-slate-950 border-cyan-900/50 flex justify-between items-center";
-                pShieldCard.innerHTML = `
-                    <div class="flex-1 pr-3">
-                        <div class="font-bold text-cyan-400 text-sm flex items-center space-x-1.5">
-                            <i class="fa-solid fa-user-shield text-base text-cyan-400"></i>
-                            <span>SPIELER-KÖRPERSCHILD</span>
-                            <span class="bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full">${playerShieldCurrent}/${playerShieldMax} HP</span>
-                        </div>
-                        <div class="text-xs text-slate-400 mt-1">Absorbiert 100% des Schadens (Spieler-HP nimmt 0 Schaden). Ist neu kaufbar/aufladbar bei Zerstörung.</div>
-                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2 relative">
-                            <div class="bg-cyan-400 h-full transition-all duration-300" style="width: ${playerShieldPct}%"></div>
-                        </div>
-                    </div>
-                    <button onclick="refillPlayerShield()" ${canRefillPlayerShield ? '' : 'disabled'} class="px-3 py-2 ${canRefillPlayerShield ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'} rounded-lg text-xs font-bold min-h-[36px] flex-shrink-0">
-                        ${playerShieldMax === 0 ? 'Erst Upgrade kaufen' : (playerShieldCurrent >= playerShieldMax ? 'Voll Intakt' : `Neu aufladen $${playerShieldCost}`)}
-                    </button>
-                `;
-                upgradesContainer.appendChild(pShieldCard);
-
-                const baseShieldMax = gameInstance.maxBaseShield || 0;
-                const baseShieldCurrent = gameInstance.baseShield || 0;
-                const baseShieldPct = baseShieldMax > 0 ? Math.min(100, Math.round((baseShieldCurrent / baseShieldMax) * 100)) : 0;
-                const baseShieldCost = Math.round(60 + (baseShieldMax * 0.25));
-                const canRefillBaseShield = baseShieldMax > 0 && baseShieldCurrent < baseShieldMax;
-
-                const bShieldCard = document.createElement('div');
-                bShieldCard.className = "p-4 rounded-2xl border bg-slate-950 border-sky-900/50 flex justify-between items-center";
-                bShieldCard.innerHTML = `
-                    <div class="flex-1 pr-3">
-                        <div class="font-bold text-sky-400 text-sm flex items-center space-x-1.5">
-                            <i class="fa-solid fa-building-shield text-base text-sky-400"></i>
-                            <span>BASIS-KRAFTFELD</span>
-                            <span class="bg-sky-950 text-sky-300 border border-sky-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full">${baseShieldCurrent}/${baseShieldMax} HP</span>
-                        </div>
-                        <div class="text-xs text-slate-400 mt-1">Absorbiert 100% aller Zombie-Angriffe & Explosionen auf die Basis. Neu kaufbar/aufladbar bei Zerstörung.</div>
-                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2 relative">
-                            <div class="bg-sky-400 h-full transition-all duration-300" style="width: ${baseShieldPct}%"></div>
-                        </div>
-                    </div>
-                    <button onclick="refillBaseShield()" ${canRefillBaseShield ? '' : 'disabled'} class="px-3 py-2 ${canRefillBaseShield ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-950/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'} rounded-lg text-xs font-bold min-h-[36px] flex-shrink-0">
-                        ${baseShieldMax === 0 ? 'Erst Upgrade kaufen' : (baseShieldCurrent >= baseShieldMax ? 'Voll Intakt' : `Neu aufladen $${baseShieldCost}`)}
-                    </button>
-                `;
-                upgradesContainer.appendChild(bShieldCard);
-
-                // --- 2. REPARATUR & HEILUNG ---
-                const repairCard = document.createElement('div');
-                repairCard.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
-                repairCard.innerHTML = `
-                    <div>
-                        <div class="font-bold text-sky-400 text-sm"><i class="fa-solid fa-wrench mr-1"></i> Basis Reparieren (+250 HP)</div>
-                        <div class="text-xs text-slate-400 mt-1">Stellt Basis-Gesundheit wieder her</div>
-                    </div>
-                    <button onclick="repairBase()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold min-h-[36px]">$120</button>
-                `;
-                upgradesContainer.appendChild(repairCard);
-
-                const healCard = document.createElement('div');
-                healCard.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
-                healCard.innerHTML = `
-                    <div>
-                        <div class="font-bold text-emerald-400 text-sm"><i class="fa-solid fa-kit-medical mr-1"></i> Medkit / Spieler Heilung</div>
-                        <div class="text-xs text-slate-400 mt-1">Stellt volle Spieler-Gesundheit her</div>
-                    </div>
-                    <button onclick="healPlayer()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold min-h-[36px]">$80</button>
-                `;
-                upgradesContainer.appendChild(healCard);
-
-                // --- 3. UPGRADES CATALOG ---
-                Object.entries(UPGRADES).forEach(([key, upg]) => {
+                // Helper to create Upgrade Cards
+                const createUpgradeCard = (key, upg) => {
                     const currentLvl = (key === 'companion_dog') ? Math.max(1, gameInstance.upgrades[key] || 1) : (gameInstance.upgrades[key] || 0);
                     const cost = getUpgradeCost(key, currentLvl);
                     const isMax = currentLvl >= upg.maxLevel;
@@ -303,21 +265,132 @@ let isShopOpen = false;
                     }
 
                     const card = document.createElement('div');
-                    card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
+                    card.className = "p-3.5 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center hover:border-slate-700 transition";
                     card.innerHTML = `
-                        <div>
-                            <div class="font-bold text-white text-sm flex items-center space-x-2">
+                        <div class="pr-2">
+                            <div class="font-bold text-white text-xs sm:text-sm flex items-center space-x-2">
                                 <span>${upg.name}</span>
                                 <span class="bg-slate-800 text-amber-400 font-mono text-[10px] px-2 py-0.5 rounded-full">Lvl ${currentLvl}${upg.maxLevel === Infinity ? '' : '/' + upg.maxLevel}</span>
                             </div>
-                            <div class="text-xs text-slate-400 mt-1">${descText}</div>
+                            <div class="text-[11px] text-slate-400 mt-1 leading-snug">${descText}</div>
                         </div>
-                        <button onclick="buyUpgrade('${key}')" ${isMax ? 'disabled' : ''} class="px-4 py-2 ${isMax ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white'} rounded-lg text-xs font-bold min-h-[36px]">
+                        <button onclick="buyUpgrade('${key}')" ${isMax ? 'disabled' : ''} class="px-3.5 py-2 ${isMax ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-950/40'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0">
                             ${isMax ? 'MAX' : '$' + cost}
                         </button>
                     `;
-                    upgradesContainer.appendChild(card);
-                });
+                    return card;
+                };
+
+                // --- 1. SPIELER KATEGORIE ---
+                if (cat === 'player' || cat === 'all') {
+                    if (cat === 'all') upgradesContainer.appendChild(createSectionHeader('fa-solid fa-person-rifle', '👤 Überlebender & Spieler-Status', 'text-cyan-400'));
+
+                    // Medkit Sofortheilung
+                    const healCard = document.createElement('div');
+                    healCard.className = "p-3.5 rounded-2xl border bg-slate-950 border-emerald-900/40 flex justify-between items-center";
+                    healCard.innerHTML = `
+                        <div class="pr-2">
+                            <div class="font-bold text-emerald-400 text-xs sm:text-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-kit-medical"></i><span>Medkit Sofortheilung</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">Stellt volle Spieler-HP & Körperschild wieder her.</div>
+                        </div>
+                        <button onclick="healPlayer()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 shadow-md shadow-emerald-950/40">$80</button>
+                    `;
+                    upgradesContainer.appendChild(healCard);
+
+                    // Spieler Körperschild Refill
+                    const playerShieldMax = gameInstance.maxPlayerShield || 0;
+                    const playerShieldCurrent = gameInstance.playerShield || 0;
+                    const playerShieldPct = playerShieldMax > 0 ? Math.min(100, Math.round((playerShieldCurrent / playerShieldMax) * 100)) : 0;
+                    const playerShieldCost = Math.round(40 + (playerShieldMax * 0.25));
+                    const canRefillPlayerShield = playerShieldMax > 0 && playerShieldCurrent < playerShieldMax;
+
+                    const pShieldCard = document.createElement('div');
+                    pShieldCard.className = "p-3.5 rounded-2xl border bg-slate-950 border-cyan-900/50 flex justify-between items-center";
+                    pShieldCard.innerHTML = `
+                        <div class="flex-1 pr-3">
+                            <div class="font-bold text-cyan-400 text-xs sm:text-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-user-shield"></i>
+                                <span>Körperschild Refill</span>
+                                <span class="bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full">${playerShieldCurrent}/${playerShieldMax} HP</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">Absorbiert 100% Schaden auf Spieler-HP.</div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+                                <div class="bg-cyan-400 h-full transition-all duration-300" style="width: ${playerShieldPct}%"></div>
+                            </div>
+                        </div>
+                        <button onclick="refillPlayerShield()" ${canRefillPlayerShield ? '' : 'disabled'} class="px-3 py-2 ${canRefillPlayerShield ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0">
+                            ${playerShieldMax === 0 ? 'Nicht freigeschaltet' : (playerShieldCurrent >= playerShieldMax ? 'Voll' : `$${playerShieldCost}`)}
+                        </button>
+                    `;
+                    upgradesContainer.appendChild(pShieldCard);
+
+                    // Player Upgrades
+                    ['player_hp', 'player_shield', 'player_speed', 'crit_chance', 'scavenger'].forEach(key => {
+                        if (UPGRADES[key]) upgradesContainer.appendChild(createUpgradeCard(key, UPGRADES[key]));
+                    });
+                }
+
+                // --- 2. HQ & BASIS KATEGORIE ---
+                if (cat === 'hq' || cat === 'all') {
+                    if (cat === 'all') upgradesContainer.appendChild(createSectionHeader('fa-solid fa-building-shield', '🏰 Hauptquartier & Basis-Verteidigung', 'text-sky-400'));
+
+                    // Basis Sofort-Reparatur
+                    const repairCard = document.createElement('div');
+                    repairCard.className = "p-3.5 rounded-2xl border bg-slate-950 border-sky-900/40 flex justify-between items-center";
+                    repairCard.innerHTML = `
+                        <div class="pr-2">
+                            <div class="font-bold text-sky-400 text-xs sm:text-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-wrench"></i><span>Basis Schnell-Reparatur (+500 HP)</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">Stellt Basis-Gesundheit im Notfall wieder her.</div>
+                        </div>
+                        <button onclick="repairBase()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 shadow-md shadow-sky-950/40">$120</button>
+                    `;
+                    upgradesContainer.appendChild(repairCard);
+
+                    // Basis Kraftfeld Refill
+                    const baseShieldMax = gameInstance.maxBaseShield || 0;
+                    const baseShieldCurrent = gameInstance.baseShield || 0;
+                    const baseShieldPct = baseShieldMax > 0 ? Math.min(100, Math.round((baseShieldCurrent / baseShieldMax) * 100)) : 0;
+                    const baseShieldCost = Math.round(60 + (baseShieldMax * 0.25));
+                    const canRefillBaseShield = baseShieldMax > 0 && baseShieldCurrent < baseShieldMax;
+
+                    const bShieldCard = document.createElement('div');
+                    bShieldCard.className = "p-3.5 rounded-2xl border bg-slate-950 border-sky-900/50 flex justify-between items-center";
+                    bShieldCard.innerHTML = `
+                        <div class="flex-1 pr-3">
+                            <div class="font-bold text-sky-400 text-xs sm:text-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span>Basis-Kraftfeld Refill</span>
+                                <span class="bg-sky-950 text-sky-300 border border-sky-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full">${baseShieldCurrent}/${baseShieldMax} HP</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">Fängt alle Zombie-Angriffe & Explosionen ab.</div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+                                <div class="bg-sky-400 h-full transition-all duration-300" style="width: ${baseShieldPct}%"></div>
+                            </div>
+                        </div>
+                        <button onclick="refillBaseShield()" ${canRefillBaseShield ? '' : 'disabled'} class="px-3 py-2 ${canRefillBaseShield ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-950/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0">
+                            ${baseShieldMax === 0 ? 'Nicht freigeschaltet' : (baseShieldCurrent >= baseShieldMax ? 'Voll' : `$${baseShieldCost}`)}
+                        </button>
+                    `;
+                    upgradesContainer.appendChild(bShieldCard);
+
+                    // HQ Upgrades
+                    ['base_hp', 'base_shield', 'auto_repair', 'base_spikes'].forEach(key => {
+                        if (UPGRADES[key]) upgradesContainer.appendChild(createUpgradeCard(key, UPGRADES[key]));
+                    });
+                }
+
+                // --- 3. BEGLEITER & DROHNEN KATEGORIE ---
+                if (cat === 'companion' || cat === 'all') {
+                    if (cat === 'all') upgradesContainer.appendChild(createSectionHeader('fa-solid fa-dog', '🐾 Kampf-Begleiter & Drohnen', 'text-emerald-400'));
+
+                    ['companion_dog', 'combat_drone'].forEach(key => {
+                        if (UPGRADES[key]) upgradesContainer.appendChild(createUpgradeCard(key, UPGRADES[key]));
+                    });
+                }
             }
         }
 
@@ -398,6 +471,29 @@ let isShopOpen = false;
                     }
                 }
             }
+        }
+
+        function launchRepairDrones() {
+            if (!gameInstance || !gameInstance.selectedStructure) return;
+            const struct = gameInstance.selectedStructure;
+            const ud = struct.userData;
+            if (!ud.isHangar) return;
+
+            const cost = TURRET_TYPES.drone_hangar.droneLaunchCost || 160;
+            if (ud.dronesActive) {
+                showWarningToast("Drohnengeschwader ist bereits im Einsatz!");
+                return;
+            }
+            if (gameInstance.money < cost) {
+                showWarningToast(`Zu wenig Geld! Benötigt: $${cost}`);
+                return;
+            }
+
+            gameInstance.money -= cost;
+            gameInstance.launchRepairDrones(struct);
+            gameInstance.syncHUD();
+            gameInstance.inspectStructure(struct);
+            showPurchaseToast("🛸 Reparatur-Drohnen gestartet! (1 Min. Einsatz)");
         }
 
         function upgradeSelectedStructure() {
@@ -749,8 +845,8 @@ let isShopOpen = false;
                     gameInstance.playerShield = gameInstance.maxPlayerShield;
                 }
                 if (key === 'base_hp') {
-                    gameInstance.maxBaseHp += 250;
-                    gameInstance.baseHp += 250;
+                    gameInstance.maxBaseHp += 500;
+                    gameInstance.baseHp += 500;
                 }
                 if (key === 'base_shield') {
                     gameInstance.maxBaseShield += 200;
@@ -814,11 +910,11 @@ let isShopOpen = false;
             if (!gameInstance) return;
             if (gameInstance.money >= 120 && gameInstance.baseHp < gameInstance.maxBaseHp) {
                 gameInstance.money -= 120;
-                gameInstance.baseHp = Math.min(gameInstance.maxBaseHp, gameInstance.baseHp + 250);
+                gameInstance.baseHp = Math.min(gameInstance.maxBaseHp, gameInstance.baseHp + 500);
                 gameInstance.syncHUD();
                 gameInstance.saveGameSession();
                 renderShopCatalog();
-                showPurchaseToast("Basis repariert! (+250 HP)");
+                showPurchaseToast("Basis repariert! (+500 HP)");
             }
         }
 

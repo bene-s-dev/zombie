@@ -205,6 +205,12 @@
             </button>
         </div>
 
+        <!-- ================= BASE ATTACK ALARM HUD BANNER ================= -->
+        <div id="hud-base-alarm" class="hidden absolute top-14 sm:top-16 left-1/2 transform -translate-x-1/2 z-40 bg-gradient-to-r from-rose-600 via-red-600 to-rose-600 border-2 border-red-300 text-white font-teko text-lg sm:text-2xl px-5 py-1 sm:py-1.5 rounded-full shadow-2xl animate-bounce flex items-center space-x-2 pointer-events-none tracking-wider uppercase">
+            <i class="fa-solid fa-triangle-exclamation text-amber-300 text-xl animate-spin"></i>
+            <span class="drop-shadow-md">⚠️ Basis wird angegriffen!</span>
+        </div>
+
         <!-- ================= STRUCTURE INSPECT / UPGRADE / SELL MODAL ================= -->
         <div id="inspect-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
             <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-center">
@@ -222,7 +228,18 @@
                 <div id="inspect-stats" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1 text-left font-mono">
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 pt-1">
+                <!-- HANGAR DRONE LAUNCH ACTION -->
+                <div id="inspect-hangar-box" class="hidden space-y-2 pt-1">
+                    <button type="button" id="inspect-drone-launch-btn" onclick="launchRepairDrones()" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-95 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/50">
+                        <i class="fa-solid fa-paper-plane text-emerald-300"></i>
+                        <span id="inspect-drone-launch-text">Reparatur-Drohnen starten (60s) - $160</span>
+                    </button>
+                    <div id="inspect-drone-status" class="hidden text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800/80 p-2.5 rounded-xl text-center font-mono">
+                        <i class="fa-solid fa-circle-notch fa-spin mr-1 text-emerald-300"></i> Drohnengeschwader im Einsatz: <span id="inspect-drone-timer" class="font-bold text-white">60s</span>
+                    </div>
+                </div>
+
+                <div id="inspect-standard-actions" class="grid grid-cols-2 gap-2 pt-1">
                     <button type="button" id="inspect-upgrade-btn" onclick="upgradeSelectedStructure()" class="py-3 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1">
                         <i class="fa-solid fa-arrow-up"></i>
                         <span id="inspect-upgrade-text">Upgrade ($150)</span>
@@ -460,7 +477,8 @@
                             </div>
                             <div class="flex items-center space-x-3 text-xs text-slate-300">
                                 <label class="w-14 font-semibold">Winkel</label>
-                                <input type="range" id="cam-angle" min="0" max="1" step="0.1" value="0.5" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-5">
+                                <input type="range" id="cam-angle" min="0" max="1" step="0.05" value="0.5" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-5">
+                                <span id="cam-angle-label" class="text-[10px] font-mono text-amber-400 w-20 text-right font-bold">Standard</span>
                             </div>
                             <div id="cam-preview-container" class="w-full h-24 bg-black rounded border border-slate-700 overflow-hidden relative"></div>
                         </div>
@@ -575,7 +593,21 @@
                     </div>
 
                     <div id="shop-tab-upgrades" class="shop-tab-content hidden">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Upgrades & Reparatur</h3>
+                        <!-- Category Filter Sub-Tabs -->
+                        <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-3.5 bg-slate-950/70 p-1.5 rounded-2xl border border-slate-800/80">
+                            <button type="button" onclick="setUpgradeCategory('all')" id="upg-cat-all" class="upg-cat-btn flex-1 min-w-[70px] py-1.5 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold bg-amber-600 text-white transition flex items-center justify-center space-x-1 shadow-md shadow-amber-950/40">
+                                <i class="fa-solid fa-layer-group"></i><span>Alle</span>
+                            </button>
+                            <button type="button" onclick="setUpgradeCategory('player')" id="upg-cat-player" class="upg-cat-btn flex-1 min-w-[70px] py-1.5 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-person-rifle text-cyan-400"></i><span>Spieler</span>
+                            </button>
+                            <button type="button" onclick="setUpgradeCategory('hq')" id="upg-cat-hq" class="upg-cat-btn flex-1 min-w-[70px] py-1.5 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-building-shield text-sky-400"></i><span>HQ & Basis</span>
+                            </button>
+                            <button type="button" onclick="setUpgradeCategory('companion')" id="upg-cat-companion" class="upg-cat-btn flex-1 min-w-[70px] py-1.5 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-dog text-emerald-400"></i><span>Begleiter</span>
+                            </button>
+                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-upgrades-container"></div>
                     </div>
                 </div>
