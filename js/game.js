@@ -254,7 +254,7 @@
                     if (this.isAc130Active && e.touches.length > 0) {
                         const touch = e.touches[0];
                         const aimX = touch.clientX;
-                        const aimY = Math.max(20, touch.clientY - 60);
+                        const aimY = Math.max(20, touch.clientY - 80);
                         this.mousePos.x = (aimX / window.innerWidth) * 2 - 1;
                         this.mousePos.y = -(aimY / window.innerHeight) * 2 + 1;
                         this.raycaster.setFromCamera(this.mousePos, this.camera);
@@ -351,7 +351,7 @@
                             acTouchHandled = true;
                             this.ac130TouchAimId = touch.identifier;
                             const aimX = touch.clientX;
-                            const aimY = Math.max(20, touch.clientY - 60);
+                            const aimY = Math.max(20, touch.clientY - 80);
                             this.mousePos.x = (aimX / window.innerWidth) * 2 - 1;
                             this.mousePos.y = -(aimY / window.innerHeight) * 2 + 1;
                             this.raycaster.setFromCamera(this.mousePos, this.camera);
@@ -439,7 +439,7 @@
                     }
                     if (this.isPaused || this.isGameOver) return;
 
-                    // Direct Touch Drag Aiming during AC-130 mode (with 60px finger elevation offset)
+                    // Direct Touch Drag Aiming during AC-130 mode (with 80px finger elevation offset)
                     if (this.isAc130Active) {
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
@@ -447,7 +447,7 @@
                             if (targetEl && targetEl.closest('button, input, #pause-modal, #shop-modal, #game-over-modal')) continue;
 
                             const aimX = touch.clientX;
-                            const aimY = Math.max(20, touch.clientY - 60);
+                            const aimY = Math.max(20, touch.clientY - 80);
                             this.mousePos.x = (aimX / window.innerWidth) * 2 - 1;
                             this.mousePos.y = -(aimY / window.innerHeight) * 2 + 1;
                             this.raycaster.setFromCamera(this.mousePos, this.camera);
