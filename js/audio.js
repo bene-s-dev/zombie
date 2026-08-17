@@ -1140,6 +1140,10 @@ class SoundEngine {
         }
     }
 
+    playNukeJetSound() {
+        this.playSlowJetFlyover();
+    }
+
     playSlowJetFlyover() {
         if (!Storage.data.sfxEnabled) return;
         if (!this.activeJetNodes) this.activeJetNodes = [];

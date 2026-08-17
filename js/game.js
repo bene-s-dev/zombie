@@ -13,12 +13,15 @@
                 this.ghostMesh = null;
                 this.selectedStructure = null; 
 
-                this.airstrikeCooldown = 45.0;
+                this.airstrikeCooldown = 0;
                 this.activeAirstrike = null; 
-                this.nukeCooldown = 90.0;
+                this.nukeCooldown = 0;
                 this.isNukeActive = false;
                 this.activeNukeStrike = null;
                 this.nukeSpawnBlockTimer = 0;
+                this.cameraShake = 0;
+                this.nukeTargetRing = null;
+                this.activeMushroomClouds = [];
                 this.intelShown = { runner: false, shield: false, tank: false, boss: false };
 
                 this.touchJoystick = { active: false, touchId: null, startX: 0, startY: 0, vectorX: 0, vectorY: 0 };
@@ -2774,138 +2777,542 @@
                 }
             }
 
+            shakeScreen(intensity = 0.5) {
+                this.cameraShake = Math.max(this.cameraShake || 0, intensity);
+            }
+
             triggerNuke() {
-                if (this.isPaused || this.isGameOver || this.nukeCooldown > 0 || this.isNukeActive) return;
+                if (this.isPaused || this.isGameOver || this.isNukeActive) return;
+
+                if (this.nukeCooldown > 0) {
+                    if (typeof showWarningToast === 'function') {
+                        showWarningToast(`☢️ Atombombe lädt nach: noch ${Math.ceil(this.nukeCooldown)}s!`);
+                    }
+                    return;
+                }
 
                 this.nukeCooldown = 90.0;
                 this.isNukeActive = true;
 
-                audio.playConfirmBip();
-                audio.startMusic();
+                if (typeof audio !== 'undefined') {
+                    if (audio.playConfirmBip) audio.playConfirmBip();
+                    if (audio.startMusic) audio.startMusic();
+                    if (audio.playAtomicSound) audio.playAtomicSound();
+                    if (audio.startNuclearSiren) audio.startNuclearSiren();
+                }
 
-                // 1. Play atomic.mp3 immediately from 0 to 5 seconds
-                audio.playAtomicSound();
+                // Show Nuclear Warning HUD Banner
+                const warnHud = document.getElementById('nuke-warning-hud');
+                const warnSub = document.getElementById('nuke-warning-sub');
+                if (warnHud) {
+                    warnHud.classList.remove('hidden');
+                    warnHud.style.opacity = '1';
+                }
+                if (warnSub) warnSub.innerText = "STRATEGISCHER STEALTH-BOMBER IM ANFLUG...";
 
-                // 2. Play continuous heavy long-drawn air-raid siren
-                audio.startNuclearSiren();
+                // Create Ground Target Warning Holo-Ring at center (0, 0.08, 0)
+                if (this.nukeTargetRing) {
+                    this.scene.remove(this.nukeTargetRing.group);
+                    this.nukeTargetRing = null;
+                }
+                const ringGroup = new THREE.Group();
+                ringGroup.position.set(0, 0.08, 0);
 
-                // 3. Right after 5 seconds of atomic.mp3, launch Jet immediately
+                // Outer pulsing red hazard ring
+                const outerGeo = new THREE.RingGeometry(22, 23.5, 48);
+                const outerMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+                const outerRing = new THREE.Mesh(outerGeo, outerMat);
+                outerRing.rotation.x = -Math.PI / 2;
+                ringGroup.add(outerRing);
+
+                // Middle amber ring
+                const midGeo = new THREE.RingGeometry(12, 13, 36);
+                const midMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+                const midRing = new THREE.Mesh(midGeo, midMat);
+                midRing.rotation.x = -Math.PI / 2;
+                ringGroup.add(midRing);
+
+                // Inner core red ring
+                const coreGeo = new THREE.RingGeometry(2, 3.2, 24);
+                const coreMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
+                const coreRing = new THREE.Mesh(coreGeo, coreMat);
+                coreRing.rotation.x = -Math.PI / 2;
+                ringGroup.add(coreRing);
+
+                // Crosshairs
+                const crossMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.7 });
+                const crossX = new THREE.Mesh(new THREE.BoxGeometry(46, 0.02, 0.4), crossMat);
+                const crossZ = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 46), crossMat);
+                ringGroup.add(crossX);
+                ringGroup.add(crossZ);
+
+                this.scene.add(ringGroup);
+                this.nukeTargetRing = {
+                    group: ringGroup,
+                    outerMat: outerMat,
+                    midMat: midMat,
+                    coreMat: coreMat,
+                    time: 0
+                };
+
+                this.shakeScreen(0.3);
+
+                // After ~2 seconds of siren and tension -> Launch Stealth Bomber
                 setTimeout(() => {
                     if (this.isGameOver) {
-                        audio.stopNuclearSiren();
+                        if (typeof audio !== 'undefined' && audio.stopNuclearSiren) audio.stopNuclearSiren();
                         this.isNukeActive = false;
+                        if (this.nukeTargetRing) {
+                            this.scene.remove(this.nukeTargetRing.group);
+                            this.nukeTargetRing = null;
+                        }
+                        if (warnHud) warnHud.classList.add('hidden');
                         return;
                     }
-                    
-                    // Launch heavy nuclear stealth bomber
                     this.spawnNukeJet();
-                }, 5000);
+                }, 2000);
             }
 
             spawnNukeJet() {
-                audio.playNukeJetSound();
+                if (typeof audio !== 'undefined' && audio.playNukeJetSound) {
+                    audio.playNukeJetSound();
+                }
+
+                const warnSub = document.getElementById('nuke-warning-sub');
+                if (warnSub) warnSub.innerText = "STEALTH-BOMBER IM ZIELRAUM - ABWURF ERFOLGT!";
 
                 const jetGroup = new THREE.Group();
-                // Dark matte stealth composite fuselage
-                const jetMat = new THREE.MeshStandardMaterial({ 
-                    color: 0x09090b, 
-                    metalness: 0.8, 
-                    roughness: 0.3,
-                    emissive: 0x18181b,
+                const stealthBlackMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x0a0a0c, 
+                    metalness: 0.85, 
+                    roughness: 0.25,
+                    emissive: 0x111114,
                     emissiveIntensity: 0.2
                 });
                 const wingMat = new THREE.MeshStandardMaterial({ 
-                    color: 0x18181b, 
+                    color: 0x141418, 
                     metalness: 0.9, 
                     roughness: 0.2,
                     emissive: 0x09090b,
                     emissiveIntensity: 0.1
                 });
 
-                // Giant Supersonic Heavy Stealth Fuselage
-                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.4, 9.5, 8), jetMat);
+                // Giant Supersonic Stealth Fuselage
+                const fuselage = new THREE.Mesh(new THREE.ConeGeometry(1.6, 11.0, 8), stealthBlackMat);
                 fuselage.rotation.x = Math.PI / 2;
                 jetGroup.add(fuselage);
 
-                // Cockpit Canopy (Dark Amber / Gold Reflective Glass)
+                // Cockpit Canopy (Amber Gold Reflective Glass)
                 const canopyMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
-                const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.75, 2.8, 8), canopyMat);
+                const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, 3.2, 8), canopyMat);
                 canopy.rotation.x = Math.PI / 2;
-                canopy.position.set(0, 0.65, 0.8);
+                canopy.position.set(0, 0.7, 1.0);
                 canopy.scale.set(0.7, 1, 0.5);
                 jetGroup.add(canopy);
 
                 // Massive Delta Stealth Flying Wings
-                const wings = new THREE.Mesh(new THREE.BoxGeometry(13.6, 0.2, 3.8), wingMat);
-                wings.position.set(0, 0, -1.0);
+                const wings = new THREE.Mesh(new THREE.BoxGeometry(16.0, 0.25, 4.5), wingMat);
+                wings.position.set(0, 0, -1.2);
                 jetGroup.add(wings);
 
                 // Twin Canting Tail Fins
-                const tailGeo = new THREE.BoxGeometry(0.15, 2.4, 1.8);
+                const tailGeo = new THREE.BoxGeometry(0.18, 2.8, 2.0);
                 const tailL = new THREE.Mesh(tailGeo, wingMat);
-                tailL.position.set(-1.8, 1.0, -3.2);
+                tailL.position.set(-2.2, 1.2, -3.8);
                 tailL.rotation.z = -0.35;
                 jetGroup.add(tailL);
 
                 const tailR = new THREE.Mesh(tailGeo, wingMat);
-                tailR.position.set(1.8, 1.0, -3.2);
+                tailR.position.set(2.2, 1.2, -3.8);
                 tailR.rotation.z = 0.35;
                 jetGroup.add(tailR);
 
-                // === POSITIONS- & ATOM-WARNLICHTER ===
-                // 1. Linke Tragflächenspitze: ROTES Positionslicht
-                const redNavMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                // Wingtip Navigation & Strobe Lights
+                const redNavMat = new THREE.MeshBasicMaterial({ color: 0xff1111 });
                 const redNav = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), redNavMat);
-                redNav.position.set(-6.8, 0, -1.2);
+                redNav.position.set(-8.0, 0, -1.5);
                 jetGroup.add(redNav);
 
-                // 2. Rechte Tragflächenspitze: GRÜNES Positionslicht
-                const greenNavMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
+                const greenNavMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
                 const greenNav = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), greenNavMat);
-                greenNav.position.set(6.8, 0, -1.2);
+                greenNav.position.set(8.0, 0, -1.5);
                 jetGroup.add(greenNav);
 
-                // 3. Atom-Warn-Blinklichter auf den Flügeln (Amber Strobe Beacons)
+                // Strobe Beacons on Wings
                 const strobeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-                const beaconL = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), strobeMat);
-                beaconL.position.set(-3.5, 0.35, 0);
+                const beaconL = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), strobeMat);
+                beaconL.position.set(-4.0, 0.4, 0);
                 jetGroup.add(beaconL);
 
-                const beaconR = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), strobeMat);
-                beaconR.position.set(3.5, 0.35, 0);
+                const beaconR = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), strobeMat);
+                beaconR.position.set(4.0, 0.4, 0);
                 jetGroup.add(beaconR);
 
-                // 4. Quad Jet Glowing Exhaust Thrusters (4 Triebwerke)
+                // Quad Glowing Jet Exhaust Afterburners
                 const burnerMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+                const burnerCoreMat = new THREE.MeshBasicMaterial({ color: 0xffedd5 });
                 for (let bi = -2; bi <= 2; bi++) {
                     if (bi === 0) continue;
-                    const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.15, 1.2, 8), burnerMat);
+                    const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.2, 1.6, 8), burnerMat);
                     burner.rotation.x = Math.PI / 2;
-                    burner.position.set(bi * 1.1, 0, -4.6);
+                    burner.position.set(bi * 1.25, 0, -5.2);
                     jetGroup.add(burner);
+
+                    const coreFlame = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.05, 2.2, 8), burnerCoreMat);
+                    coreFlame.rotation.x = Math.PI / 2;
+                    coreFlame.position.set(bi * 1.25, 0, -5.6);
+                    jetGroup.add(coreFlame);
                 }
 
-                // Starkes Amber-Bodenlicht
-                const nukeLight = new THREE.PointLight(0xf59e0b, 5.0, 60);
-                nukeLight.position.set(0, -3.0, 0);
-                jetGroup.add(nukeLight);
+                // Amber Tactical Ground Spotlight
+                const spotLight = new THREE.PointLight(0xf59e0b, 6.0, 70);
+                spotLight.position.set(0, -2.5, 0);
+                jetGroup.add(spotLight);
 
-                jetGroup.position.set(0, 36, -200);
+                jetGroup.position.set(0, 38, -210);
                 this.scene.add(jetGroup);
 
                 this.activeNukeStrike = {
                     jetMesh: jetGroup,
-                    speed: 65,
+                    speed: 85,
                     bombDropped: false,
                     nukeBombMesh: null,
-                    bombSpeedY: 0,
+                    bombVelocityY: 10,
                     exploded: false,
-                    beaconL: beaconL,
-                    beaconR: beaconR
+                    beacons: [beaconL, beaconR]
                 };
             }
 
+            detonateNuke(detonationPos) {
+                // 1. Audio & Camera Rumble
+                if (typeof audio !== 'undefined') {
+                    if (audio.stopNuclearSiren) audio.stopNuclearSiren();
+                    if (audio.playHeavyAtomicExplosion) audio.playHeavyAtomicExplosion();
+                }
+
+                this.shakeScreen(2.5);
+                this.nukeSpawnBlockTimer = 3.5;
+
+                // 2. Fullscreen Blinding Nuclear Flash & Fallout Color Ramp
+                const flashOverlay = document.getElementById('nuke-flash-overlay');
+                if (flashOverlay) {
+                    flashOverlay.style.transition = 'none';
+                    flashOverlay.style.background = '#ffffff';
+                    flashOverlay.style.opacity = '1.0';
+                    setTimeout(() => {
+                        flashOverlay.style.transition = 'opacity 0.6s ease-in, background-color 0.8s ease-in';
+                        flashOverlay.style.background = 'radial-gradient(circle, rgba(255,180,50,0.85) 0%, rgba(220,38,38,0.7) 65%, rgba(15,23,42,0.95) 100%)';
+                        setTimeout(() => {
+                            flashOverlay.style.transition = 'opacity 3.2s ease-out';
+                            flashOverlay.style.opacity = '0';
+                        }, 500);
+                    }, 250);
+                }
+
+                // 3. Update HUD Warning Banner
+                const warnHud = document.getElementById('nuke-warning-hud');
+                const warnSub = document.getElementById('nuke-warning-sub');
+                if (warnSub) warnSub.innerText = "☢️ DETONATION ERFOLGREICH - ALLE ZIELE VAPORISIERT ☢️";
+                setTimeout(() => {
+                    if (warnHud) {
+                        warnHud.style.transition = 'opacity 1.5s ease-out';
+                        warnHud.style.opacity = '0';
+                        setTimeout(() => {
+                            warnHud.classList.add('hidden');
+                            warnHud.style.opacity = '1';
+                        }, 1500);
+                    }
+                }, 3000);
+
+                // 4. Disintegrate and Vaporize ALL Zombies
+                for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                    const z = this.zombies[zi];
+                    if (!z || z.userData.isDead) continue;
+                    z.userData.hp = -99999;
+                    this.createBloodSparks(z.position, 0xff4400);
+                    this.createBloodSparks(z.position, 0xfacc15);
+                    this.createExplosion(z.position, 8, 99999, 8, false);
+                    this.killZombie(z);
+                }
+
+                // 5. Giant Scorched Radioactive Impact Crater Decal on Ground
+                const craterGroup = new THREE.Group();
+                craterGroup.position.copy(detonationPos);
+                craterGroup.position.y = 0.05;
+
+                // Dark burnt scorched soot circle
+                const sootMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x09090b, 
+                    roughness: 0.95, 
+                    transparent: true, 
+                    opacity: 0.9 
+                });
+                const sootMesh = new THREE.Mesh(new THREE.CircleGeometry(24, 32), sootMat);
+                sootMesh.rotation.x = -Math.PI / 2;
+                craterGroup.add(sootMesh);
+
+                // Inner molten orange glowing fissure cracks
+                const lavaMat = new THREE.MeshBasicMaterial({ 
+                    color: 0xf97316, 
+                    transparent: true, 
+                    opacity: 0.85 
+                });
+                const lavaRing = new THREE.Mesh(new THREE.RingGeometry(2, 14, 24), lavaMat);
+                lavaRing.rotation.x = -Math.PI / 2;
+                lavaRing.position.y = 0.01;
+                craterGroup.add(lavaRing);
+
+                this.scene.add(craterGroup);
+
+                // Slowly cool and fade crater over 45s
+                setTimeout(() => {
+                    let cTicks = 0;
+                    const cFadeInterval = setInterval(() => {
+                        cTicks++;
+                        sootMat.opacity -= 0.02;
+                        lavaMat.opacity -= 0.03;
+                        if (cTicks >= 40) {
+                            clearInterval(cFadeInterval);
+                            this.scene.remove(craterGroup);
+                        }
+                    }, 100);
+                }, 25000);
+
+                // 6. BUILD GLORIOUS VOLUMETRIC THREE.JS 3D MUSHROOM CLOUD SIMULATION
+                const cloudGroup = new THREE.Group();
+                cloudGroup.position.copy(detonationPos);
+                this.scene.add(cloudGroup);
+
+                // Intense Dynamic Point Light
+                const blastLight = new THREE.PointLight(0xffedd5, 35.0, 260);
+                blastLight.position.set(0, 10, 0);
+                cloudGroup.add(blastLight);
+
+                const nukeColors = [0xffffff, 0xfff7ed, 0xfef08a, 0xfacc15, 0xf97316, 0xef4444, 0x991b1b, 0x27272a, 0x18181b];
+
+                // --- Part A: Initial Multi-Layer Expanding Fireball ---
+                const fireballs = [];
+                for (let fi = 0; fi < 8; fi++) {
+                    const col = nukeColors[fi % nukeColors.length];
+                    const fbMat = new THREE.MeshBasicMaterial({ 
+                        color: col, 
+                        transparent: true, 
+                        opacity: 0.95 
+                    });
+                    const fbGeo = new THREE.SphereGeometry(3.5 + fi * 0.8, 16, 16);
+                    const fbMesh = new THREE.Mesh(fbGeo, fbMat);
+                    fbMesh.position.set(
+                        (Math.random() - 0.5) * 4,
+                        3.0 + fi * 1.4,
+                        (Math.random() - 0.5) * 4
+                    );
+                    cloudGroup.add(fbMesh);
+                    fireballs.push({
+                        mesh: fbMesh,
+                        mat: fbMat,
+                        initialScale: 1.0,
+                        growRate: 6.5 + fi * 0.8,
+                        riseSpeed: 8.0 + fi * 1.5,
+                        rotSpeed: (Math.random() - 0.5) * 1.2
+                    });
+                }
+
+                // --- Part B: Rising Vertical Stem Vortex Column ---
+                const stemSegments = [];
+                const stemTiers = 14;
+                for (let si = 0; si < stemTiers; si++) {
+                    const isLower = (si < 5);
+                    const col = isLower ? (si < 2 ? 0xf97316 : 0xdc2626) : 0x27272a;
+                    const stemMat = new THREE.MeshStandardMaterial({ 
+                        color: col, 
+                        roughness: 0.9, 
+                        metalness: 0.1,
+                        emissive: isLower ? 0xf97316 : 0x18181b,
+                        emissiveIntensity: isLower ? 0.6 : 0.1,
+                        transparent: true, 
+                        opacity: 0.9 
+                    });
+                    const stemGeo = new THREE.SphereGeometry(2.8 + si * 0.35, 14, 14);
+                    const stemMesh = new THREE.Mesh(stemGeo, stemMat);
+                    stemMesh.position.set(
+                        (Math.random() - 0.5) * 2.5,
+                        2.0 + si * 2.8,
+                        (Math.random() - 0.5) * 2.5
+                    );
+                    stemMesh.visible = false;
+                    cloudGroup.add(stemMesh);
+
+                    stemSegments.push({
+                        mesh: stemMesh,
+                        mat: stemMat,
+                        delay: 0.1 + si * 0.07,
+                        baseScale: 1.0,
+                        expandRate: 1.6 + si * 0.12,
+                        targetY: 4.0 + si * 3.4,
+                        riseSpeed: 16.0 + si * 1.8,
+                        rotSpeed: (Math.random() - 0.5) * 1.8
+                    });
+                }
+
+                // --- Part C: Expanding Toroidal Mushroom Cap / Anvil Top ---
+                const capClouds = [];
+                const capCount = 18;
+                for (let ci = 0; ci < capCount; ci++) {
+                    const angle = (ci / capCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+                    const isHot = (ci % 3 === 0);
+                    const capMat = new THREE.MeshStandardMaterial({ 
+                        color: isHot ? 0xe11d48 : 0x1f2937, 
+                        roughness: 0.85, 
+                        metalness: 0.15,
+                        emissive: isHot ? 0xf97316 : 0x09090b,
+                        emissiveIntensity: isHot ? 0.5 : 0.05,
+                        transparent: true, 
+                        opacity: 0.92 
+                    });
+                    const capGeo = new THREE.SphereGeometry(4.5 + Math.random() * 2.0, 14, 14);
+                    const capMesh = new THREE.Mesh(capGeo, capMat);
+                    capMesh.position.set(
+                        Math.cos(angle) * 4.0,
+                        40.0 + (Math.random() - 0.5) * 3.5,
+                        Math.sin(angle) * 4.0
+                    );
+                    capMesh.visible = false;
+                    cloudGroup.add(capMesh);
+
+                    capClouds.push({
+                        mesh: capMesh,
+                        mat: capMat,
+                        delay: 0.5 + Math.random() * 0.3,
+                        angle: angle,
+                        radius: 4.0,
+                        expandSpeed: 7.5 + Math.random() * 4.5,
+                        rotSpeed: 0.3 + (Math.random() - 0.5) * 0.2,
+                        baseScale: 1.0
+                    });
+                }
+
+                // --- Part D: Ground Blast Dust Skirt ---
+                const dustSkirt = [];
+                const dustCount = 12;
+                for (let di = 0; di < dustCount; di++) {
+                    const dAngle = (di / dustCount) * Math.PI * 2;
+                    const dustMat = new THREE.MeshStandardMaterial({ 
+                        color: 0x475569, 
+                        roughness: 0.95, 
+                        transparent: true, 
+                        opacity: 0.75 
+                    });
+                    const dMesh = new THREE.Mesh(new THREE.SphereGeometry(3.0 + Math.random() * 1.5, 12, 12), dustMat);
+                    dMesh.position.set(Math.cos(dAngle) * 6, 1.8, Math.sin(dAngle) * 6);
+                    cloudGroup.add(dMesh);
+
+                    dustSkirt.push({
+                        mesh: dMesh,
+                        mat: dustMat,
+                        angle: dAngle,
+                        radius: 6.0,
+                        expandSpeed: 14.0 + Math.random() * 6.0,
+                        baseScale: 1.0
+                    });
+                }
+
+                // --- Part E: Supersonic Glowing Ground Shockwave Rings ---
+                const shockwaveRings = [];
+                const sColors = [0xffedd5, 0xfacc15, 0xf97316, 0xef4444];
+                for (let ri = 0; ri < 4; ri++) {
+                    const rMat = new THREE.MeshBasicMaterial({ 
+                        color: sColors[ri], 
+                        transparent: true, 
+                        opacity: 0.95, 
+                        side: THREE.DoubleSide 
+                    });
+                    const rGeo = new THREE.RingGeometry(2.0 + ri * 2.0, 5.5 + ri * 3.5, 48);
+                    const rMesh = new THREE.Mesh(rGeo, rMat);
+                    rMesh.rotation.x = -Math.PI / 2;
+                    rMesh.position.set(0, 0.2 + ri * 0.08, 0);
+                    cloudGroup.add(rMesh);
+
+                    shockwaveRings.push({
+                        mesh: rMesh,
+                        mat: rMat,
+                        scale: 1.0,
+                        speed: 38.0 + ri * 14.0
+                    });
+                }
+
+                // --- Part F: Arcing High-Speed Fiery Debris Ejecta ---
+                const debris = [];
+                for (let pi = 0; pi < 45; pi++) {
+                    const debMat = new THREE.MeshBasicMaterial({ 
+                        color: nukeColors[pi % 6], 
+                        transparent: true, 
+                        opacity: 1.0 
+                    });
+                    const debGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+                    const debMesh = new THREE.Mesh(debGeo, debMat);
+                    debMesh.position.set(0, 3 + Math.random() * 4, 0);
+                    cloudGroup.add(debMesh);
+
+                    const pAngle = Math.random() * Math.PI * 2;
+                    const pSpeed = 22 + Math.random() * 38;
+                    debris.push({
+                        mesh: debMesh,
+                        mat: debMat,
+                        vx: Math.cos(pAngle) * pSpeed,
+                        vy: 20 + Math.random() * 32,
+                        vz: Math.sin(pAngle) * pSpeed,
+                        rx: (Math.random() - 0.5) * 12,
+                        ry: (Math.random() - 0.5) * 12
+                    });
+                }
+
+                // --- Part G: Drifting Radioactive Fallout Ash Particles ---
+                const falloutParticles = [];
+                for (let ai = 0; ai < 35; ai++) {
+                    const ashMat = new THREE.MeshBasicMaterial({ 
+                        color: ai % 2 === 0 ? 0xfacc15 : 0xf97316, 
+                        transparent: true, 
+                        opacity: 0.85 
+                    });
+                    const ashMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 6, 6), ashMat);
+                    ashMesh.position.set(
+                        (Math.random() - 0.5) * 60,
+                        25 + Math.random() * 30,
+                        (Math.random() - 0.5) * 60
+                    );
+                    cloudGroup.add(ashMesh);
+
+                    falloutParticles.push({
+                        mesh: ashMesh,
+                        mat: ashMat,
+                        fallSpeed: 4.5 + Math.random() * 4.0,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+
+                // Register active cloud simulation object
+                this.activeMushroomClouds.push({
+                    group: cloudGroup,
+                    blastLight: blastLight,
+                    fireballs: fireballs,
+                    stemSegments: stemSegments,
+                    capClouds: capClouds,
+                    dustSkirt: dustSkirt,
+                    shockwaveRings: shockwaveRings,
+                    debris: debris,
+                    falloutParticles: falloutParticles,
+                    age: 0,
+                    duration: 6.8
+                });
+
+                // End Nuke Active state after explosion finishes
+                setTimeout(() => {
+                    this.isNukeActive = false;
+                }, 4000);
+            }
+
             updateNuke(dt) {
+                // Cooldown countdown & HUD update
                 if (this.nukeCooldown > 0) {
                     this.nukeCooldown = Math.max(0, this.nukeCooldown - dt);
                     const cdSec = Math.ceil(this.nukeCooldown);
@@ -2941,6 +3348,16 @@
                     if (progressFill) progressFill.style.width = "0%";
                 }
 
+                // Update Target Ground Ring animation
+                if (this.nukeTargetRing) {
+                    this.nukeTargetRing.time += dt;
+                    const pulse = 0.6 + 0.4 * Math.sin(this.nukeTargetRing.time * 8);
+                    this.nukeTargetRing.outerMat.opacity = pulse * 0.85;
+                    this.nukeTargetRing.midMat.opacity = (1.0 - pulse * 0.4) * 0.9;
+                    this.nukeTargetRing.group.rotation.y += dt * 0.6;
+                }
+
+                // Update Active Nuke Flight & Bomb Drop
                 if (this.activeNukeStrike) {
                     const strike = this.activeNukeStrike;
                     strike.jetMesh.position.z += strike.speed * dt;
@@ -2950,151 +3367,213 @@
                         strike.beacons.forEach(b => { if (b) b.visible = isBeaconOn; });
                     }
 
-                    if (!strike.bombDropped && strike.jetMesh.position.z >= -20) {
+                    // Release Heavy Thermonuclear Warhead right over the center map (z >= -8)
+                    if (!strike.bombDropped && strike.jetMesh.position.z >= -8) {
                         strike.bombDropped = true;
 
-                        const nukeMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-                        const bombMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.25, 2.8, 8), nukeMat);
-                        bombMesh.rotation.x = Math.PI / 2;
-                        bombMesh.position.set(0, 32, 0);
-                        this.scene.add(bombMesh);
-                        strike.nukeBombMesh = bombMesh;
+                        const warnSub = document.getElementById('nuke-warning-sub');
+                        if (warnSub) warnSub.innerText = "SPRENGKOPF ABGEWORFEN - EINSCHLAG IN KÜRZE!";
+
+                        // Build detailed Tactical Thermonuclear Warhead Mesh
+                        const bombGroup = new THREE.Group();
+
+                        // Main Bomb Body (Dark gunmetal with yellow hazard band)
+                        const bombBodyMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.8, roughness: 0.3 });
+                        const bombBody = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 3.4, 12), bombBodyMat);
+                        bombBody.rotation.x = Math.PI / 2;
+                        bombGroup.add(bombBody);
+
+                        // Conical Nose Cone (Yellow Hazard Tip)
+                        const noseMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.6, roughness: 0.3 });
+                        const nose = new THREE.Mesh(new THREE.ConeGeometry(0.75, 1.4, 12), noseMat);
+                        nose.rotation.x = Math.PI / 2;
+                        nose.position.set(0, 0, 2.4);
+                        bombGroup.add(nose);
+
+                        // Blinking Red Proximity Beacon on Nose
+                        const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                        const noseBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), beaconMat);
+                        noseBeacon.position.set(0, 0, 3.1);
+                        bombGroup.add(noseBeacon);
+
+                        // 4 Tail Stabilizing Fins (Black & Yellow hazard stripes)
+                        const finMat = new THREE.MeshStandardMaterial({ color: 0xca8a04, metalness: 0.7, roughness: 0.3 });
+                        for (let fi = 0; fi < 4; fi++) {
+                            const fin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.4, 1.0), finMat);
+                            fin.position.set(0, 0, -1.8);
+                            fin.rotation.z = (fi * Math.PI) / 2;
+                            bombGroup.add(fin);
+                        }
+
+                        // Thruster plume at tail
+                        const thrusterMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+                        const thruster = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 8), thrusterMat);
+                        thruster.rotation.x = -Math.PI / 2;
+                        thruster.position.set(0, 0, -2.4);
+                        bombGroup.add(thruster);
+
+                        bombGroup.position.set(0, 34, strike.jetMesh.position.z);
+                        this.scene.add(bombGroup);
+                        strike.nukeBombMesh = bombGroup;
+                        strike.noseBeacon = noseBeacon;
                     }
 
+                    // Warhead descent physics
                     if (strike.nukeBombMesh) {
-                        strike.nukeBombMesh.position.y -= 45 * dt;
+                        strike.bombVelocityY += 75 * dt;
+                        strike.nukeBombMesh.position.y -= strike.bombVelocityY * dt;
+                        strike.nukeBombMesh.position.z += 12 * dt;
+                        strike.nukeBombMesh.rotation.x = Math.min(Math.PI * 0.45, strike.nukeBombMesh.rotation.x + dt * 1.5);
 
-                        if (strike.nukeBombMesh.position.y <= 0.5) {
+                        if (strike.noseBeacon) {
+                            strike.noseBeacon.visible = (Math.floor(performance.now() / 80) % 2 === 0);
+                        }
+
+                        // Ground Impact & Detonation!
+                        if (strike.nukeBombMesh.position.y <= 0.8) {
+                            const detonationPos = strike.nukeBombMesh.position.clone();
+                            detonationPos.y = 0;
+
                             this.scene.remove(strike.nukeBombMesh);
                             strike.nukeBombMesh = null;
 
-                            // 3 seconds post-nuke zombie spawn grace period!
-                            this.nukeSpawnBlockTimer = 3.0;
-
-                            // Stop nuclear siren immediately on impact!
-                            audio.stopNuclearSiren();
-
-                            // Play Heavy Atomic Explosion Sound on impact
-                            audio.playHeavyAtomicExplosion();
-
-                            // 1. GIGANTIC MULTI-COLOR ATOMIC FIREBALL & SHOCKWAVE CLUSTER
-                            const nukeGroup = new THREE.Group();
-                            this.scene.add(nukeGroup);
-
-                            const nukeColors = [0xffedd5, 0xfacc15, 0xf97316, 0xdc2626, 0x991b1b];
-                            const fireballMeshes = [];
-
-                            // Core Yellow/Orange/Red Fireball Spheres
-                            for (let fi = 0; fi < 5; fi++) {
-                                const fColor = nukeColors[fi % nukeColors.length];
-                                const fMat = new THREE.MeshBasicMaterial({ color: fColor, transparent: true, opacity: 0.95 });
-                                const fGeo = new THREE.SphereGeometry(3 + fi * 0.6, 24, 24);
-                                const fMesh = new THREE.Mesh(fGeo, fMat);
-                                fMesh.position.set(
-                                    (Math.random() - 0.5) * 3,
-                                    4 + fi * 1.5,
-                                    (Math.random() - 0.5) * 3
-                                );
-                                nukeGroup.add(fMesh);
-                                fireballMeshes.push({ mesh: fMesh, mat: fMat, rate: 2.8 + fi * 0.4 });
+                            if (this.nukeTargetRing) {
+                                this.scene.remove(this.nukeTargetRing.group);
+                                this.nukeTargetRing = null;
                             }
 
-                            // Multiple Fiery Shockwave Rings on ground (Yellow, Orange, Red)
-                            const ringColors = [0xfacc15, 0xf97316, 0xef4444];
-                            const ringMeshes = [];
-
-                            for (let ri = 0; ri < 3; ri++) {
-                                const rMat = new THREE.MeshBasicMaterial({ 
-                                    color: ringColors[ri], 
-                                    transparent: true, 
-                                    opacity: 0.9, 
-                                    side: THREE.DoubleSide 
-                                });
-                                const rGeo = new THREE.RingGeometry(2 + ri * 1.2, 5 + ri * 2, 32);
-                                const rMesh = new THREE.Mesh(rGeo, rMat);
-                                rMesh.rotation.x = -Math.PI / 2;
-                                rMesh.position.set(0, 0.15 + ri * 0.1, 0);
-                                nukeGroup.add(rMesh);
-                                ringMeshes.push({ mesh: rMesh, mat: rMat, rate: 3.5 + ri * 0.8 });
-                            }
-
-                            // Flying Fiery Ember Sparks
-                            for (let pi = 0; pi < 30; pi++) {
-                                const pMat = new THREE.MeshBasicMaterial({ 
-                                    color: nukeColors[pi % nukeColors.length], 
-                                    transparent: true, 
-                                    opacity: 1.0 
-                                });
-                                const pMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), pMat);
-                                const pAngle = Math.random() * Math.PI * 2;
-                                const pSpeed = 15 + Math.random() * 25;
-                                pMesh.position.set(0, 2 + Math.random() * 3, 0);
-                                pMesh.userData = {
-                                    vx: Math.cos(pAngle) * pSpeed,
-                                    vy: 8 + Math.random() * 14,
-                                    vz: Math.sin(pAngle) * pSpeed
-                                };
-                                nukeGroup.add(pMesh);
-                                fireballMeshes.push({ mesh: pMesh, mat: pMat, rate: 1.0, isParticle: true });
-                            }
-
-                            let nukeTicks = 0;
-                            const nukeAnimInterval = setInterval(() => {
-                                nukeTicks++;
-                                fireballMeshes.forEach(item => {
-                                    if (item.isParticle) {
-                                        item.mesh.position.x += item.mesh.userData.vx * 0.03;
-                                        item.mesh.position.y += item.mesh.userData.vy * 0.03;
-                                        item.mesh.position.z += item.mesh.userData.vz * 0.03;
-                                        item.mat.opacity -= 0.04;
-                                    } else {
-                                        const s = 1.0 + nukeTicks * item.rate * 0.18;
-                                        item.mesh.scale.set(s, s * 1.2, s);
-                                        item.mat.opacity -= 0.03;
-                                    }
-                                });
-
-                                ringMeshes.forEach(item => {
-                                    const rs = 1.0 + nukeTicks * item.rate * 0.22;
-                                    item.mesh.scale.set(rs, rs, 1);
-                                    item.mat.opacity -= 0.035;
-                                });
-
-                                if (nukeTicks >= 35) {
-                                    clearInterval(nukeAnimInterval);
-                                    this.scene.remove(nukeGroup);
-                                }
-                            }, 25);
-
-                            // 2. AFTER THE GIGANTIC MULTI-COLOR EXPLOSION CLUSTER (650ms later) -> FULLSCREEN WHITE FLASH (erst danach weiß!)
-                            setTimeout(() => {
-                                if (this.isGameOver) return;
-
-                                const flashOverlay = document.getElementById('nuke-flash-overlay');
-                                if (flashOverlay) {
-                                    flashOverlay.style.transition = 'none';
-                                    flashOverlay.style.opacity = '1.0';
-                                    setTimeout(() => {
-                                        flashOverlay.style.transition = 'opacity 2.8s ease-out';
-                                        flashOverlay.style.opacity = '0';
-                                    }, 650);
-                                }
-
-                                for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
-                                    const z = this.zombies[zi];
-                                    z.userData.hp = -9999;
-                                    this.createBloodSparks(z.position, 0xef4444);
-                                    this.killZombie(z);
-                                }
-
-                                this.isNukeActive = false;
-                            }, 650);
+                            this.detonateNuke(detonationPos);
                         }
                     }
 
-                    if (strike.jetMesh.position.z > 220) {
+                    // Remove Stealth Bomber after flying off-screen
+                    if (strike.jetMesh.position.z > 240) {
                         this.scene.remove(strike.jetMesh);
                         this.activeNukeStrike = null;
+                    }
+                }
+
+                // Update active Mushroom Cloud visual simulations
+                if (this.activeMushroomClouds && this.activeMushroomClouds.length > 0) {
+                    for (let m = this.activeMushroomClouds.length - 1; m >= 0; m--) {
+                        const cloud = this.activeMushroomClouds[m];
+                        cloud.age += dt;
+                        const progress = cloud.age / cloud.duration;
+
+                        if (progress >= 1.0) {
+                            this.scene.remove(cloud.group);
+                            this.activeMushroomClouds.splice(m, 1);
+                            continue;
+                        }
+
+                        // Animate Dynamic Intense Nuclear Blast Light
+                        if (cloud.blastLight) {
+                            if (cloud.age < 0.6) {
+                                cloud.blastLight.intensity = 35.0 * (1.0 - cloud.age / 0.6);
+                            } else if (cloud.age < 2.5) {
+                                cloud.blastLight.intensity = 8.0 * (1.0 - (cloud.age - 0.6) / 1.9);
+                            } else {
+                                cloud.blastLight.intensity = 0;
+                            }
+                        }
+
+                        // Animate Core Expanding Fireball (Stage 1)
+                        if (cloud.fireballs) {
+                            cloud.fireballs.forEach(fb => {
+                                const s = fb.initialScale + cloud.age * fb.growRate;
+                                fb.mesh.scale.set(s, s * 1.1, s);
+                                fb.mesh.position.y += fb.riseSpeed * dt;
+                                fb.mesh.rotation.y += fb.rotSpeed * dt;
+                                if (cloud.age > 0.8) {
+                                    fb.mat.opacity = Math.max(0, 0.95 - (cloud.age - 0.8) * 0.4);
+                                }
+                            });
+                        }
+
+                        // Animate Rising Stem Vortex Column (Stage 2)
+                        if (cloud.stemSegments) {
+                            cloud.stemSegments.forEach(seg => {
+                                if (cloud.age >= seg.delay) {
+                                    seg.mesh.visible = true;
+                                    const localAge = cloud.age - seg.delay;
+                                    const s = seg.baseScale + localAge * seg.expandRate;
+                                    seg.mesh.scale.set(s, s, s);
+                                    seg.mesh.position.y = Math.min(seg.targetY, seg.mesh.position.y + seg.riseSpeed * dt);
+                                    seg.mesh.rotation.y += seg.rotSpeed * dt;
+                                    
+                                    // Fade from incandescent orange to dark billowing smoke
+                                    if (localAge > 1.8) {
+                                        seg.mat.opacity = Math.max(0, 0.9 - (localAge - 1.8) * 0.28);
+                                    }
+                                }
+                            });
+                        }
+
+                        // Animate Expanding Toroidal Mushroom Cap (Stage 3)
+                        if (cloud.capClouds) {
+                            cloud.capClouds.forEach(cap => {
+                                if (cloud.age >= cap.delay) {
+                                    cap.mesh.visible = true;
+                                    const localAge = cloud.age - cap.delay;
+                                    cap.radius += cap.expandSpeed * dt;
+                                    cap.angle += cap.rotSpeed * dt;
+                                    cap.mesh.position.x = Math.cos(cap.angle) * cap.radius;
+                                    cap.mesh.position.z = Math.sin(cap.angle) * cap.radius;
+                                    cap.mesh.position.y += Math.sin(localAge * 1.5) * 0.8 * dt;
+
+                                    const s = cap.baseScale + localAge * 2.2;
+                                    cap.mesh.scale.set(s, s * 0.75, s);
+
+                                    if (localAge > 2.0) {
+                                        cap.mat.opacity = Math.max(0, 0.9 - (localAge - 2.0) * 0.3);
+                                    }
+                                }
+                            });
+                        }
+
+                        // Animate Ground Dust Skirt
+                        if (cloud.dustSkirt) {
+                            cloud.dustSkirt.forEach(dust => {
+                                dust.radius += dust.expandSpeed * dt;
+                                dust.mesh.position.x = Math.cos(dust.angle) * dust.radius;
+                                dust.mesh.position.z = Math.sin(dust.angle) * dust.radius;
+                                const s = dust.baseScale + cloud.age * 2.8;
+                                dust.mesh.scale.set(s, s * 0.6, s);
+                                dust.mat.opacity = Math.max(0, 0.75 - cloud.age * 0.16);
+                            });
+                        }
+
+                        // Animate Supersonic Shockwave Rings
+                        if (cloud.shockwaveRings) {
+                            cloud.shockwaveRings.forEach(ring => {
+                                ring.scale += ring.speed * dt;
+                                ring.mesh.scale.set(ring.scale, ring.scale, 1);
+                                ring.mat.opacity = Math.max(0, 0.9 - (ring.scale / 120.0));
+                            });
+                        }
+
+                        // Animate Flying Fiery Debris Ejecta
+                        if (cloud.debris) {
+                            cloud.debris.forEach(deb => {
+                                deb.mesh.position.x += deb.vx * dt;
+                                deb.mesh.position.z += deb.vz * dt;
+                                deb.vy -= 35 * dt; // gravity
+                                deb.mesh.position.y = Math.max(0.2, deb.mesh.position.y + deb.vy * dt);
+                                deb.mesh.rotation.x += deb.rx * dt;
+                                deb.mesh.rotation.y += deb.ry * dt;
+                                deb.mat.opacity = Math.max(0, 1.0 - cloud.age * 0.25);
+                            });
+                        }
+
+                        // Animate Drifting Radioactive Fallout Ash
+                        if (cloud.falloutParticles) {
+                            cloud.falloutParticles.forEach(pt => {
+                                pt.mesh.position.x += Math.sin(cloud.age * 1.5 + pt.phase) * 1.8 * dt;
+                                pt.mesh.position.z += Math.cos(cloud.age * 1.2 + pt.phase) * 1.8 * dt;
+                                pt.mesh.position.y = Math.max(0.1, pt.mesh.position.y - pt.fallSpeed * dt);
+                                pt.mat.opacity = Math.max(0, 0.85 - cloud.age * 0.15);
+                            });
+                        }
                     }
                 }
             }
@@ -3981,6 +4460,14 @@
                         this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, this.playerGroup.position.x + this.cameraOffset.x, 0.08);
                         this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, this.playerGroup.position.y + this.cameraOffset.y, 0.08);
                         this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, this.playerGroup.position.z + this.cameraOffset.z, 0.08);
+
+                        if (this.cameraShake > 0) {
+                            this.camera.position.x += (Math.random() - 0.5) * this.cameraShake * 3.0;
+                            this.camera.position.y += (Math.random() - 0.5) * this.cameraShake * 2.0;
+                            this.camera.position.z += (Math.random() - 0.5) * this.cameraShake * 3.0;
+                            this.cameraShake = Math.max(0, this.cameraShake - dt * 1.5);
+                        }
+
                         this.camera.lookAt(this.playerGroup.position);
                     }
 
