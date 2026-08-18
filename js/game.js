@@ -140,14 +140,25 @@
                 // Base viewing distance
                 const baseDist = (isMobile ? 17.5 : 28.0) * zoom;
 
-                // Pitch angle from 28° (flach/isometrisch) bis 90° (absolute Vogelperspektive)
-                const pitchDeg = 28.0 + (angle * 62.0); // 0.0 -> 28°, 1.0 -> 90°
+                // Pitch angle from 28° (flach/isometrisch) bis 84° (Vogelperspektive)
+                // Capping pitch angle at 84° avoids the 90° vertical singularity (Gimbal Lock) where camera orientation flips
+                const pitchDeg = 28.0 + (angle * 56.0); // 0.0 -> 28°, 1.0 -> 84°
                 const pitchRad = (pitchDeg * Math.PI) / 180;
 
                 this.cameraOffset.x = 0;
                 this.cameraOffset.y = baseDist * Math.sin(pitchRad);
-                // Keep minimal epsilon for z so camera up vector and lookAt remain perfectly stable
-                this.cameraOffset.z = Math.max(0.001, baseDist * Math.cos(pitchRad));
+                this.cameraOffset.z = baseDist * Math.cos(pitchRad);
+
+                if (this.camera && this.playerGroup) {
+                    this.camera.position.x = this.playerGroup.position.x + this.cameraOffset.x;
+                    this.camera.position.y = this.playerGroup.position.y + this.cameraOffset.y;
+                    this.camera.position.z = this.playerGroup.position.z + this.cameraOffset.z;
+                    this.camera.lookAt(
+                        this.camera.position.x - this.cameraOffset.x,
+                        this.playerGroup.position.y,
+                        this.camera.position.z - this.cameraOffset.z
+                    );
+                }
             }
 
             setupControls() {
@@ -2673,12 +2684,12 @@
                         if (this.airstrikeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
                         } else {
                             const isMobile = window.matchMedia('(pointer: coarse)').matches;
                             if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[E] BEREIT";
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-amber-400 airstrike-ready-blink";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-amber-500/60 text-amber-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-amber-500/60 text-amber-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
                         }
                     }
                 } else if (this._lastAirstrikeCdSec !== 0) {
@@ -3334,12 +3345,12 @@
                         if (this.nukeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
                         } else {
                             const isMobile = window.matchMedia('(pointer: coarse)').matches;
                             if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[Q] BEREIT";
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-red-500 animate-spin";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-red-500/60 text-red-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-red-500/60 text-red-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
                         }
                     }
                 } else if (this._lastNukeCdSec !== 0) {
@@ -3893,12 +3904,12 @@
                         if (this.ac130Cooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-slate-500 opacity-60";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
                         } else {
                             const isMobile = window.matchMedia('(pointer: coarse)').matches;
                             if (statusText) statusText.innerText = isMobile ? "BEREIT" : "BEREIT [V]";
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-cyan-400";
-                            if (btn) btn.className = "relative overflow-hidden bg-transparent hover:bg-slate-900/30 active:bg-slate-900/50 border border-cyan-500/60 text-cyan-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-10 sm:h-11 w-[76px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
                         }
                     }
                 } else if (this._lastAc130CdSec !== 0) {
@@ -4468,7 +4479,12 @@
                             this.cameraShake = Math.max(0, this.cameraShake - dt * 1.5);
                         }
 
-                        this.camera.lookAt(this.playerGroup.position);
+                        // Fixed orientation lookAt: locks viewing angle and completely eliminates gimbal lock / yaw spin during movement
+                        this.camera.lookAt(
+                            this.camera.position.x - this.cameraOffset.x,
+                            this.playerGroup.position.y,
+                            this.camera.position.z - this.cameraOffset.z
+                        );
                     }
 
                     if (this.playerShieldMesh) {

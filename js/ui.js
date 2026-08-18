@@ -61,9 +61,9 @@ let isShopOpen = false;
 
             const label = document.getElementById('cam-angle-label');
             if (label) {
-                if (angle >= 0.98) label.innerText = '90° Vogelpersp.';
+                if (angle >= 0.98) label.innerText = '84° Vogelpersp.';
                 else if (angle <= 0.02) label.innerText = '28° 3D Flach';
-                else label.innerText = `${Math.round(28 + angle * 62)}°`;
+                else label.innerText = `${Math.round(28 + angle * 56)}°`;
             }
             
             if (_camSaveTimeout) clearTimeout(_camSaveTimeout);
@@ -71,9 +71,9 @@ let isShopOpen = false;
 
             if (previewCamera && previewRenderer) {
                 const dist = 14 * zoom;
-                const pitchDeg = 28.0 + (angle * 62.0);
+                const pitchDeg = 28.0 + (angle * 56.0);
                 const pitchRad = (pitchDeg * Math.PI) / 180;
-                previewCamera.position.set(0, dist * Math.sin(pitchRad), Math.max(0.001, dist * Math.cos(pitchRad)));
+                previewCamera.position.set(0, dist * Math.sin(pitchRad), dist * Math.cos(pitchRad));
                 previewCamera.lookAt(0, 0, 0);
                 previewRenderer.render(previewScene, previewCamera);
             }
