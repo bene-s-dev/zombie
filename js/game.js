@@ -317,10 +317,24 @@
                 window.addEventListener('pointermove', onPointerMove);
                 window.addEventListener('click', (e) => handleSelection(e.clientX, e.clientY));
 
+                const isUiTarget = (e, touch) => {
+                    const uiSelector = 'button, input, select, textarea, label, a, #game-hud, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto';
+                    if (e && e.target && e.target.closest(uiSelector)) {
+                        return true;
+                    }
+                    if (touch && typeof document.elementFromPoint === 'function') {
+                        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if (el && el.closest(uiSelector)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
                 const onTouchStart = (e) => {
                     if (this.isPlacementMode) {
                         const touch = e.touches[0] || e.changedTouches[0];
-                        if (touch) {
+                        if (touch && !isUiTarget(e, touch)) {
                             this.placementTouchStart = {
                                 x: touch.clientX,
                                 y: touch.clientY,
@@ -345,8 +359,7 @@
                         let acTouchHandled = false;
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
-                            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-                            if (targetEl && targetEl.closest('button, input, #pause-modal, #shop-modal, #game-over-modal')) continue;
+                            if (isUiTarget(e, touch)) continue;
 
                             if (!this.touchJoystick.active) {
                                 acTouchHandled = true;
@@ -371,8 +384,7 @@
                     let touchHandled = false;
                     for (let i = 0; i < e.changedTouches.length; i++) {
                         const touch = e.changedTouches[i];
-                        const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-                        if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal')) continue;
+                        if (isUiTarget(e, touch)) continue;
 
                         touchHandled = true;
                         this.gameplayTouchStart = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
@@ -422,7 +434,7 @@
                 const onTouchMove = (e) => {
                     if (this.isPlacementMode) {
                         const touch = e.touches[0] || e.changedTouches[0];
-                        if (touch) {
+                        if (touch && !isUiTarget(e, touch)) {
                             this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
                             this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
                             this.raycaster.setFromCamera(this.mousePos, this.camera);
@@ -516,8 +528,7 @@
                         if (this.placementJustStarted) return;
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
-                            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-                            if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal, #inspect-modal, #placement-hud')) continue;
+                            if (isUiTarget(e, touch)) continue;
 
                             this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
                             this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
@@ -544,33 +555,32 @@
                     } else if (!this.isPaused && !this.isGameOver) {
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
+                            if (isUiTarget(e, touch)) continue;
+
                             if (this.gameplayTouchStart && touch.identifier === this.gameplayTouchStart.id) {
                                 const dx = Math.abs(touch.clientX - this.gameplayTouchStart.x);
                                 const dy = Math.abs(touch.clientY - this.gameplayTouchStart.y);
                                 const duration = Date.now() - this.gameplayTouchStart.time;
 
                                 if (dx < 18 && dy < 18 && duration < 320) {
-                                    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-                                    if (!targetEl || !targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal, #inspect-modal, #placement-hud, #joystick-container')) {
-                                        this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                                        this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                                        this.raycaster.setFromCamera(this.mousePos, this.camera);
+                                    this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                                    this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                                    this.raycaster.setFromCamera(this.mousePos, this.camera);
 
-                                        const clickableObjects = [];
-                                        this.turrets.forEach(t => t.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
-                                        this.walls.forEach(w => w.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
+                                    const clickableObjects = [];
+                                    this.turrets.forEach(t => t.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
+                                    this.walls.forEach(w => w.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
 
-                                        const intersects = this.raycaster.intersectObjects(clickableObjects, true);
-                                        if (intersects.length > 0) {
-                                            let topObj = intersects[0].object;
-                                            let depth = 0;
-                                            while (topObj && topObj.parent && topObj.parent !== this.scene && depth++ < 15) {
-                                                topObj = topObj.parent;
-                                            }
-                                            if (topObj && topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) {
-                                                this.inspectStructure(topObj);
-                                                break;
-                                            }
+                                    const intersects = this.raycaster.intersectObjects(clickableObjects, true);
+                                    if (intersects.length > 0) {
+                                        let topObj = intersects[0].object;
+                                        let depth = 0;
+                                        while (topObj && topObj.parent && topObj.parent !== this.scene && depth++ < 15) {
+                                            topObj = topObj.parent;
+                                        }
+                                        if (topObj && topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) {
+                                            this.inspectStructure(topObj);
+                                            break;
                                         }
                                     }
                                 }

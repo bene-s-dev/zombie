@@ -552,33 +552,33 @@
                 </div>
 
                 <!-- Top-Right Actions: Money, Shop, Pause (always accessible, never shifted off-screen) -->
-                <div class="order-2 sm:order-3 flex items-start space-x-1 sm:space-x-1.5 ml-auto sm:ml-0">
+                <div class="order-2 sm:order-3 flex items-center space-x-1 sm:space-x-1.5 ml-auto sm:ml-0 pointer-events-auto">
                     <div class="bg-slate-950/70 border border-amber-500/60 px-2 sm:px-3 rounded-lg sm:rounded-xl backdrop-blur-sm shadow-lg flex items-center space-x-1 h-9 sm:h-11">
                         <i class="fa-solid fa-coins text-amber-400 text-xs sm:text-base"></i>
                         <span id="hud-money" class="font-mono text-xs sm:text-base font-bold text-amber-400">$ 0</span>
                     </div>
 
-                    <button onclick="toggleShop()" style="touch-action: manipulation;" class="bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 text-red-400 border border-red-500/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-9 sm:h-11 min-w-[36px] sm:min-w-[44px]" title="Laden öffnen">
-                        <i class="fa-solid fa-store text-xs sm:text-base"></i>
+                    <button id="hud-shop-btn" onclick="toggleShop()" style="touch-action: manipulation;" class="bg-slate-950/80 hover:bg-slate-900 active:bg-slate-950 text-red-400 border border-red-500/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-9 sm:h-11 min-w-[40px] sm:min-w-[44px] cursor-pointer" title="Laden öffnen [B]">
+                        <i class="fa-solid fa-store text-sm sm:text-base"></i>
                     </button>
 
-                    <!-- Pause button column with fixed size x2 Speed button stacked directly below -->
+                    <!-- Pause button column with early wave trigger stacked directly below -->
                     <div class="flex flex-col space-y-0.5 sm:space-y-1 items-center">
-                        <button onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 text-slate-200 border border-slate-700/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-9 sm:h-11 min-w-[36px] sm:min-w-[44px]" title="Pause">
-                            <i class="fa-solid fa-pause text-xs sm:text-base"></i>
+                        <button id="hud-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-slate-950/80 hover:bg-slate-900 active:bg-slate-950 text-slate-200 border border-slate-700/60 p-1.5 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-5 sm:h-7 min-w-[36px] sm:min-w-[44px] cursor-pointer" title="Pause [ESC]">
+                            <i class="fa-solid fa-pause text-[10px] sm:text-xs"></i>
                         </button>
-                        <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/80 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-md sm:rounded-lg border border-amber-500/50 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-5 sm:h-7 px-1 text-[8px] sm:text-[10px]" title="Nächste Welle sofort starten (Max. 3 gleichzeitig)">
-                            <i class="fa-solid fa-plus text-[8px] sm:text-[10px] text-amber-400 font-bold"></i>
-                            <i class="fa-solid fa-skull text-[8px] sm:text-[10px] text-red-400"></i>
-                            <span id="early-wave-badge" class="font-mono text-[8px] sm:text-[9px] font-bold text-amber-300 ml-0.5">1/3</span>
+                        <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-md sm:rounded-lg border border-amber-500/50 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-4 sm:h-5 px-1 text-[8px] sm:text-[9px] cursor-pointer" title="Nächste Welle sofort starten (Max. 3 gleichzeitig)">
+                            <i class="fa-solid fa-plus text-[7px] sm:text-[8px] text-amber-400 font-bold"></i>
+                            <i class="fa-solid fa-skull text-[7px] sm:text-[8px] text-red-400"></i>
+                            <span id="early-wave-badge" class="font-mono text-[7px] sm:text-[8px] font-bold text-amber-300 ml-0.5">1/3</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Tactical Abilities Dock: Centered on mobile & desktop, guaranteed prominence and responsive width -->
-                <div id="hud-tactical-skills" class="order-3 sm:order-2 w-full sm:w-auto flex items-center justify-center space-x-1 sm:space-x-1.5 mt-0.5 sm:mt-0">
+                <div id="hud-tactical-skills" class="order-3 sm:order-2 w-full sm:w-auto flex items-center justify-center space-x-1 sm:space-x-1.5 mt-0.5 sm:mt-0 pointer-events-auto">
                     <!-- AC-130 Gunship Button [V] -->
-                    <button id="hud-ac130-btn" onclick="triggerAc130()" ontouchstart="triggerAc130(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse" title="AC-130 Gunship [V]">
+                    <button id="hud-ac130-btn" onclick="triggerAc130()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse cursor-pointer" title="AC-130 Gunship [V]">
                         <div id="ac130-progress-fill" class="absolute top-0 left-0 bottom-0 bg-cyan-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="ac130-icon" class="relative z-10 flex items-center text-cyan-400">
                             <i class="fa-solid fa-crosshairs text-[10px] sm:text-xs"></i>
@@ -590,7 +590,7 @@
                     </button>
 
                     <!-- Luftschlag Button [E] -->
-                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" ontouchstart="triggerAirstrike(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-amber-500/60 text-amber-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse" title="Luftschlag [E]">
+                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-amber-500/60 text-amber-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse cursor-pointer" title="Luftschlag [E]">
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="airstrike-icon" class="relative z-10 flex items-center text-amber-400 airstrike-ready-blink">
                             <i class="fa-solid fa-plane-up text-[10px] sm:text-xs"></i>
@@ -602,7 +602,7 @@
                     </button>
 
                     <!-- Nuke Ultimate Button [Q] -->
-                    <button id="hud-nuke-btn" onclick="triggerNuke()" ontouchstart="triggerNuke(); event.stopPropagation();" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-red-500/60 text-red-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse" title="Atombombe [Q]">
+                    <button id="hud-nuke-btn" onclick="triggerNuke()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-red-500/60 text-red-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse cursor-pointer" title="Atombombe [Q]">
                         <div id="nuke-progress-fill" class="absolute top-0 left-0 bottom-0 bg-red-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="nuke-icon" class="relative z-10 flex items-center text-red-500 animate-spin">
                             <i class="fa-solid fa-radiation text-[10px] sm:text-xs"></i>
