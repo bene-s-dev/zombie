@@ -9,6 +9,9 @@ const Storage = {
         swapTouchControls: true,
         cameraZoom: 1.0,
         cameraAngle: 0.5,
+        extraAc130Enabled: true,
+        extraAirstrikeEnabled: true,
+        extraNukeEnabled: true,
         highscores: [],
         lastPlayerName: 'SPIELER'
     },
@@ -19,6 +22,9 @@ const Storage = {
                 this.data = { ...this.data, ...JSON.parse(saved) };
             }
             if (this.data.swapTouchControls === undefined) this.data.swapTouchControls = true;
+            if (this.data.extraAc130Enabled === undefined) this.data.extraAc130Enabled = true;
+            if (this.data.extraAirstrikeEnabled === undefined) this.data.extraAirstrikeEnabled = true;
+            if (this.data.extraNukeEnabled === undefined) this.data.extraNukeEnabled = true;
             if (!this.data.highscores) this.data.highscores = [];
             if (!this.data.lastPlayerName) this.data.lastPlayerName = 'SPIELER';
         } catch(e) { console.error("Could not load save profile", e); }

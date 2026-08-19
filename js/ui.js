@@ -2,13 +2,113 @@ let activeShopTab = 'weapons';
 let gameInstance = null;
 let isShopOpen = false;
 
-        const savedData = Storage.load();
-        const mainMusicToggle = document.getElementById('toggle-music');
-        if (mainMusicToggle) mainMusicToggle.checked = savedData.musicEnabled;
-        const mainSfxToggle = document.getElementById('toggle-sfx');
-        if (mainSfxToggle) mainSfxToggle.checked = savedData.sfxEnabled;
-        if (document.getElementById('cam-zoom')) document.getElementById('cam-zoom').value = savedData.cameraZoom;
-        if (document.getElementById('cam-angle')) document.getElementById('cam-angle').value = savedData.cameraAngle;
+const savedData = Storage.load();
+const mainMusicToggle = document.getElementById('toggle-music');
+if (mainMusicToggle) mainMusicToggle.checked = savedData.musicEnabled;
+const mainSfxToggle = document.getElementById('toggle-sfx');
+if (mainSfxToggle) mainSfxToggle.checked = savedData.sfxEnabled;
+if (document.getElementById('cam-zoom')) document.getElementById('cam-zoom').value = savedData.cameraZoom;
+if (document.getElementById('cam-angle')) document.getElementById('cam-angle').value = savedData.cameraAngle;
+
+function toggleAudio(type, enabled) {
+    if (type === 'music') {
+        Storage.data.musicEnabled = enabled;
+        if (!enabled) {
+            if (typeof audio !== 'undefined') audio.stopMusic();
+        } else if (gameInstance && !gameInstance.isGameOver && !gameInstance.isPaused) {
+            if (typeof audio !== 'undefined') audio.startMusic();
+        }
+    } else if (type === 'sfx') {
+        Storage.data.sfxEnabled = enabled;
+    }
+    Storage.save();
+    ['toggle-music', 'pause-toggle-music'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = Storage.data.musicEnabled;
+    });
+    ['toggle-sfx', 'pause-toggle-sfx'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = Storage.data.sfxEnabled;
+    });
+}
+
+function toggleExtra(extraType, enabled) {
+    if (extraType === 'ac130') {
+        Storage.data.extraAc130Enabled = !!enabled;
+    } else if (extraType === 'airstrike') {
+        Storage.data.extraAirstrikeEnabled = !!enabled;
+    } else if (extraType === 'nuke') {
+        Storage.data.extraNukeEnabled = !!enabled;
+    }
+    Storage.save();
+    syncExtrasUI();
+    updateTacticalExtrasHUD();
+}
+
+function setAllExtras(enabled) {
+    Storage.data.extraAc130Enabled = !!enabled;
+    Storage.data.extraAirstrikeEnabled = !!enabled;
+    Storage.data.extraNukeEnabled = !!enabled;
+    Storage.save();
+    syncExtrasUI();
+    updateTacticalExtrasHUD();
+}
+
+function syncExtrasUI() {
+    const ac130 = Storage.data.extraAc130Enabled !== false;
+    const airstrike = Storage.data.extraAirstrikeEnabled !== false;
+    const nuke = Storage.data.extraNukeEnabled !== false;
+
+    const elMenuAc130 = document.getElementById('menu-extra-ac130');
+    if (elMenuAc130) elMenuAc130.checked = ac130;
+    const elMenuAirstrike = document.getElementById('menu-extra-airstrike');
+    if (elMenuAirstrike) elMenuAirstrike.checked = airstrike;
+    const elMenuNuke = document.getElementById('menu-extra-nuke');
+    if (elMenuNuke) elMenuNuke.checked = nuke;
+
+    const elPauseAc130 = document.getElementById('pause-extra-ac130');
+    if (elPauseAc130) elPauseAc130.checked = ac130;
+    const elPauseAirstrike = document.getElementById('pause-extra-airstrike');
+    if (elPauseAirstrike) elPauseAirstrike.checked = airstrike;
+    const elPauseNuke = document.getElementById('pause-extra-nuke');
+    if (elPauseNuke) elPauseNuke.checked = nuke;
+}
+
+function updateTacticalExtrasHUD() {
+    const ac130 = Storage.data.extraAc130Enabled !== false;
+    const airstrike = Storage.data.extraAirstrikeEnabled !== false;
+    const nuke = Storage.data.extraNukeEnabled !== false;
+
+    const btnAc130 = document.getElementById('hud-ac130-btn');
+    if (btnAc130) {
+        if (ac130) btnAc130.classList.remove('hidden');
+        else btnAc130.classList.add('hidden');
+    }
+
+    const btnAirstrike = document.getElementById('hud-airstrike-btn');
+    if (btnAirstrike) {
+        if (airstrike) btnAirstrike.classList.remove('hidden');
+        else btnAirstrike.classList.add('hidden');
+    }
+
+    const btnNuke = document.getElementById('hud-nuke-btn');
+    if (btnNuke) {
+        if (nuke) btnNuke.classList.remove('hidden');
+        else btnNuke.classList.add('hidden');
+    }
+
+    const dock = document.getElementById('hud-tactical-skills');
+    if (dock) {
+        if (!ac130 && !airstrike && !nuke) {
+            dock.classList.add('hidden');
+        } else {
+            dock.classList.remove('hidden');
+        }
+    }
+}
+
+syncExtrasUI();
+updateTacticalExtrasHUD();
 
         let previewScene, previewCamera, previewRenderer, previewPlayer;
         function initCameraPreview() {
@@ -601,6 +701,7 @@ let isShopOpen = false;
         }
 
         function triggerAc130() {
+            if (Storage.data.extraAc130Enabled === false) return;
             if (gameInstance) {
                 gameInstance.triggerAc130();
                 gameInstance.saveGameSession();
@@ -608,6 +709,7 @@ let isShopOpen = false;
         }
 
         function triggerAirstrike() {
+            if (Storage.data.extraAirstrikeEnabled === false) return;
             if (gameInstance) {
                 gameInstance.triggerAirstrike();
                 gameInstance.saveGameSession();
@@ -615,6 +717,7 @@ let isShopOpen = false;
         }
 
         function triggerNuke() {
+            if (Storage.data.extraNukeEnabled === false) return;
             if (gameInstance) {
                 gameInstance.triggerNuke();
                 gameInstance.saveGameSession();
@@ -667,6 +770,7 @@ let isShopOpen = false;
                 updatePauseSaveStatus();
                 document.getElementById('pause-toggle-music').checked = Storage.data.musicEnabled;
                 document.getElementById('pause-toggle-sfx').checked = Storage.data.sfxEnabled;
+                syncExtrasUI();
                 updateTouchSwapUI();
                 modal.classList.remove('hidden');
                 setTimeout(() => { initCameraPreview(); }, 50);
@@ -1044,6 +1148,7 @@ let isShopOpen = false;
                 }
                 const gameHud = document.getElementById('game-hud');
                 if (gameHud) gameHud.classList.remove('hidden');
+                updateTacticalExtrasHUD();
 
                 if (loadingScreen) loadingScreen.classList.add('hidden');
             }

@@ -121,6 +121,7 @@
                 this.createPlayer();
                 this.createDogMesh();
                 this.setupControls();
+                if (typeof updateTacticalExtrasHUD === 'function') updateTacticalExtrasHUD();
 
                 this.secondTimer = setInterval(() => this.onSecondTick(), 1000);
                 this.updateSpawnInterval();
@@ -172,7 +173,9 @@
                         e.preventDefault();
                     }
                     if (e.code === 'KeyV') {
-                        this.triggerAc130();
+                        if (typeof Storage === 'undefined' || Storage.data.extraAc130Enabled !== false) {
+                            this.triggerAc130();
+                        }
                     }
                     if (this.isAc130Active) {
                         if (e.code === 'Digit1' || e.code === 'Numpad1') {
@@ -186,10 +189,14 @@
                         }
                     }
                     if (e.code === 'KeyE') {
-                        this.triggerAirstrike();
+                        if (typeof Storage === 'undefined' || Storage.data.extraAirstrikeEnabled !== false) {
+                            this.triggerAirstrike();
+                        }
                     }
                     if (e.code === 'KeyQ') {
-                        this.triggerNuke();
+                        if (typeof Storage === 'undefined' || Storage.data.extraNukeEnabled !== false) {
+                            this.triggerNuke();
+                        }
                     }
                     if (e.code === 'KeyR' && this.isPlacementMode) {
                         rotatePlacement();
@@ -2526,6 +2533,7 @@
             }
 
             triggerAirstrike() {
+                if (typeof Storage !== 'undefined' && Storage.data.extraAirstrikeEnabled === false) return;
                 if (this.isPaused || this.isGameOver || this.airstrikeCooldown > 0 || (this.activeAirstrikes && this.activeAirstrikes.length > 0)) return;
 
                 this.airstrikeCooldown = 45.0;
@@ -2691,6 +2699,9 @@
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-amber-400 airstrike-ready-blink";
                             if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-amber-500/60 text-amber-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
                         }
+                        if (typeof Storage !== 'undefined' && Storage.data.extraAirstrikeEnabled === false) {
+                            if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
+                        }
                     }
                 } else if (this._lastAirstrikeCdSec !== 0) {
                     this._lastAirstrikeCdSec = 0;
@@ -2793,6 +2804,7 @@
             }
 
             triggerNuke() {
+                if (typeof Storage !== 'undefined' && Storage.data.extraNukeEnabled === false) return;
                 if (this.isPaused || this.isGameOver || this.isNukeActive) return;
 
                 if (this.nukeCooldown > 0) {
@@ -3352,6 +3364,9 @@
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-red-500 animate-spin";
                             if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-red-500/60 text-red-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
                         }
+                        if (typeof Storage !== 'undefined' && Storage.data.extraNukeEnabled === false) {
+                            if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
+                        }
                     }
                 } else if (this._lastNukeCdSec !== 0) {
                     this._lastNukeCdSec = 0;
@@ -3627,6 +3642,7 @@
             }
 
             triggerAc130() {
+                if (typeof Storage !== 'undefined' && Storage.data.extraAc130Enabled === false) return;
                 if (this.isPaused || this.isGameOver) return;
                 if (this.isAc130Active) return;
                 if (this.ac130Cooldown > 0) {
@@ -3910,6 +3926,9 @@
                             if (statusText) statusText.innerText = isMobile ? "BEREIT" : "BEREIT [V]";
                             if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-cyan-400";
                             if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
+                        }
+                        if (typeof Storage !== 'undefined' && Storage.data.extraAc130Enabled === false) {
+                            if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
                         }
                     }
                 } else if (this._lastAc130CdSec !== 0) {
