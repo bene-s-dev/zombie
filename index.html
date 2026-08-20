@@ -88,10 +88,20 @@
 
         /* Safe area padding for notch / dynamic island devices */
         .safe-area-padding {
-            padding-top: max(env(safe-area-inset-top), 0.75rem);
-            padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
-            padding-left: max(env(safe-area-inset-left), 0.75rem);
-            padding-right: max(env(safe-area-inset-right), 0.75rem);
+            padding-top: max(env(safe-area-inset-top), 0.5rem);
+            padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+            padding-left: max(env(safe-area-inset-left), 0.5rem);
+            padding-right: max(env(safe-area-inset-right), 0.5rem);
+        }
+        .safe-area-padding-x {
+            padding-left: max(env(safe-area-inset-left), 0.5rem);
+            padding-right: max(env(safe-area-inset-right), 0.5rem);
+        }
+        .safe-area-padding-top {
+            padding-top: max(env(safe-area-inset-top), 0.35rem);
+        }
+        .safe-area-padding-bottom {
+            padding-bottom: max(env(safe-area-inset-bottom), 0.35rem);
         }
 
         /* Smooth momentum scrolling */
@@ -172,7 +182,7 @@
         </div>
 
         <!-- ================= MODERN WARFARE AC-130 DEATH FROM ABOVE OVERLAY ================= -->
-        <div id="ac130-overlay" class="hidden pointer-events-none fixed inset-0 z-[80] select-none overflow-hidden mw-scanlines flex flex-col justify-between p-2 sm:p-5 text-white font-mono text-[10px] sm:text-xs">
+        <div id="ac130-overlay" class="hidden pointer-events-none fixed inset-0 z-[80] select-none overflow-hidden mw-scanlines flex flex-col justify-between p-2 sm:p-4 safe-area-padding text-white font-mono text-[10px] sm:text-xs">
             <!-- Vignette Edge Shadows -->
             <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)]"></div>
 
@@ -537,91 +547,97 @@
         </div>
 
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
-        <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between">
-            <div class="flex flex-wrap sm:flex-nowrap justify-between items-center sm:items-start w-full max-w-5xl mx-auto p-1 sm:p-2.5 pointer-events-auto gap-y-1 gap-x-1 sm:gap-x-2">
-                <!-- Top-Left Wave Container: Time on left, Zombies in middle, Wave on right -->
-                <div id="hud-wave-container" class="order-1 flex items-center space-x-1.5 sm:space-x-3.5 py-0.5 drop-shadow-md">
-                    <div id="hud-timer" class="w-auto font-mono text-[10px] sm:text-xs text-slate-300 whitespace-nowrap">00:00</div>
-                    <div id="hud-zombies-left" class="w-20 sm:w-32 font-teko text-sm sm:text-xl font-bold text-white leading-none text-center truncate">0 UNTOTE</div>
-                    <div id="hud-wave-title-wrap" class="min-w-[85px] sm:min-w-[150px] flex items-center justify-start">
-                        <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1">
+        <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between select-none">
+            <!-- Top HUD Bar: Safe-area aware, Scalable flex container with unbreakable left/center/right flow -->
+            <header class="w-full flex items-center justify-between p-1.5 sm:p-2.5 safe-area-padding-x safe-area-padding-top gap-1 sm:gap-2 pointer-events-none">
+                <!-- Left Dock: Wave & Timer (High priority, non-collapsing, compact) -->
+                <div id="hud-wave-container" class="flex-shrink-0 flex items-center space-x-1.5 sm:space-x-3 bg-slate-950/80 border border-slate-800/80 px-2 sm:px-3 py-1 rounded-xl backdrop-blur-md shadow-lg pointer-events-auto">
+                    <div id="hud-timer" class="font-mono text-[10px] sm:text-xs text-slate-300 whitespace-nowrap">00:00</div>
+                    <div class="h-3 w-px bg-slate-700/60"></div>
+                    <div id="hud-zombies-left" class="font-teko text-base sm:text-xl font-bold text-white leading-none whitespace-nowrap">0 UNTOTE</div>
+                    <div class="h-3 w-px bg-slate-700/60"></div>
+                    <div id="hud-wave-title-wrap" class="flex items-center justify-start">
+                        <div id="hud-wave-title" class="text-[9px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1 whitespace-nowrap">
                             <i class="fa-solid fa-skull"></i>
                             <span>WELLE 1</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Top-Right Actions: Money, Shop, Pause (always accessible, never shifted off-screen) -->
-                <div class="order-2 sm:order-3 flex items-center space-x-1 sm:space-x-1.5 ml-auto sm:ml-0 pointer-events-auto">
-                    <div class="bg-slate-950/70 border border-amber-500/60 px-2 sm:px-3 rounded-lg sm:rounded-xl backdrop-blur-sm shadow-lg flex items-center space-x-1 h-9 sm:h-11">
-                        <i class="fa-solid fa-coins text-amber-400 text-xs sm:text-base"></i>
-                        <span id="hud-money" class="font-mono text-xs sm:text-base font-bold text-amber-400">$ 0</span>
-                    </div>
-
-                    <button id="hud-shop-btn" onclick="toggleShop()" style="touch-action: manipulation;" class="bg-slate-950/80 hover:bg-slate-900 active:bg-slate-950 text-red-400 border border-red-500/60 p-2 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-9 sm:h-11 min-w-[40px] sm:min-w-[44px] cursor-pointer" title="Laden öffnen [B]">
-                        <i class="fa-solid fa-store text-sm sm:text-base"></i>
-                    </button>
-
-                    <!-- Pause button column with early wave trigger stacked directly below -->
-                    <div class="flex flex-col space-y-0.5 sm:space-y-1 items-center">
-                        <button id="hud-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-slate-950/80 hover:bg-slate-900 active:bg-slate-950 text-slate-200 border border-slate-700/60 p-1.5 sm:px-3 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-5 sm:h-7 min-w-[36px] sm:min-w-[44px] cursor-pointer" title="Pause [ESC]">
-                            <i class="fa-solid fa-pause text-[10px] sm:text-xs"></i>
-                        </button>
-                        <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-md sm:rounded-lg border border-amber-500/50 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 w-full h-4 sm:h-5 px-1 text-[8px] sm:text-[9px] cursor-pointer" title="Nächste Welle sofort starten (Max. 3 gleichzeitig)">
-                            <i class="fa-solid fa-plus text-[7px] sm:text-[8px] text-amber-400 font-bold"></i>
-                            <i class="fa-solid fa-skull text-[7px] sm:text-[8px] text-red-400"></i>
-                            <span id="early-wave-badge" class="font-mono text-[7px] sm:text-[8px] font-bold text-amber-300 ml-0.5">1/3</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Tactical Abilities Dock: Centered on mobile & desktop, guaranteed prominence and responsive width -->
-                <div id="hud-tactical-skills" class="order-3 sm:order-2 w-full sm:w-auto flex items-center justify-center space-x-1 sm:space-x-1.5 mt-0.5 sm:mt-0 pointer-events-auto">
+                <!-- Center Dock: Tactical Abilities (Scalable, fluid, shrinks if screen is narrow) -->
+                <div id="hud-tactical-skills" class="flex-1 min-w-0 max-w-fit flex items-center justify-center space-x-1 sm:space-x-1.5 pointer-events-auto px-0.5 sm:px-1">
                     <!-- AC-130 Gunship Button [V] -->
-                    <button id="hud-ac130-btn" onclick="triggerAc130()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse cursor-pointer" title="AC-130 Gunship [V]">
+                    <button id="hud-ac130-btn" onclick="triggerAc130()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/80 hover:bg-slate-900 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-8 sm:h-10 min-w-[54px] sm:min-w-[76px] max-w-[90px] flex-shrink cursor-pointer" title="AC-130 Gunship [V]">
                         <div id="ac130-progress-fill" class="absolute top-0 left-0 bottom-0 bg-cyan-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="ac130-icon" class="relative z-10 flex items-center text-cyan-400">
                             <i class="fa-solid fa-crosshairs text-[10px] sm:text-xs"></i>
                         </div>
-                        <div class="relative z-10 flex flex-col text-left">
+                        <div class="relative z-10 flex flex-col text-left truncate">
                             <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase leading-none tracking-tight">AC-130</span>
-                            <span id="ac130-status-text" class="font-mono text-[8px] sm:text-[9px] font-bold text-cyan-400 leading-tight">BEREIT</span>
+                            <span id="ac130-status-text" class="font-mono text-[7px] sm:text-[9px] font-bold text-cyan-400 leading-tight">BEREIT</span>
                         </div>
                     </button>
 
                     <!-- Luftschlag Button [E] -->
-                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-amber-500/60 text-amber-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse cursor-pointer" title="Luftschlag [E]">
+                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/80 hover:bg-slate-900 active:bg-slate-900 border border-amber-500/60 text-amber-400 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-8 sm:h-10 min-w-[54px] sm:min-w-[76px] max-w-[90px] flex-shrink cursor-pointer" title="Luftschlag [E]">
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="airstrike-icon" class="relative z-10 flex items-center text-amber-400 airstrike-ready-blink">
                             <i class="fa-solid fa-plane-up text-[10px] sm:text-xs"></i>
                         </div>
-                        <div class="relative z-10 flex flex-col text-left">
-                            <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase leading-none tracking-tight">Luftschlag</span>
-                            <span id="airstrike-status-text" class="font-mono text-[8px] sm:text-[9px] font-bold text-amber-400 leading-tight">BEREIT</span>
+                        <div class="relative z-10 flex flex-col text-left truncate">
+                            <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase leading-none tracking-tight">Schlag</span>
+                            <span id="airstrike-status-text" class="font-mono text-[7px] sm:text-[9px] font-bold text-amber-400 leading-tight">BEREIT</span>
                         </div>
                     </button>
 
                     <!-- Nuke Ultimate Button [Q] -->
-                    <button id="hud-nuke-btn" onclick="triggerNuke()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-red-500/60 text-red-400 px-1.5 sm:px-2 py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] pointer-events-auto animate-pulse cursor-pointer" title="Atombombe [Q]">
+                    <button id="hud-nuke-btn" onclick="triggerNuke()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/80 hover:bg-slate-900 active:bg-slate-900 border border-red-500/60 text-red-400 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-8 sm:h-10 min-w-[54px] sm:min-w-[76px] max-w-[90px] flex-shrink cursor-pointer" title="Atombombe [Q]">
                         <div id="nuke-progress-fill" class="absolute top-0 left-0 bottom-0 bg-red-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="nuke-icon" class="relative z-10 flex items-center text-red-500 animate-spin">
                             <i class="fa-solid fa-radiation text-[10px] sm:text-xs"></i>
                         </div>
-                        <div class="relative z-10 flex flex-col text-left">
-                            <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase leading-none tracking-tight">Atombombe</span>
-                            <span id="nuke-status-text" class="font-mono text-[8px] sm:text-[9px] font-bold text-red-400 leading-tight">BEREIT</span>
+                        <div class="relative z-10 flex flex-col text-left truncate">
+                            <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase leading-none tracking-tight">Nuke</span>
+                            <span id="nuke-status-text" class="font-mono text-[7px] sm:text-[9px] font-bold text-red-400 leading-tight">BEREIT</span>
                         </div>
                     </button>
                 </div>
-            </div>
+
+                <!-- Right Dock: Actions (ALWAYS visible, never pushed off-screen, flex-shrink-0) -->
+                <div class="flex-shrink-0 flex items-center space-x-1 sm:space-x-1.5 ml-auto pointer-events-auto">
+                    <!-- Money Badge -->
+                    <div class="bg-slate-950/80 border border-amber-500/60 px-1.5 sm:px-2.5 rounded-lg sm:rounded-xl backdrop-blur-sm shadow-lg flex items-center space-x-1 h-8 sm:h-10 text-amber-400 font-bold text-[11px] sm:text-sm font-mono">
+                        <i class="fa-solid fa-coins text-amber-400 text-[10px] sm:text-xs"></i>
+                        <span id="hud-money">$ 0</span>
+                    </div>
+
+                    <!-- Shop Button -->
+                    <button id="hud-shop-btn" onclick="toggleShop()" style="touch-action: manipulation;" class="bg-slate-950/80 hover:bg-slate-900 active:bg-slate-950 text-red-400 border border-red-500/60 p-1 sm:px-2 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-8 sm:h-10 min-w-[32px] sm:min-w-[40px] cursor-pointer" title="Laden öffnen [B]">
+                        <i class="fa-solid fa-store text-xs sm:text-sm"></i>
+                    </button>
+
+                    <!-- Pause Button & Early Wave Trigger stacked -->
+                    <div class="flex flex-col space-y-0.5 items-center">
+                        <button id="hud-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-slate-950/90 hover:bg-slate-800 active:bg-slate-950 text-amber-300 hover:text-white border border-amber-400/80 px-1.5 sm:px-2 rounded-md sm:rounded-lg shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-4.5 sm:h-5 min-w-[32px] sm:min-w-[40px] cursor-pointer" title="Pause [ESC]">
+                            <i class="fa-solid fa-pause text-[9px] sm:text-xs text-amber-400"></i>
+                        </button>
+                        <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-md border border-amber-500/50 shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-0.5 w-full h-3.5 sm:h-4.5 px-1 text-[7px] sm:text-[8px] cursor-pointer" title="Nächste Welle sofort starten (Max. 3 gleichzeitig)">
+                            <i class="fa-solid fa-plus text-[6px] sm:text-[7px] text-amber-400 font-bold"></i>
+                            <i class="fa-solid fa-skull text-[6px] sm:text-[7px] text-red-400"></i>
+                            <span id="early-wave-badge" class="font-mono text-[6px] sm:text-[7px] font-bold text-amber-300 ml-0.5">1/3</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
 
             <!-- Bottom HUD -->
-            <div class="w-full flex justify-between items-end p-2 sm:p-4 pointer-events-none">
-                <div class="bg-slate-950/85 border border-slate-800 p-2 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[100px] sm:min-w-[140px] pointer-events-auto">
-                    <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1 items-center">
-                        <span class="text-slate-300 flex items-center"><i class="fa-solid fa-user-shield text-emerald-400 mr-1"></i> SPIELER</span>
-                        <div id="hud-player-lives-hearts" class="flex items-center space-x-0.5 text-xs text-red-500 mr-1"></div>
-                        <span id="hud-player-hp-text" class="text-emerald-400 font-mono">200/200</span>
+            <footer class="w-full flex justify-between items-end p-1.5 sm:p-3 safe-area-padding-x safe-area-padding-bottom gap-1 sm:gap-2 pointer-events-none">
+                <!-- Player Stats Box (Left) -->
+                <div class="bg-slate-950/85 border border-slate-800 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[85px] sm:min-w-[130px] max-w-[170px] flex-shrink pointer-events-auto">
+                    <div class="flex justify-between text-[8px] sm:text-[11px] font-bold mb-0.5 sm:mb-1 items-center">
+                        <span class="text-slate-300 flex items-center truncate"><i class="fa-solid fa-user-shield text-emerald-400 mr-1 text-[9px] sm:text-xs"></i> SPIELER</span>
+                        <div id="hud-player-lives-hearts" class="flex items-center space-x-0.5 text-[9px] sm:text-xs text-red-500 mx-1"></div>
+                        <span id="hud-player-hp-text" class="text-emerald-400 font-mono text-[8px] sm:text-[11px] whitespace-nowrap">200/200</span>
                     </div>
                     <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
                         <div id="hud-player-hp-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%;"></div>
@@ -629,139 +645,145 @@
                     </div>
                 </div>
 
-                <div class="bg-slate-950/85 border border-slate-800 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-2 sm:space-x-3 text-[10px] sm:text-xs">
-                    <div class="text-slate-400 uppercase font-semibold hidden sm:block">Waffe:</div>
-                    <div id="hud-weapon-name" class="font-bold text-amber-400 text-[10px] sm:text-xs">Pistole (Lvl 1)</div>
-                    <div class="h-3 w-px bg-slate-700"></div>
-                    <div id="hud-weapon-stats" class="text-[9px] sm:text-[11px] font-mono text-slate-300"><i class="fa-solid fa-bolt text-amber-400 mr-0.5"></i> Dmg: 32</div>
+                <!-- Weapon Stats Pill (Center) -->
+                <div class="bg-slate-950/85 border border-slate-800 px-2.5 sm:px-4 py-1 sm:py-2 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-1.5 sm:space-x-2.5 text-[9px] sm:text-xs max-w-[45vw] flex-shrink min-w-0">
+                    <div class="text-slate-400 uppercase font-semibold hidden md:block">Waffe:</div>
+                    <div id="hud-weapon-name" class="font-bold text-amber-400 text-[9px] sm:text-xs whitespace-nowrap truncate">Pistole (Lvl 1)</div>
+                    <div class="h-3 w-px bg-slate-700 flex-shrink-0"></div>
+                    <div id="hud-weapon-stats" class="text-[8px] sm:text-[11px] font-mono text-slate-300 whitespace-nowrap truncate"><i class="fa-solid fa-bolt text-amber-400 mr-0.5"></i> Dmg: 32</div>
                 </div>
 
-                <div class="bg-slate-950/85 border border-slate-800 p-2 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[100px] sm:min-w-[140px] pointer-events-auto">
-                    <div class="flex justify-between text-[9px] sm:text-[11px] font-bold mb-1 items-center">
-                        <span class="text-slate-300 flex items-center"><i class="fa-solid fa-building-shield text-sky-400 mr-1"></i> BASIS</span>
-                        <div id="hud-base-lives-hearts" class="flex items-center space-x-0.5 text-xs text-sky-400 mr-1"></div>
-                        <span id="hud-base-hp-text" class="text-sky-400 font-mono">2500/2500</span>
+                <!-- Base Stats Box (Right) -->
+                <div class="bg-slate-950/85 border border-slate-800 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[85px] sm:min-w-[130px] max-w-[170px] flex-shrink pointer-events-auto">
+                    <div class="flex justify-between text-[8px] sm:text-[11px] font-bold mb-0.5 sm:mb-1 items-center">
+                        <span class="text-slate-300 flex items-center truncate"><i class="fa-solid fa-building-shield text-sky-400 mr-1 text-[9px] sm:text-xs"></i> BASIS</span>
+                        <div id="hud-base-lives-hearts" class="flex items-center space-x-0.5 text-[9px] sm:text-xs text-sky-400 mx-1"></div>
+                        <span id="hud-base-hp-text" class="text-sky-400 font-mono text-[8px] sm:text-[11px] whitespace-nowrap">2500/2500</span>
                     </div>
                     <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
                         <div id="hud-base-hp-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 100%;"></div>
                         <div id="hud-base-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
                     </div>
                 </div>
-            </div>
+            </footer>
         </div>
 
         <!-- ================= PAUSE & SETTINGS MODAL ================= -->
-        <div id="pause-modal" class="hidden absolute inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md safe-area-padding">
-            <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl sm:max-w-4xl rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-2xl space-y-3 sm:space-y-4 max-h-[92dvh] overflow-y-auto custom-scroll">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <div class="flex items-center space-x-2.5">
-                        <i class="fa-solid fa-pause text-amber-400 text-xl sm:text-2xl"></i>
-                        <h2 class="font-teko text-2xl sm:text-3xl font-bold text-white tracking-wider uppercase">SPIEL PAUSIERT</h2>
+        <div id="pause-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md safe-area-padding">
+            <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl sm:max-w-3xl rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-2xl flex flex-col max-h-[94dvh] overflow-hidden">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2 sm:pb-3 flex-shrink-0">
+                    <div class="flex items-center space-x-2 sm:space-x-2.5">
+                        <i class="fa-solid fa-pause text-amber-400 text-lg sm:text-2xl"></i>
+                        <h2 class="font-teko text-2xl sm:text-3xl font-bold text-white tracking-wider uppercase leading-none">SPIEL PAUSIERT</h2>
                     </div>
-                    <button onclick="togglePauseModal()" class="text-slate-400 hover:text-white p-1.5 text-xl"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="togglePauseModal()" class="text-slate-400 hover:text-white p-1 text-xl"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- LEFT COLUMN: Kamera-Einstellungen & Spielstand Speichern -->
-                    <div class="space-y-3">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kamera & Speicherstand</h3>
-                        
-                        <!-- Camera settings box -->
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-                            <div class="flex items-center space-x-3 text-xs text-slate-300">
-                                <label class="w-14 font-semibold">Zoom</label>
-                                <input type="range" id="cam-zoom" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-5">
-                            </div>
-                            <div class="flex items-center space-x-3 text-xs text-slate-300">
-                                <label class="w-14 font-semibold">Winkel</label>
-                                <input type="range" id="cam-angle" min="0" max="1" step="0.05" value="0.5" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-5">
-                                <span id="cam-angle-label" class="text-[10px] font-mono text-amber-400 w-20 text-right font-bold">Standard</span>
-                            </div>
-                            <div id="cam-preview-container" class="w-full h-24 bg-black rounded border border-slate-700 overflow-hidden relative"></div>
-                        </div>
-
-                        <!-- Save options box directly under Camera Settings -->
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center space-x-2">
-                            <div class="overflow-hidden">
-                                <div class="text-xs font-bold text-slate-200 flex items-center">
-                                    <i class="fa-solid fa-floppy-disk text-emerald-400 mr-1.5"></i>
-                                    <span>Spielstand</span>
+                <!-- Modal Body (Scrollable in landscape) -->
+                <div class="flex-1 min-h-0 overflow-y-auto custom-scroll py-2 sm:py-3 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <!-- LEFT COLUMN: Kamera-Einstellungen & Spielstand Speichern -->
+                        <div class="space-y-2.5">
+                            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kamera & Speicherstand</h3>
+                            
+                            <!-- Camera settings box -->
+                            <div class="bg-slate-950 p-2.5 sm:p-3 rounded-xl border border-slate-800 space-y-1.5">
+                                <div class="flex items-center space-x-2 text-xs text-slate-300">
+                                    <label class="w-12 font-semibold text-[11px]">Zoom</label>
+                                    <input type="range" id="cam-zoom" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-4">
                                 </div>
-                                <div id="pause-save-status-text" class="text-[10px] text-slate-400 truncate">Zuletzt: --:--:--</div>
-                            </div>
-                            <button onclick="manualSaveInPauseMenu()" id="pause-save-now-btn" class="px-3 py-2 bg-emerald-600/30 hover:bg-emerald-600/50 active:bg-emerald-600 text-emerald-400 font-bold text-xs rounded-lg border border-emerald-500/40 flex items-center space-x-1.5 transition">
-                                <i class="fa-solid fa-cloud-arrow-up"></i>
-                                <span id="pause-save-now-btn-text">JETZT SPEICHERN</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- RIGHT COLUMN: Steuerung & Audio -->
-                    <div class="space-y-3">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Steuerung & Audio</h3>
-                        <div class="mobile-only bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
-                            <div>
-                                <div class="text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-1.5"></i> Touch-Layout</div>
-                                <div id="pause-touch-swap-label" class="text-[10px] text-slate-400">Joystick links / Feuer rechts</div>
-                            </div>
-                            <button type="button" onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-lg border border-slate-700">
-                                Tauschen
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2.5">
-                            <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
-                                <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-1.5"></i> Musik</span>
-                                <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-4 h-4 accent-red-600 rounded">
-                            </label>
-                            <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-3 rounded-xl border border-slate-800">
-                                <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-1.5"></i> SFX</span>
-                                <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-4 h-4 accent-red-600 rounded">
-                            </label>
-                        </div>
-
-                        <!-- Taktische Extras Box in Pause Menu -->
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1.5">
-                                <div class="text-xs font-bold text-slate-200 flex items-center">
-                                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400 mr-1.5 text-xs"></i>
-                                    <span>Taktische Extras</span>
+                                <div class="flex items-center space-x-2 text-xs text-slate-300">
+                                    <label class="w-12 font-semibold text-[11px]">Winkel</label>
+                                    <input type="range" id="cam-angle" min="0" max="1" step="0.05" value="0.5" oninput="updateCameraPreview()" class="flex-1 accent-amber-500 h-4">
+                                    <span id="cam-angle-label" class="text-[10px] font-mono text-amber-400 w-16 text-right font-bold">Standard</span>
                                 </div>
-                                <div class="flex items-center space-x-1">
-                                    <button type="button" onclick="setAllExtras(true)" class="px-2 py-0.5 text-[9px] bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-emerald-400 rounded border border-emerald-500/30 font-bold transition" title="Alle drei Extras aktivieren">Alle An</button>
-                                    <button type="button" onclick="setAllExtras(false)" class="px-2 py-0.5 text-[9px] bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-rose-400 rounded border border-rose-500/30 font-bold transition" title="Alle drei Extras ausschalten">Alle Aus</button>
-                                </div>
+                                <div id="cam-preview-container" class="w-full h-16 sm:h-20 bg-black rounded border border-slate-700 overflow-hidden relative"></div>
                             </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <label class="flex items-center justify-between p-2 bg-slate-900/80 hover:bg-slate-900 rounded-lg border border-slate-800/80 cursor-pointer text-[11px] font-semibold text-cyan-300">
-                                    <span class="flex items-center truncate mr-1"><i class="fa-solid fa-crosshairs mr-1 text-[10px]"></i> AC-130</span>
-                                    <input type="checkbox" id="pause-extra-ac130" onchange="toggleExtra('ac130', this.checked)" class="w-3.5 h-3.5 accent-cyan-500 rounded cursor-pointer">
+
+                            <!-- Save options box directly under Camera Settings -->
+                            <div class="bg-slate-950 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex justify-between items-center space-x-2">
+                                <div class="overflow-hidden">
+                                    <div class="text-[11px] sm:text-xs font-bold text-slate-200 flex items-center">
+                                        <i class="fa-solid fa-floppy-disk text-emerald-400 mr-1.5"></i>
+                                        <span>Spielstand</span>
+                                    </div>
+                                    <div id="pause-save-status-text" class="text-[9px] sm:text-[10px] text-slate-400 truncate">Zuletzt: --:--:--</div>
+                                </div>
+                                <button onclick="manualSaveInPauseMenu()" id="pause-save-now-btn" class="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-emerald-600/30 hover:bg-emerald-600/50 active:bg-emerald-600 text-emerald-400 font-bold text-[10px] sm:text-xs rounded-lg border border-emerald-500/40 flex items-center space-x-1.5 transition">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span id="pause-save-now-btn-text">JETZT SPEICHERN</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN: Steuerung & Audio -->
+                        <div class="space-y-2.5">
+                            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Steuerung & Audio</h3>
+                            <div class="mobile-only bg-slate-950 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <div class="text-[11px] sm:text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-1.5"></i> Touch-Layout</div>
+                                    <div id="pause-touch-swap-label" class="text-[9px] sm:text-[10px] text-slate-400">Joystick links / Feuer rechts</div>
+                                </div>
+                                <button type="button" onclick="toggleTouchSwap()" id="touch-swap-btn" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-[11px] rounded-lg border border-slate-700">
+                                    Tauschen
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2 sm:p-2.5 rounded-xl border border-slate-800">
+                                    <span class="text-[11px] sm:text-xs font-semibold text-slate-300"><i class="fa-solid fa-music text-slate-400 mr-1"></i> Musik</span>
+                                    <input type="checkbox" id="pause-toggle-music" onchange="toggleAudio('music', this.checked)" class="w-3.5 h-3.5 accent-red-600 rounded">
                                 </label>
-                                <label class="flex items-center justify-between p-2 bg-slate-900/80 hover:bg-slate-900 rounded-lg border border-slate-800/80 cursor-pointer text-[11px] font-semibold text-amber-300">
-                                    <span class="flex items-center truncate mr-1"><i class="fa-solid fa-plane-up mr-1 text-[10px]"></i> Schlag</span>
-                                    <input type="checkbox" id="pause-extra-airstrike" onchange="toggleExtra('airstrike', this.checked)" class="w-3.5 h-3.5 accent-amber-500 rounded cursor-pointer">
+                                <label class="flex items-center justify-between cursor-pointer bg-slate-950 p-2 sm:p-2.5 rounded-xl border border-slate-800">
+                                    <span class="text-[11px] sm:text-xs font-semibold text-slate-300"><i class="fa-solid fa-volume-high text-slate-400 mr-1"></i> SFX</span>
+                                    <input type="checkbox" id="pause-toggle-sfx" onchange="toggleAudio('sfx', this.checked)" class="w-3.5 h-3.5 accent-red-600 rounded">
                                 </label>
-                                <label class="flex items-center justify-between p-2 bg-slate-900/80 hover:bg-slate-900 rounded-lg border border-slate-800/80 cursor-pointer text-[11px] font-semibold text-red-300">
-                                    <span class="flex items-center truncate mr-1"><i class="fa-solid fa-radiation mr-1 text-[10px]"></i> Nuke</span>
-                                    <input type="checkbox" id="pause-extra-nuke" onchange="toggleExtra('nuke', this.checked)" class="w-3.5 h-3.5 accent-red-500 rounded cursor-pointer">
-                                </label>
+                            </div>
+
+                            <!-- Taktische Extras Box in Pause Menu -->
+                            <div class="bg-slate-950 p-2.5 sm:p-3 rounded-xl border border-slate-800 space-y-1.5">
+                                <div class="flex justify-between items-center border-b border-slate-800/80 pb-1">
+                                    <div class="text-[11px] font-bold text-slate-200 flex items-center">
+                                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400 mr-1 text-[10px]"></i>
+                                        <span>Taktische Extras</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <button type="button" onclick="setAllExtras(true)" class="px-1.5 py-0.5 text-[8px] bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-emerald-400 rounded border border-emerald-500/30 font-bold transition" title="Alle drei Extras aktivieren">Alle An</button>
+                                        <button type="button" onclick="setAllExtras(false)" class="px-1.5 py-0.5 text-[8px] bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-rose-400 rounded border border-rose-500/30 font-bold transition" title="Alle drei Extras ausschalten">Alle Aus</button>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <label class="flex items-center justify-between p-1.5 bg-slate-900/80 hover:bg-slate-900 rounded-lg border border-slate-800/80 cursor-pointer text-[10px] font-semibold text-cyan-300">
+                                        <span class="truncate mr-1"><i class="fa-solid fa-crosshairs mr-0.5 text-[9px]"></i> AC-130</span>
+                                        <input type="checkbox" id="pause-extra-ac130" onchange="toggleExtra('ac130', this.checked)" class="w-3 h-3 accent-cyan-500 rounded cursor-pointer">
+                                    </label>
+                                    <label class="flex items-center justify-between p-1.5 bg-slate-900/80 hover:bg-slate-900 rounded-lg border border-slate-800/80 cursor-pointer text-[10px] font-semibold text-amber-300">
+                                        <span class="truncate mr-1"><i class="fa-solid fa-plane-up mr-0.5 text-[9px]"></i> Schlag</span>
+                                        <input type="checkbox" id="pause-extra-airstrike" onchange="toggleExtra('airstrike', this.checked)" class="w-3 h-3 accent-amber-500 rounded cursor-pointer">
+                                    </label>
+                                    <label class="flex items-center justify-between p-1.5 bg-slate-900/80 hover:bg-slate-900 rounded-lg border border-slate-800/80 cursor-pointer text-[10px] font-semibold text-red-300">
+                                        <span class="truncate mr-1"><i class="fa-solid fa-radiation mr-0.5 text-[9px]"></i> Nuke</span>
+                                        <input type="checkbox" id="pause-extra-nuke" onchange="toggleExtra('nuke', this.checked)" class="w-3 h-3 accent-red-500 rounded cursor-pointer">
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- FOOTER ACTIONS: HAUPTMENÜ, EVAKUIEREN & WEITER / SPIEL FORTSETZEN -->
-                <div class="flex items-center space-x-2 sm:space-x-3 pt-3 border-t border-slate-800">
-                    <button onclick="returnToMainMenu()" class="px-3 sm:px-4 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs sm:text-sm transition flex items-center space-x-1.5">
-                        <i class="fa-solid fa-house"></i>
+                <!-- FOOTER ACTIONS: HAUPTMENÜ, EVAKUIEREN & WEITER / SPIEL FORTSETZEN (Fixed at bottom) -->
+                <div class="flex items-center space-x-2 pt-2.5 border-t border-slate-800 flex-shrink-0">
+                    <button onclick="returnToMainMenu()" class="px-2.5 sm:px-4 py-2 sm:py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-[11px] sm:text-xs transition flex items-center space-x-1">
+                        <i class="fa-solid fa-house text-xs"></i>
                         <span>Hauptmenü</span>
                     </button>
-                    <button onclick="surrenderGame()" class="px-3 sm:px-4 py-3 bg-rose-950/70 hover:bg-rose-900 active:bg-rose-950 text-rose-300 font-bold rounded-xl text-xs sm:text-sm border border-rose-700/60 transition flex items-center space-x-1.5" title="Operation beenden und Highscore einloggen">
-                        <i class="fa-solid fa-person-walking-arrow-right"></i>
+                    <button onclick="surrenderGame()" class="px-2.5 sm:px-4 py-2 sm:py-2.5 bg-rose-950/70 hover:bg-rose-900 active:bg-rose-950 text-rose-300 font-bold rounded-xl text-[11px] sm:text-xs border border-rose-700/60 transition flex items-center space-x-1" title="Operation beenden und Highscore einloggen">
+                        <i class="fa-solid fa-person-walking-arrow-right text-xs"></i>
                         <span>Evakuieren</span>
                     </button>
-                    <button onclick="togglePauseModal()" class="flex-1 py-3 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl tracking-wider font-bold rounded-xl shadow-xl active:scale-98 transition flex items-center justify-center space-x-2">
-                        <i class="fa-solid fa-play text-lg"></i>
+                    <button onclick="togglePauseModal()" class="flex-1 py-2 sm:py-2.5 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-xl sm:text-2xl tracking-wider font-bold rounded-xl shadow-xl active:scale-98 transition flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-play text-sm"></i>
                         <span>SPIEL FORTSETZEN</span>
                     </button>
                 </div>
