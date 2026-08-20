@@ -509,9 +509,9 @@
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between select-none">
             <!-- Top HUD Bar: Safe-area aware, Scalable flex container with unbreakable left/center/right flow -->
-            <header class="w-full flex items-center justify-between p-1.5 sm:p-2.5 safe-area-padding-x safe-area-padding-top gap-1 sm:gap-2 pointer-events-none">
+            <header class="w-full flex items-start justify-between p-1.5 sm:p-2.5 safe-area-padding-x safe-area-padding-top gap-1 sm:gap-2 pointer-events-none">
                 <!-- Left Dock: Wave & Timer (No background, No border, clean pure HUD text) -->
-                <div id="hud-wave-container" class="flex-shrink-0 flex items-center space-x-2 sm:space-x-3 py-0.5 pointer-events-auto drop-shadow-md">
+                <div id="hud-wave-container" class="flex-shrink-0 flex items-center space-x-2 sm:space-x-3 h-8 sm:h-10 pointer-events-auto drop-shadow-md">
                     <div id="hud-timer" class="font-mono text-[11px] sm:text-xs text-slate-300 whitespace-nowrap">00:00</div>
                     <div class="h-3.5 w-px bg-slate-700/70"></div>
                     <div id="hud-zombies-left" class="font-teko text-lg sm:text-2xl font-bold text-white leading-none whitespace-nowrap">0 UNTOTE</div>
@@ -525,7 +525,7 @@
                 </div>
 
                 <!-- Center Dock: Tactical Abilities (Slim / thin profile matching wave & timer HUD line) -->
-                <div id="hud-tactical-skills" class="flex-1 min-w-0 max-w-fit flex items-center justify-center space-x-1 sm:space-x-1.5 pointer-events-auto px-0.5 sm:px-1">
+                <div id="hud-tactical-skills" class="flex-1 min-w-0 max-w-fit flex items-center justify-center space-x-1 sm:space-x-1.5 h-8 sm:h-10 pointer-events-auto px-0.5 sm:px-1">
                     <!-- AC-130 Gunship Button [V] -->
                     <button id="hud-ac130-btn" onclick="triggerAc130()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/85 hover:bg-slate-900 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 px-1.5 sm:px-2 py-0.5 rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 min-w-[50px] sm:min-w-[68px] max-w-[85px] flex-shrink cursor-pointer" title="AC-130 Gunship [V]">
                         <div id="ac130-progress-fill" class="absolute top-0 left-0 bottom-0 bg-cyan-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
@@ -564,7 +564,7 @@
                 </div>
 
                 <!-- Right Dock: Actions (ALWAYS visible, never pushed off-screen, flex-shrink-0) -->
-                <div class="flex-shrink-0 flex items-center space-x-1 sm:space-x-1.5 ml-auto pointer-events-auto">
+                <div class="flex-shrink-0 flex items-start space-x-1 sm:space-x-1.5 ml-auto pointer-events-auto">
                     <!-- Money Badge -->
                     <div class="bg-slate-950/80 border border-amber-500/60 px-1.5 sm:px-2.5 rounded-lg sm:rounded-xl backdrop-blur-sm shadow-lg flex items-center space-x-1 h-8 sm:h-10 text-amber-400 font-bold text-[11px] sm:text-sm font-mono">
                         <i class="fa-solid fa-coins text-amber-400 text-[10px] sm:text-xs"></i>
