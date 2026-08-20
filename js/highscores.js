@@ -12,12 +12,25 @@ function ensureDefaultHighscores() {
     }
 }
 
+let isSyncingHighscores = false;
+
 async function fetchOnlineHighscores() {
+    if (isSyncingHighscores) return;
+    isSyncingHighscores = true;
     ensureDefaultHighscores();
+
     const statusDot = document.getElementById('online-status-dot');
     const statusText = document.getElementById('online-status-text');
-    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping mr-1.5";
-    if (statusText) statusText.innerText = "SYNC...";
+    const loadingEl = document.getElementById('highscore-list-loading');
+    const emptyEl = document.getElementById('highscore-list-empty');
+    const tableWrapper = document.getElementById('highscore-list-table-wrapper');
+
+    if (statusDot) statusDot.className = "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400 animate-ping mr-1.5";
+    if (statusText) statusText.innerText = "LÄDT...";
+
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    if (emptyEl) emptyEl.classList.add('hidden');
+    if (tableWrapper) tableWrapper.classList.add('hidden');
 
     try {
         const controller = new AbortController();
@@ -56,17 +69,20 @@ async function fetchOnlineHighscores() {
                 }
                 Storage.save();
             }
-            if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
+            if (statusDot) statusDot.className = "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
             if (statusText) statusText.innerText = "ONLINE";
         } else {
             throw new Error("HTTP " + res.status);
         }
     } catch (e) {
         console.warn("Using local highscores:", e);
-        if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-slate-500 mr-1.5";
+        if (statusDot) statusDot.className = "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-500 mr-1.5";
         if (statusText) statusText.innerText = "LOKAL";
+    } finally {
+        isSyncingHighscores = false;
+        if (loadingEl) loadingEl.classList.add('hidden');
+        updateHighscoreUI();
     }
-    updateHighscoreUI();
 }
 
 function updateHighscoreUI() {
@@ -202,3 +218,13 @@ function clearHighscores() {
         updateHighscoreUI();
     }
 }
+
+// Auto-sync online highscores on initial start screen load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchOnlineHighscores();
+    });
+} else {
+    fetchOnlineHighscores();
+}
+

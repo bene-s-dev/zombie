@@ -827,6 +827,9 @@ updateTacticalExtrasHUD();
                 mainMenu.classList.remove('opacity-0', 'pointer-events-none', 'hidden');
             }
             updateMainMenuResumeButton();
+            if (typeof fetchOnlineHighscores === 'function') {
+                fetchOnlineHighscores();
+            }
         }
 
         function toggleShop(explicitState) {

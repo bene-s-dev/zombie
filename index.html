@@ -507,9 +507,15 @@
                             </div>
                         </h3>
                         
-                        <div class="flex-1 flex flex-col justify-center my-2 min-h-0">
+                        <div class="flex-1 flex flex-col justify-center my-2 min-h-0 relative">
+                            <!-- Lädt... Anzeige -->
+                            <div id="highscore-list-loading" class="flex flex-col items-center justify-center py-6 sm:py-10 text-xs text-amber-400">
+                                <i class="fa-solid fa-circle-notch fa-spin text-2xl sm:text-3xl mb-2 text-amber-400"></i>
+                                <span class="font-mono text-[11px] sm:text-xs tracking-wider uppercase font-bold text-slate-300">Synchronisiere Bestenliste...</span>
+                            </div>
+
                             <!-- Leere Liste -->
-                            <div id="highscore-list-empty" class="text-center py-6 sm:py-10 text-xs text-slate-500">
+                            <div id="highscore-list-empty" class="hidden text-center py-6 sm:py-10 text-xs text-slate-500">
                                 <i class="fa-solid fa-ghost text-2xl sm:text-3xl mb-1.5 text-slate-600 block"></i>
                                 Keine Einträge vorhanden.<br>Überlebe, um dich hier einzutragen!
                             </div>
