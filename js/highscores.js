@@ -1,13 +1,6 @@
 function ensureDefaultHighscores() {
-    if (!Storage.data.highscores || !Array.isArray(Storage.data.highscores) || Storage.data.highscores.length === 0) {
-        Storage.data.highscores = [
-            { name: "APEX_PREDATOR", time: 745, wave: 18, kills: 480, difficulty: "hard", date: "12.08" },
-            { name: "COMMANDER_MAX", time: 610, wave: 14, kills: 395, difficulty: "normal", date: "12.08" },
-            { name: "SHADOW_SLAYER", time: 480, wave: 11, kills: 270, difficulty: "normal", date: "11.08" },
-            { name: "ZOMBIE_HUNTER", time: 320, wave: 7, kills: 185, difficulty: "easy", date: "10.08" },
-            { name: "RECRUIT_99", time: 195, wave: 4, kills: 92, difficulty: "normal", date: "09.08" }
-        ];
-        Storage.data.highScoreSeconds = 745;
+    if (!Storage.data.highscores || !Array.isArray(Storage.data.highscores)) {
+        Storage.data.highscores = [];
         Storage.save();
     }
 }
@@ -51,24 +44,16 @@ async function fetchOnlineHighscores() {
                     date: item.date || ''
                 }));
 
-                const allScores = [...(Storage.data.highscores || []), ...onlineScores];
-                const uniqueScores = [];
-                const seen = new Set();
-                allScores.forEach(s => {
-                    const key = `${s.name}_${s.time}_${s.wave}_${s.kills}`;
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        uniqueScores.push(s);
-                    }
-                });
-
-                uniqueScores.sort((a, b) => b.wave !== a.wave ? b.wave - a.wave : (b.kills !== a.kills ? b.kills - a.kills : b.time - a.time));
-                Storage.data.highscores = uniqueScores.slice(0, 10);
+                onlineScores.sort((a, b) => b.wave !== a.wave ? b.wave - a.wave : (b.kills !== a.kills ? b.kills - a.kills : b.time - a.time));
+                Storage.data.highscores = onlineScores.slice(0, 10);
                 if (Storage.data.highscores.length > 0) {
                     Storage.data.highScoreSeconds = Math.max(Storage.data.highScoreSeconds || 0, Storage.data.highscores[0].time);
                 }
-                Storage.save();
+            } else {
+                Storage.data.highscores = [];
+                Storage.data.highScoreSeconds = 0;
             }
+            Storage.save();
             if (statusDot) statusDot.className = "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
             if (statusText) statusText.innerText = "ONLINE";
         } else {
@@ -88,9 +73,9 @@ async function fetchOnlineHighscores() {
 function updateHighscoreUI() {
     ensureDefaultHighscores();
     const list = Storage.data.highscores || [];
-    const maxWave = list.length > 0 ? list[0].wave : 1;
+    const maxWave = list.length > 0 ? list[0].wave : 0;
     const menuHighscoreEl = document.getElementById('menu-highscore');
-    if (menuHighscoreEl) menuHighscoreEl.innerText = `Welle ${maxWave}`;
+    if (menuHighscoreEl) menuHighscoreEl.innerText = maxWave > 0 ? `Welle ${maxWave}` : 'Kein Rekord';
     
     const tbody = document.getElementById('highscore-list-body');
     const emptyEl = document.getElementById('highscore-list-empty');
@@ -209,13 +194,25 @@ async function submitHighscore() {
     if (entryEl) entryEl.classList.add('hidden');
 }
 
-function clearHighscores() {
+async function clearHighscores() {
     if (confirm("Möchtest du wirklich alle Highscores zurücksetzen?")) {
         Storage.data.highscores = [];
         Storage.data.highScoreSeconds = 0;
         Storage.save();
-        ensureDefaultHighscores();
         updateHighscoreUI();
+
+        try {
+            await fetch(ONLINE_API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: "Zombie Game Highscores",
+                    data: { highscores: [] }
+                })
+            });
+        } catch (e) {
+            console.warn("Could not clear online scores:", e);
+        }
     }
 }
 

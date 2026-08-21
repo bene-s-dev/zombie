@@ -1791,7 +1791,7 @@
                         <div>• Reichweite: <strong class="text-sky-400">${ud.range}m</strong></div>
                         <div>• Cadence: <strong class="text-emerald-400">${ud.firerate}ms</strong></div>
                     `;
-                    const upgCost = Math.round(ud.totalInvested * 0.60);
+                    const upgCost = Math.round(ud.totalInvested * 0.80);
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
 
                     document.getElementById('inspect-upgrade-text').innerText = `Upgrade ($${upgCost})`;
@@ -1825,23 +1825,14 @@
                 const idx = this.walls.indexOf(wallGroup);
                 if (idx !== -1) {
                     this.createExplosion(wallGroup.position, 3.0, 0);
-                    this.scene.remove(wallGroup);
                     this.walls.splice(idx, 1);
+                    this.scene.remove(wallGroup);
                 }
             }
 
             killZombie(z) {
-                if (!z || !z.userData || z.userData.isDead) return;
-                z.userData.isDead = true;
-
-                if (this.lockedAimTarget === z) {
-                    this.lockedAimTarget = null;
-                }
-
                 const idx = this.zombies.indexOf(z);
-                if (idx !== -1) {
-                    this.zombies.splice(idx, 1);
-                }
+                if (idx !== -1) this.zombies.splice(idx, 1);
                 this.scene.remove(z);
 
                 if (z.userData.type === 'exploder' && !z.userData.hasExploded) {
@@ -1849,7 +1840,7 @@
                     this.createExplosion(z.position, 3.8, 85 * (z.userData.dmgMult || 1), 3.8, false, true);
                 }
                 const scavengerLvl = this.upgrades.scavenger || 0;
-                const scavengerMult = Math.pow(1.05, scavengerLvl);
+                const scavengerMult = Math.pow(1.035, scavengerLvl);
                 this.money += Math.round(z.userData.reward * scavengerMult);
                 this.totalKills++;
                 audio.playCoin();

@@ -363,8 +363,8 @@ updateTacticalExtrasHUD();
                             descText = `MAX-STUFE: K9-Alpha-Rudelführer (<b>${maxDmg} Dmg</b>, maximaler Sprungradius, Verlangsamung & Reißbiss).`;
                         }
                     } else if (key === 'scavenger') {
-                        const totalBonusPct = Math.round((Math.pow(1.05, currentLvl) - 1) * 100);
-                        descText = `Erhöht erbeutetes Geld pro Zombie um 5% multiplikativ pro Stufe (Bonus: +${totalBonusPct}%)`;
+                        const totalBonusPct = Math.round((Math.pow(1.035, currentLvl) - 1) * 100);
+                        descText = `Erhöht erbeutetes Geld pro Zombie um +3.5% multiplikativ pro Stufe (Aktueller Bonus: <b>+${totalBonusPct}%</b>, unbegrenzt)`;
                     }
 
                     const card = document.createElement('div');
@@ -590,7 +590,7 @@ updateTacticalExtrasHUD();
             const ud = struct.userData;
             if (!ud.isTurret) return;
 
-            const cost = Math.round(ud.totalInvested * 0.60);
+            const cost = Math.round(ud.totalInvested * 0.80);
             if (gameInstance.money >= cost) {
                 gameInstance.money -= cost;
                 applyTurretLevelUpgrades(struct, ud.level + 1);
@@ -930,7 +930,7 @@ updateTacticalExtrasHUD();
                 return Math.round(upg.costBase * Math.pow(1.6, Math.max(0, currentLvl - 1)));
             }
             if (key === 'scavenger') {
-                return Math.round(150 * Math.pow(1.08, currentLvl));
+                return Math.round(upg.costBase * Math.pow(1.45, currentLvl));
             }
             return Math.round(upg.costBase * Math.pow(1.6, currentLvl));
         }
