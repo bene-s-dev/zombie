@@ -19,7 +19,7 @@ const TURRET_TYPES = {
     drone_hangar: {
         id: 'drone_hangar',
         name: 'Reparatur-Drohnen-Hangar',
-        cost: 650,
+        cost: 1450,
         range: 60,
         damage: 0,
         firerate: 0,
@@ -27,9 +27,7 @@ const TURRET_TYPES = {
         maxHp: 99999,
         isIndestructible: true,
         isHangar: true,
-        droneLaunchCost: 160,
-        droneDuration: 60,
-        desc: 'Unzerstörbare High-Tech Drohnenstation. Sendet autonome Reparatur-Drohnengeschwader aus, die beschädigte Geschütztürme im Feld anfliegen und reparieren (1 Min. Einsatz).'
+        desc: 'Unzerstörbare High-Tech Drohnenstation. Sendet permanent ein Geschwader autonomer Reparatur-Drohnen aus, die kontinuierlich alle beschädigten Geschütztürme im Feld reparieren!'
     }
 };
 

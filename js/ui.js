@@ -277,11 +277,14 @@ updateTacticalExtrasHUD();
                 Object.values(TURRET_TYPES).forEach(t => {
                     const card = document.createElement('div');
                     card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
+                    const statsLine = t.isHangar 
+                        ? `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Permanent aktiv | Reparatur ~195 HP/s</div>`
+                        : `<div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m | Kadenz: ${t.firerate}ms</div>`;
                     card.innerHTML = `
                         <div>
                             <div class="font-bold text-white text-sm">${t.name}</div>
                             <div class="text-xs text-slate-400 mt-1">${t.desc}</div>
-                            <div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m</div>
+                            ${statsLine}
                         </div>
                         <button onclick="startBuildPlacement('turret', '${t.id}')" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px]">
                             <i class="fa-solid fa-hammer text-xs"></i>
@@ -536,8 +539,16 @@ updateTacticalExtrasHUD();
 
             for (let lvl = currentLvl + 1; lvl <= targetLevel; lvl++) {
                 ud.level = lvl;
-                ud.damage *= 1.35;
-                ud.range += 2;
+                // High-impact upgrades: +70% dmg, +16% firerate, +3.5m range, +45% HP
+                ud.damage = Math.round(ud.damage * 1.70);
+                ud.firerate = Math.max(70, Math.round(ud.firerate * 0.84));
+                ud.range += 3.5;
+                if (ud.splashRadius) {
+                    ud.splashRadius = Math.round((ud.splashRadius * 1.25) * 10) / 10;
+                }
+                const hpBonus = Math.round(ud.maxHp * 0.45);
+                ud.maxHp += hpBonus;
+                ud.hp += hpBonus;
 
                 if (ud.head) {
                     ud.head.scale.multiplyScalar(1.06);
@@ -573,36 +584,13 @@ updateTacticalExtrasHUD();
             }
         }
 
-        function launchRepairDrones() {
-            if (!gameInstance || !gameInstance.selectedStructure) return;
-            const struct = gameInstance.selectedStructure;
-            const ud = struct.userData;
-            if (!ud.isHangar) return;
-
-            const cost = TURRET_TYPES.drone_hangar.droneLaunchCost || 160;
-            if (ud.dronesActive) {
-                showWarningToast("Drohnengeschwader ist bereits im Einsatz!");
-                return;
-            }
-            if (gameInstance.money < cost) {
-                showWarningToast(`Zu wenig Geld! Benötigt: $${cost}`);
-                return;
-            }
-
-            gameInstance.money -= cost;
-            gameInstance.launchRepairDrones(struct);
-            gameInstance.syncHUD();
-            gameInstance.inspectStructure(struct);
-            showPurchaseToast("🛸 Reparatur-Drohnen gestartet! (1 Min. Einsatz)");
-        }
-
         function upgradeSelectedStructure() {
             if (!gameInstance || !gameInstance.selectedStructure) return;
             const struct = gameInstance.selectedStructure;
             const ud = struct.userData;
             if (!ud.isTurret) return;
 
-            const cost = Math.round(ud.totalInvested * 0.75);
+            const cost = Math.round(ud.totalInvested * 0.60);
             if (gameInstance.money >= cost) {
                 gameInstance.money -= cost;
                 applyTurretLevelUpgrades(struct, ud.level + 1);
@@ -610,6 +598,7 @@ updateTacticalExtrasHUD();
 
                 gameInstance.syncHUD();
                 gameInstance.inspectStructure(gameInstance.selectedStructure);
+                showPurchaseToast(`⚡ Turm auf Level ${ud.level} aufgewertet!`);
             }
         }
 
@@ -639,6 +628,13 @@ updateTacticalExtrasHUD();
 
             const refund = Math.round(ud.totalInvested * 0.7);
             gameInstance.money += refund;
+
+            if (ud.activeDronesList && Array.isArray(ud.activeDronesList)) {
+                ud.activeDronesList.forEach(d => {
+                    gameInstance.scene.remove(d);
+                });
+                ud.activeDronesList = [];
+            }
 
             if (ud.isTurret) {
                 const idx = gameInstance.turrets.indexOf(struct);

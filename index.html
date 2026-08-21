@@ -327,18 +327,23 @@
         </div>
 
         <!-- ================= PLACEMENT / BUILD MODE OVERLAY ================= -->
-        <div id="placement-hud" class="hidden absolute top-3 left-1/2 transform -translate-x-1/2 z-50 bg-slate-950/90 border border-amber-500/60 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-2xl flex items-center space-x-2 pointer-events-auto text-xs">
-            <div class="flex items-center space-x-1">
-                <i class="fa-solid fa-hammer text-amber-400"></i>
-                <span class="font-teko text-base font-bold text-amber-400 tracking-wider">BAU: <span id="placement-item-name" class="text-white">TURM</span></span>
+        <div id="placement-hud" class="hidden absolute top-3 left-1/2 transform -translate-x-1/2 z-50 bg-slate-950/95 border border-amber-500/80 backdrop-blur-md px-3 sm:px-4 py-2 rounded-2xl shadow-2xl flex items-center space-x-2 sm:space-x-3 pointer-events-auto text-xs">
+            <div class="flex items-center space-x-1.5 border-r border-slate-800 pr-2.5">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                    <i class="fa-solid fa-pause mr-1 text-[9px]"></i> PAUSIERT
+                </span>
+                <span class="font-teko text-lg sm:text-xl font-bold text-amber-400 tracking-wider">BAU: <span id="placement-item-name" class="text-white">TURM</span></span>
             </div>
-            <button type="button" onclick="rotatePlacement()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
+            <div class="hidden md:flex items-center text-[10px] text-slate-400 font-mono">
+                <i class="fa-solid fa-link text-emerald-400 mr-1"></i> Mehrfachbau aktiv
+            </div>
+            <button type="button" onclick="rotatePlacement()" class="px-3 py-1.5 sm:py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center space-x-1 shadow-md shadow-amber-950/40">
                 <i class="fa-solid fa-rotate-right"></i>
-                <span>Drehen</span>
+                <span>Drehen (R)</span>
             </button>
-            <button type="button" onclick="cancelPlacement()" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1">
+            <button type="button" onclick="cancelPlacement()" class="px-3 py-1.5 sm:py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold rounded-xl text-xs transition flex items-center space-x-1 shadow-md shadow-rose-950/40">
                 <i class="fa-solid fa-xmark"></i>
-                <span>Abbrechen</span>
+                <span>Fertig (ESC)</span>
             </button>
         </div>
 
@@ -367,12 +372,10 @@
 
                 <!-- HANGAR DRONE LAUNCH ACTION -->
                 <div id="inspect-hangar-box" class="hidden space-y-2 pt-1">
-                    <button type="button" id="inspect-drone-launch-btn" onclick="launchRepairDrones()" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-95 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/50">
-                        <i class="fa-solid fa-paper-plane text-emerald-300"></i>
-                        <span id="inspect-drone-launch-text">Reparatur-Drohnen starten (60s) - $160</span>
-                    </button>
-                    <div id="inspect-drone-status" class="hidden text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800/80 p-2.5 rounded-xl text-center font-mono">
-                        <i class="fa-solid fa-circle-notch fa-spin mr-1 text-emerald-300"></i> Drohnengeschwader im Einsatz: <span id="inspect-drone-timer" class="font-bold text-white">60s</span>
+                    <div class="text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 p-3 rounded-xl text-center font-mono flex items-center justify-center space-x-2 shadow-inner">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <i class="fa-solid fa-satellite-dish text-emerald-300"></i>
+                        <span class="font-bold text-emerald-200">Drohnengeschwader permanent im Einsatz</span>
                     </div>
                 </div>
 

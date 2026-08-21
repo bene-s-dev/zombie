@@ -47,7 +47,7 @@
                 this.baseLives = 3;
                 this.isBaseInvulnerable = false;
                 this.currentWave = 1;
-                this.zombiesLeftToSpawn = 12;
+                this.zombiesLeftToSpawn = 20;
                 this.gameSeconds = 0;
                 this.totalKills = 0;
 
@@ -637,15 +637,27 @@
 
                 this.zombiesLeftToSpawn--;
 
-                const angle = Math.random() * Math.PI * 2;
-                const minDist = Math.max(18, 72 - (this.currentWave - 1) * 3.5);
-                const maxDist = Math.max(32, 80 - (this.currentWave - 1) * 2.5);
-                const distance = minDist + Math.random() * (maxDist - minDist);
-                const x = Math.cos(angle) * distance;
-                const z = Math.sin(angle) * distance;
+                // Spawn strictly at the outer perimeter / edges of the 160x160 map (never inside)
+                const side = Math.floor(Math.random() * 4); // 0: North, 1: South, 2: West, 3: East
+                const edgeDistance = 74 + Math.random() * 4; // 74 to 78m
+                const edgeOffset = (Math.random() - 0.5) * 150; // -75 to +75m along the perimeter
+                let x, z;
+                if (side === 0) {
+                    x = edgeOffset;
+                    z = -edgeDistance;
+                } else if (side === 1) {
+                    x = edgeOffset;
+                    z = edgeDistance;
+                } else if (side === 2) {
+                    x = -edgeDistance;
+                    z = edgeOffset;
+                } else {
+                    x = edgeDistance;
+                    z = edgeOffset;
+                }
 
-                const waveHpScale = Math.pow(1.20, this.currentWave - 1);
-                const waveDmgScale = Math.pow(1.12, this.currentWave - 1);
+                const waveHpScale = Math.pow(1.13, this.currentWave - 1);
+                const waveDmgScale = Math.pow(1.08, this.currentWave - 1);
 
                 const isBossWave = (this.currentWave % 7 === 0) && (this.zombiesLeftToSpawn === 0);
 
@@ -1260,7 +1272,7 @@
                     return;
                 }
 
-                const { kind, specId, cost } = this.pendingPlacement;
+                const { kind, specId, cost, spec } = this.pendingPlacement;
                 if (this.money < cost) {
                     if (typeof showPurchaseToast === 'function') showPurchaseToast('❌ Nicht genug Geld!');
                     return;
@@ -1274,10 +1286,8 @@
 
                 if (kind === 'turret') {
                     this.buildTurretAt(specId, x, z, rot);
-                    if (typeof showPurchaseToast === 'function') showPurchaseToast(`${TURRET_TYPES[specId]?.name || 'Turm'} platziert!`);
                 } else {
                     this.buildWallAt(specId, x, z, rot);
-                    if (typeof showPurchaseToast === 'function') showPurchaseToast(`${WALL_TYPES[specId]?.name || 'Wall'} platziert!`);
                 }
 
                 if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') {
@@ -1286,8 +1296,21 @@
                 this.syncHUD();
                 this.saveGameSession();
 
-                // Finish placement mode immediately and resume gameplay smoothly
-                this.cancelPlacement();
+                // Chained building: If player has enough funds for another structure of the same type, keep placement active
+                if (this.money >= cost) {
+                    if (typeof showPurchaseToast === 'function') {
+                        showPurchaseToast(`✅ ${spec?.name || 'Struktur'} gebaut! Weiterbauen oder ESC zum Beenden.`);
+                    }
+                    if (this.pointerWorldPos) {
+                        this.updateGhostPosition(this.pointerWorldPos.x, this.pointerWorldPos.z);
+                    }
+                    this.isPaused = true;
+                } else {
+                    if (typeof showPurchaseToast === 'function') {
+                        showPurchaseToast(`✅ ${spec?.name || 'Struktur'} gebaut!`);
+                    }
+                    this.cancelPlacement();
+                }
             }
 
             cancelPlacement() {
@@ -1299,7 +1322,11 @@
                 }
                 const hud = document.getElementById('placement-hud');
                 if (hud) hud.classList.add('hidden');
-                this.isPaused = false;
+                if (typeof isShopOpen !== 'undefined' && typeof isPauseModalOpen !== 'undefined') {
+                    this.isPaused = isShopOpen || isPauseModalOpen || (this.selectedStructure !== null && this.selectedStructure !== undefined);
+                } else {
+                    this.isPaused = false;
+                }
             }
 
             buildTurretAt(turretTypeId, x, z, rot = 0) {
@@ -1398,13 +1425,14 @@
                         maxHp: 99999,
                         level: 1,
                         totalInvested: spec.cost,
-                        dronesActive: false,
+                        dronesActive: true,
                         droneTimer: 0,
                         activeDronesList: [],
                         lastFired: 0
                     };
                     this.turrets.push(turretGroup);
                     this.scene.add(turretGroup);
+                    this.launchRepairDrones(turretGroup);
                     return turretGroup;
                 }
 
@@ -1568,7 +1596,6 @@
                 if (!hangarTurret || !hangarTurret.userData) return;
                 const ud = hangarTurret.userData;
                 ud.dronesActive = true;
-                ud.droneTimer = (TURRET_TYPES.drone_hangar && TURRET_TYPES.drone_hangar.droneDuration) || 60;
                 if (ud.dockedDrones) ud.dockedDrones.visible = false;
 
                 // Create 3 flying repair drones if not already present
@@ -1642,105 +1669,81 @@
                             ud.holoMesh.rotation.y += dt * 1.5;
                         }
 
+                        // Hangar drones are permanently active
                         if (ud.dronesActive) {
-                            ud.droneTimer = Math.max(0, ud.droneTimer - dt);
+                            if (ud.dockedDrones) ud.dockedDrones.visible = false;
 
-                            // Live UI countdown update if currently inspected
-                            if (this.selectedStructure === t) {
-                                const timerEl = document.getElementById('inspect-drone-timer');
-                                if (timerEl) timerEl.innerText = `${Math.ceil(ud.droneTimer)}s`;
-                            }
+                            // Find damaged turrets
+                            const damagedTurrets = this.turrets.filter(turret => 
+                                turret !== t && !turret.userData.isIndestructible && turret.userData.hp < turret.userData.maxHp
+                            );
 
-                            if (ud.droneTimer <= 0) {
-                                // 1 Minute expired: Drones return & dock
-                                ud.dronesActive = false;
-                                if (ud.activeDronesList) {
-                                    ud.activeDronesList.forEach(d => {
-                                        this.scene.remove(d);
-                                    });
-                                    ud.activeDronesList = [];
-                                }
-                                if (ud.dockedDrones) ud.dockedDrones.visible = true;
+                            if (ud.activeDronesList) {
+                                ud.activeDronesList.forEach((drone, idx) => {
+                                    // Spin rotors
+                                    if (drone.userData.rotors) {
+                                        drone.userData.rotors.forEach(r => { r.rotation.y += 0.4; });
+                                    }
 
-                                if (this.selectedStructure === t) {
-                                    this.inspectStructure(t);
-                                }
-                                if (typeof showPurchaseToast === 'function') {
-                                    showPurchaseToast('🛸 Reparatur-Drohnen zum Hangar zurückgekehrt!');
-                                }
-                            } else {
-                                // Find damaged turrets
-                                const damagedTurrets = this.turrets.filter(turret => 
-                                    turret !== t && !turret.userData.isIndestructible && turret.userData.hp < turret.userData.maxHp
-                                );
+                                    let targetTurret = null;
+                                    if (damagedTurrets.length > 0) {
+                                        targetTurret = damagedTurrets[idx % damagedTurrets.length];
+                                    }
 
-                                if (ud.activeDronesList) {
-                                    ud.activeDronesList.forEach((drone, idx) => {
-                                        // Spin rotors
-                                        if (drone.userData.rotors) {
-                                            drone.userData.rotors.forEach(r => { r.rotation.y += 0.4; });
-                                        }
+                                    if (targetTurret) {
+                                        // Hover target position above turret with offset per drone
+                                        const offAng = (idx * Math.PI * 2) / 3;
+                                        const targetX = targetTurret.position.x + Math.sin(offAng) * 0.8;
+                                        const targetZ = targetTurret.position.z + Math.cos(offAng) * 0.8;
+                                        const targetY = 3.2 + Math.sin(now * 0.005 + idx) * 0.2;
 
-                                        let targetTurret = null;
-                                        if (damagedTurrets.length > 0) {
-                                            targetTurret = damagedTurrets[idx % damagedTurrets.length];
-                                        }
+                                        drone.position.x += (targetX - drone.position.x) * (dt * 3.5);
+                                        drone.position.z += (targetZ - drone.position.z) * (dt * 3.5);
+                                        drone.position.y += (targetY - drone.position.y) * (dt * 3.5);
 
-                                        if (targetTurret) {
-                                            // Hover target position above turret with offset per drone
-                                            const offAng = (idx * Math.PI * 2) / 3;
-                                            const targetX = targetTurret.position.x + Math.sin(offAng) * 0.8;
-                                            const targetZ = targetTurret.position.z + Math.cos(offAng) * 0.8;
-                                            const targetY = 3.2 + Math.sin(now * 0.005 + idx) * 0.2;
+                                        // Check distance for repair
+                                        const distToTarget = Math.hypot(targetTurret.position.x - drone.position.x, targetTurret.position.z - drone.position.z);
+                                        if (distToTarget < 3.2) {
+                                            // Repair turret
+                                            targetTurret.userData.hp = Math.min(targetTurret.userData.maxHp, targetTurret.userData.hp + (65 * dt));
+                                            this.updateTurretHpBar(targetTurret);
 
-                                            drone.position.x += (targetX - drone.position.x) * (dt * 3.5);
-                                            drone.position.z += (targetZ - drone.position.z) * (dt * 3.5);
-                                            drone.position.y += (targetY - drone.position.y) * (dt * 3.5);
+                                            // Laser beam to turret
+                                            if (drone.userData.laserLine) {
+                                                drone.userData.laserLine.visible = true;
+                                                const localTarget = new THREE.Vector3(
+                                                    targetTurret.position.x - drone.position.x,
+                                                    (targetTurret.position.y + 1.2) - drone.position.y,
+                                                    targetTurret.position.z - drone.position.z
+                                                );
+                                                drone.userData.laserLine.geometry.setFromPoints([
+                                                    new THREE.Vector3(0, 0, 0),
+                                                    localTarget
+                                                ]);
+                                            }
 
-                                            // Check distance for repair
-                                            const distToTarget = Math.hypot(targetTurret.position.x - drone.position.x, targetTurret.position.z - drone.position.z);
-                                            if (distToTarget < 3.2) {
-                                                // Repair turret
-                                                targetTurret.userData.hp = Math.min(targetTurret.userData.maxHp, targetTurret.userData.hp + (50 * dt));
-                                                this.updateTurretHpBar(targetTurret);
-
-                                                // Laser beam to turret
-                                                if (drone.userData.laserLine) {
-                                                    drone.userData.laserLine.visible = true;
-                                                    const localTarget = new THREE.Vector3(
-                                                        targetTurret.position.x - drone.position.x,
-                                                        (targetTurret.position.y + 1.2) - drone.position.y,
-                                                        targetTurret.position.z - drone.position.z
-                                                    );
-                                                    drone.userData.laserLine.geometry.setFromPoints([
-                                                        new THREE.Vector3(0, 0, 0),
-                                                        localTarget
-                                                    ]);
-                                                }
-
-                                                // Spawn green sparks
-                                                if (now - (drone.userData.lastSparks || 0) > 180) {
-                                                    drone.userData.lastSparks = now;
-                                                    this.createBloodSparks(targetTurret.position, 0x22c55e);
-                                                }
-                                            } else {
-                                                if (drone.userData.laserLine) drone.userData.laserLine.visible = false;
+                                            // Spawn green sparks
+                                            if (now - (drone.userData.lastSparks || 0) > 180) {
+                                                drone.userData.lastSparks = now;
+                                                this.createBloodSparks(targetTurret.position, 0x22c55e);
                                             }
                                         } else {
-                                            // No damaged turrets: orbit above hangar
                                             if (drone.userData.laserLine) drone.userData.laserLine.visible = false;
-                                            drone.userData.orbitAngle += dt * 1.8;
-                                            const orbitR = 2.4;
-                                            const targetX = t.position.x + Math.sin(drone.userData.orbitAngle) * orbitR;
-                                            const targetZ = t.position.z + Math.cos(drone.userData.orbitAngle) * orbitR;
-                                            const targetY = 3.6 + Math.sin(now * 0.004 + idx) * 0.3;
-
-                                            drone.position.x += (targetX - drone.position.x) * (dt * 3.0);
-                                            drone.position.z += (targetZ - drone.position.z) * (dt * 3.0);
-                                            drone.position.y += (targetY - drone.position.y) * (dt * 3.0);
                                         }
-                                    });
-                                }
+                                    } else {
+                                        // No damaged turrets: orbit above hangar
+                                        if (drone.userData.laserLine) drone.userData.laserLine.visible = false;
+                                        drone.userData.orbitAngle += dt * 1.8;
+                                        const orbitR = 2.4;
+                                        const targetX = t.position.x + Math.sin(drone.userData.orbitAngle) * orbitR;
+                                        const targetZ = t.position.z + Math.cos(drone.userData.orbitAngle) * orbitR;
+                                        const targetY = 3.6 + Math.sin(now * 0.004 + idx) * 0.3;
+
+                                        drone.position.x += (targetX - drone.position.x) * (dt * 3.0);
+                                        drone.position.z += (targetZ - drone.position.z) * (dt * 3.0);
+                                        drone.position.y += (targetY - drone.position.y) * (dt * 3.0);
+                                    }
+                                });
                             }
                         }
                     }
@@ -1767,30 +1770,14 @@
                     subtitle.innerText = `Unzerstörbare Drohnenstation`;
                     stats.innerHTML = `
                         <div>• Drohnengeschwader: <strong class="text-emerald-400">3x Autonome Reparaturdrohnen</strong></div>
-                        <div>• Reparatur-Fokus: <strong class="text-sky-400">Beschädigte Geschütztürme</strong></div>
-                        <div>• Reparaturleistung: <strong class="text-emerald-400">~150 HP / Sekunde</strong></div>
-                        <div>• Einsatzdauer: <strong class="text-amber-400">60 Sekunden pro Mission</strong></div>
+                        <div>• Status: <strong class="text-emerald-400">Dauerhaft Aktiv</strong></div>
+                        <div>• Reparatur-Fokus: <strong class="text-sky-400">Alle beschädigten Geschütztürme</strong></div>
+                        <div>• Reparaturleistung: <strong class="text-emerald-400">~195 HP / Sekunde</strong></div>
                         <div>• Panzerung: <strong class="text-teal-300">100% (UNZERSTÖRBAR)</strong></div>
                     `;
 
                     if (hangarBox) {
                         hangarBox.classList.remove('hidden');
-                        const launchBtn = document.getElementById('inspect-drone-launch-btn');
-                        const statusBox = document.getElementById('inspect-drone-status');
-                        const timerEl = document.getElementById('inspect-drone-timer');
-                        const launchCost = (TURRET_TYPES.drone_hangar && TURRET_TYPES.drone_hangar.droneLaunchCost) || 160;
-
-                        if (ud.dronesActive) {
-                            if (launchBtn) launchBtn.classList.add('hidden');
-                            if (statusBox) statusBox.classList.remove('hidden');
-                            if (timerEl) timerEl.innerText = `${Math.ceil(ud.droneTimer)}s`;
-                        } else {
-                            if (launchBtn) {
-                                launchBtn.classList.remove('hidden');
-                                document.getElementById('inspect-drone-launch-text').innerText = `Reparatur-Drohnen starten (60s) - $${launchCost}`;
-                            }
-                            if (statusBox) statusBox.classList.add('hidden');
-                        }
                     }
                     if (stdActions) stdActions.classList.add('hidden');
                 } else if (ud.isTurret) {
@@ -1804,7 +1791,7 @@
                         <div>• Reichweite: <strong class="text-sky-400">${ud.range}m</strong></div>
                         <div>• Cadence: <strong class="text-emerald-400">${ud.firerate}ms</strong></div>
                     `;
-                    const upgCost = Math.round(ud.totalInvested * 0.75);
+                    const upgCost = Math.round(ud.totalInvested * 0.60);
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
 
                     document.getElementById('inspect-upgrade-text').innerText = `Upgrade ($${upgCost})`;
@@ -5326,7 +5313,7 @@
                 setTimeout(() => {
                     if (this.isGameOver) return;
                     this.currentWave++;
-                    this.zombiesLeftToSpawn = Math.round(12 + (this.currentWave - 1) * 6);
+                    this.zombiesLeftToSpawn = Math.round(20 + (this.currentWave - 1) * 4.5);
                     this.money += 180 + (this.currentWave * 40);
                     this.isWaveTransitioning = false;
                     this.updateSpawnInterval();
@@ -5348,7 +5335,7 @@
                 this.activeSimultaneousWaves = activeCount + 1;
                 this.currentWave++;
 
-                const newZombiesCount = Math.round(12 + (this.currentWave - 1) * 6);
+                const newZombiesCount = Math.round(20 + (this.currentWave - 1) * 4.5);
                 this.zombiesLeftToSpawn += newZombiesCount;
 
                 const bonusMoney = 180 + (this.currentWave * 40);
@@ -5803,7 +5790,7 @@
 
             updateSpawnInterval() {
                 if (this.spawnTimer) clearInterval(this.spawnTimer);
-                const baseInterval = Math.max(380, 1400 - (this.currentWave - 1) * 160);
+                const baseInterval = Math.max(420, 850 - (this.currentWave - 1) * 35);
                 this.spawnTimer = setInterval(() => this.spawnZombie(), baseInterval);
             }
         }
