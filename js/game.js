@@ -1929,7 +1929,8 @@
 
                 if (this.currentWeapon.isExplosive) audio.playRocket();
                 else if (this.currentWeapon.id === 'shotgun') audio.playShotgun();
-                else if (this.currentWeapon.id === 'rifle' || this.currentWeapon.id === 'minigun') audio.playRifle();
+                else if (this.currentWeapon.id === 'minigun' && audio.playMinigunShot) audio.playMinigunShot();
+                else if (this.currentWeapon.id === 'rifle') audio.playRifle();
                 else audio.playPistol();
             }
 
