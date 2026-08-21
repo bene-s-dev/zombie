@@ -61,6 +61,12 @@
                 this.ac130AimPos = new THREE.Vector3(0, 0, 0);
                 this.ac130Projectiles = [];
 
+                // Day / Night Cycle State (90s full cycle: Day -> Dusk -> Night -> Dawn)
+                this.dayNightTime = 22; // Starts in daylight
+                this.dayNightCycleDuration = 90;
+                this._lastDayNightPhase = null;
+                this._skyColor = new THREE.Color();
+
                 this.unlockedWeapons = ['pistol'];
                 this.weaponLevels = { pistol: 1, smg: 1, shotgun: 1, rifle: 1, sniper: 1, rpg: 1, minigun: 1, plasma: 1 };
                 this.currentWeapon = WEAPONS.pistol;
@@ -1664,6 +1670,147 @@
 
                         this.scene.add(droneGroup);
                         ud.activeDronesList.push(droneGroup);
+                    }
+                }
+            }
+
+            updateDayNightCycle(dt) {
+                if (this.isPaused || this.isGameOver) return;
+                this.dayNightTime = ((this.dayNightTime || 0) + dt) % (this.dayNightCycleDuration || 90);
+
+                const progress = this.dayNightTime / (this.dayNightCycleDuration || 90); // 0.0 to 1.0
+                const sunAngle = progress * Math.PI * 2; // 0 to 2PI
+
+                // Normalized Day factor: 0.0 = Deep Midnight, 1.0 = High Noon
+                const rawFactor = Math.sin(sunAngle); // -1 (night) to +1 (day)
+                const dayFactor = (rawFactor + 1) / 2; // 0.0 (night) to 1.0 (day)
+
+                // Determine Phase Text & Icon for HUD
+                let phaseText = 'TAG';
+                let phaseIcon = 'fa-sun text-amber-300';
+                let phaseTextColor = 'text-amber-300';
+
+                if (progress < 0.15) {
+                    phaseText = 'DÄMMERUNG';
+                    phaseIcon = 'fa-cloud-sun text-amber-400 animate-pulse';
+                    phaseTextColor = 'text-amber-400';
+                } else if (progress < 0.45) {
+                    phaseText = 'TAG';
+                    phaseIcon = 'fa-sun text-amber-300';
+                    phaseTextColor = 'text-amber-300';
+                } else if (progress < 0.60) {
+                    phaseText = 'DÄMMERUNG';
+                    phaseIcon = 'fa-cloud-moon text-orange-400 animate-pulse';
+                    phaseTextColor = 'text-orange-400';
+                } else {
+                    phaseText = 'NACHT';
+                    phaseIcon = 'fa-moon text-indigo-300';
+                    phaseTextColor = 'text-indigo-300';
+                }
+
+                if (this._lastDayNightPhase !== phaseText) {
+                    this._lastDayNightPhase = phaseText;
+                    const iconEl = document.getElementById('hud-daynight-icon');
+                    const textEl = document.getElementById('hud-daynight-text');
+                    if (iconEl && textEl) {
+                        iconEl.className = `fa-solid ${phaseIcon}`;
+                        textEl.innerText = phaseText;
+                        textEl.className = phaseTextColor;
+                    }
+                }
+
+                // 1. FLASHLIGHT (TASCHENLAMPE):
+                // Tagsüber AUS (wenn dayFactor > 0.40). Nachts / Dunkelheit AN mit taktischem Lichtkegel.
+                if (this.flashlight) {
+                    if (dayFactor > 0.40) {
+                        this.flashlight.visible = false;
+                        this.flashlight.intensity = 0;
+                    } else {
+                        this.flashlight.visible = true;
+                        const nightIntensity = 1.0 - (dayFactor / 0.40);
+                        this.flashlight.intensity = 2.8 * nightIntensity;
+                    }
+                }
+
+                // 2. DIRECTIONAL LIGHT (SONNEN- & MONDBEWEGUNG):
+                if (this.dirLight) {
+                    const sunX = Math.cos(sunAngle) * 55;
+                    const sunY = Math.max(15, Math.sin(sunAngle) * 60 + 20);
+                    const sunZ = Math.sin(sunAngle * 0.7) * 40;
+                    this.dirLight.position.set(sunX, sunY, sunZ);
+
+                    if (dayFactor > 0.40) {
+                        const dayNorm = (dayFactor - 0.40) / 0.60;
+                        const r = 0.96 + 0.04 * dayNorm;
+                        const g = 0.65 + 0.33 * dayNorm;
+                        const b = 0.20 + 0.72 * dayNorm;
+                        this.dirLight.color.setRGB(r, g, b);
+                        this.dirLight.intensity = (this.isMobile ? 2.1 : 1.8) * (0.8 + 0.5 * dayNorm);
+                    } else {
+                        const nightNorm = 1.0 - (dayFactor / 0.40);
+                        const r = 0.40 + 0.18 * nightNorm;
+                        const g = 0.60 + 0.20 * nightNorm;
+                        const b = 0.95 + 0.05 * nightNorm;
+                        this.dirLight.color.setRGB(r, g, b);
+                        this.dirLight.intensity = 0.35 + 0.45 * nightNorm;
+                    }
+                }
+
+                // 3. AMBIENT LIGHT:
+                if (this.ambientLight) {
+                    if (dayFactor > 0.40) {
+                        const dayNorm = (dayFactor - 0.40) / 0.60;
+                        const r = 0.40 + 0.32 * dayNorm;
+                        const g = 0.46 + 0.32 * dayNorm;
+                        const b = 0.58 + 0.30 * dayNorm;
+                        this.ambientLight.color.setRGB(r, g, b);
+                        this.ambientLight.intensity = (this.isMobile ? 2.0 : 1.7) * (0.9 + 0.35 * dayNorm);
+                    } else {
+                        const nightNorm = 1.0 - (dayFactor / 0.40);
+                        const r = 0.18 - 0.07 * nightNorm;
+                        const g = 0.22 - 0.07 * nightNorm;
+                        const b = 0.35 - 0.08 * nightNorm;
+                        this.ambientLight.color.setRGB(r, g, b);
+                        this.ambientLight.intensity = this.isMobile ? (1.3 - 0.3 * nightNorm) : (1.1 - 0.3 * nightNorm);
+                    }
+                }
+
+                // 4. SCENE BACKGROUND & FOG:
+                if (this.scene) {
+                    if (!this._skyColor) this._skyColor = new THREE.Color();
+
+                    if (dayFactor > 0.50) {
+                        const dNorm = (dayFactor - 0.50) / 0.50;
+                        this._skyColor.setRGB(
+                            0.08 + 0.14 * dNorm,
+                            0.16 + 0.28 * dNorm,
+                            0.28 + 0.42 * dNorm
+                        );
+                    } else if (dayFactor > 0.25) {
+                        const sNorm = (dayFactor - 0.25) / 0.25;
+                        this._skyColor.setRGB(
+                            0.22 + 0.18 * sNorm,
+                            0.08 + 0.12 * sNorm,
+                            0.16 + 0.15 * sNorm
+                        );
+                    } else {
+                        const nNorm = 1.0 - (dayFactor / 0.25);
+                        this._skyColor.setRGB(
+                            0.024 - 0.01 * nNorm,
+                            0.04 - 0.015 * nNorm,
+                            0.08 - 0.02 * nNorm
+                        );
+                    }
+
+                    if (this.scene.background && this.scene.background.isColor) {
+                        this.scene.background.copy(this._skyColor);
+                    } else {
+                        this.scene.background = this._skyColor.clone();
+                    }
+
+                    if (this.scene.fog) {
+                        this.scene.fog.color.copy(this._skyColor);
+                        this.scene.fog.density = dayFactor > 0.40 ? 0.005 : 0.008;
                     }
                 }
             }
@@ -4318,6 +4465,7 @@
                     if (this.nukeSpawnBlockTimer > 0) {
                         this.nukeSpawnBlockTimer = Math.max(0, this.nukeSpawnBlockTimer - dt);
                     }
+                    this.updateDayNightCycle(dt);
                     this.updateDrone(dt);
                     this.updateDog(dt);
                     this.updateAirstrike(dt);
@@ -5225,6 +5373,7 @@
                         upgrades: this.upgrades,
                         intelShown: this.intelShown,
                         playerPosition: { x: this.playerGroup.position.x, z: this.playerGroup.position.z },
+                        dayNightTime: this.dayNightTime || 0,
                         turrets: this.turrets.map(t => ({
                             typeId: t.userData.typeId,
                             level: t.userData.level || 1,
@@ -5279,6 +5428,7 @@
                     }
                     if (data.upgrades) this.upgrades = { ...this.upgrades, ...data.upgrades };
                     if (data.intelShown) this.intelShown = { ...this.intelShown, ...data.intelShown };
+                    this.dayNightTime = data.dayNightTime !== undefined ? data.dayNightTime : 22;
 
                     if (data.playerPosition && this.playerGroup) {
                         this.playerGroup.position.set(data.playerPosition.x, 0, data.playerPosition.z);
@@ -5508,13 +5658,13 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 this.camera = new THREE.PerspectiveCamera(isMobile ? 48 : 52, aspect, 0.1, 600);
                 
-                const ambientLight = new THREE.AmbientLight(0x475569, isMobile ? 1.8 : 1.5);
-                this.scene.add(ambientLight);
+                this.ambientLight = new THREE.AmbientLight(0x475569, isMobile ? 1.8 : 1.5);
+                this.scene.add(this.ambientLight);
 
-                const dirLight = new THREE.DirectionalLight(0xffedd5, 1.5);
-                dirLight.position.set(30, 50, 20);
-                dirLight.castShadow = false;
-                this.scene.add(dirLight);
+                this.dirLight = new THREE.DirectionalLight(0xffedd5, 1.5);
+                this.dirLight.position.set(30, 50, 20);
+                this.dirLight.castShadow = false;
+                this.scene.add(this.dirLight);
 
                 this.raycaster = new THREE.Raycaster();
                 this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
