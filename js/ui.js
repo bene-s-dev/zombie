@@ -295,27 +295,6 @@ updateTacticalExtrasHUD();
                 });
             }
 
-            const wallsContainer = document.getElementById('shop-walls-container');
-            if (wallsContainer) {
-                wallsContainer.innerHTML = '';
-                Object.values(WALL_TYPES).forEach(w => {
-                    const card = document.createElement('div');
-                    card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
-                    card.innerHTML = `
-                        <div>
-                            <div class="font-bold text-sky-400 text-sm"><i class="fa-solid fa-cubes mr-1"></i>${w.name}</div>
-                            <div class="text-xs text-slate-400 mt-1">${w.desc}</div>
-                            <div class="text-[10px] text-emerald-400 font-mono mt-0.5">HP: ${w.hp}</div>
-                        </div>
-                        <button onclick="startBuildPlacement('wall', '${w.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px]">
-                            <i class="fa-solid fa-hammer text-xs"></i>
-                            <span>Plazieren $${w.cost}</span>
-                        </button>
-                    `;
-                    wallsContainer.appendChild(card);
-                });
-            }
-
             let activeUpgradeCategory = window.activeUpgradeCategory || 'all';
 
             function setUpgradeCategory(cat) {
@@ -396,41 +375,14 @@ updateTacticalExtrasHUD();
                             <div class="font-bold text-emerald-400 text-xs sm:text-sm flex items-center space-x-1.5">
                                 <i class="fa-solid fa-kit-medical"></i><span>Medkit Sofortheilung</span>
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-1">Stellt volle Spieler-HP & Körperschild wieder her.</div>
+                            <div class="text-[11px] text-slate-400 mt-1">Stellt volle Spieler-HP wieder her.</div>
                         </div>
                         <button onclick="healPlayer()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 shadow-md shadow-emerald-950/40">$80</button>
                     `;
                     upgradesContainer.appendChild(healCard);
 
-                    // Spieler Körperschild Refill
-                    const playerShieldMax = gameInstance.maxPlayerShield || 0;
-                    const playerShieldCurrent = gameInstance.playerShield || 0;
-                    const playerShieldPct = playerShieldMax > 0 ? Math.min(100, Math.round((playerShieldCurrent / playerShieldMax) * 100)) : 0;
-                    const playerShieldCost = Math.round(40 + (playerShieldMax * 0.25));
-                    const canRefillPlayerShield = playerShieldMax > 0 && playerShieldCurrent < playerShieldMax;
-
-                    const pShieldCard = document.createElement('div');
-                    pShieldCard.className = "p-3.5 rounded-2xl border bg-slate-950 border-cyan-900/50 flex justify-between items-center";
-                    pShieldCard.innerHTML = `
-                        <div class="flex-1 pr-3">
-                            <div class="font-bold text-cyan-400 text-xs sm:text-sm flex items-center space-x-1.5">
-                                <i class="fa-solid fa-user-shield"></i>
-                                <span>Körperschild Refill</span>
-                                <span class="bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full">${playerShieldCurrent}/${playerShieldMax} HP</span>
-                            </div>
-                            <div class="text-[11px] text-slate-400 mt-1">Absorbiert 100% Schaden auf Spieler-HP.</div>
-                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
-                                <div class="bg-cyan-400 h-full transition-all duration-300" style="width: ${playerShieldPct}%"></div>
-                            </div>
-                        </div>
-                        <button onclick="refillPlayerShield()" ${canRefillPlayerShield ? '' : 'disabled'} class="px-3 py-2 ${canRefillPlayerShield ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0">
-                            ${playerShieldMax === 0 ? 'Nicht freigeschaltet' : (playerShieldCurrent >= playerShieldMax ? 'Voll' : `$${playerShieldCost}`)}
-                        </button>
-                    `;
-                    upgradesContainer.appendChild(pShieldCard);
-
                     // Player Upgrades
-                    ['player_hp', 'player_shield', 'player_speed', 'crit_chance', 'scavenger'].forEach(key => {
+                    ['player_hp', 'player_speed', 'scavenger'].forEach(key => {
                         if (UPGRADES[key]) upgradesContainer.appendChild(createUpgradeCard(key, UPGRADES[key]));
                     });
                 }
@@ -453,35 +405,8 @@ updateTacticalExtrasHUD();
                     `;
                     upgradesContainer.appendChild(repairCard);
 
-                    // Basis Kraftfeld Refill
-                    const baseShieldMax = gameInstance.maxBaseShield || 0;
-                    const baseShieldCurrent = gameInstance.baseShield || 0;
-                    const baseShieldPct = baseShieldMax > 0 ? Math.min(100, Math.round((baseShieldCurrent / baseShieldMax) * 100)) : 0;
-                    const baseShieldCost = Math.round(60 + (baseShieldMax * 0.25));
-                    const canRefillBaseShield = baseShieldMax > 0 && baseShieldCurrent < baseShieldMax;
-
-                    const bShieldCard = document.createElement('div');
-                    bShieldCard.className = "p-3.5 rounded-2xl border bg-slate-950 border-sky-900/50 flex justify-between items-center";
-                    bShieldCard.innerHTML = `
-                        <div class="flex-1 pr-3">
-                            <div class="font-bold text-sky-400 text-xs sm:text-sm flex items-center space-x-1.5">
-                                <i class="fa-solid fa-shield-halved"></i>
-                                <span>Basis-Kraftfeld Refill</span>
-                                <span class="bg-sky-950 text-sky-300 border border-sky-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full">${baseShieldCurrent}/${baseShieldMax} HP</span>
-                            </div>
-                            <div class="text-[11px] text-slate-400 mt-1">Fängt alle Zombie-Angriffe & Explosionen ab.</div>
-                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
-                                <div class="bg-sky-400 h-full transition-all duration-300" style="width: ${baseShieldPct}%"></div>
-                            </div>
-                        </div>
-                        <button onclick="refillBaseShield()" ${canRefillBaseShield ? '' : 'disabled'} class="px-3 py-2 ${canRefillBaseShield ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-950/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0">
-                            ${baseShieldMax === 0 ? 'Nicht freigeschaltet' : (baseShieldCurrent >= baseShieldMax ? 'Voll' : `$${baseShieldCost}`)}
-                        </button>
-                    `;
-                    upgradesContainer.appendChild(bShieldCard);
-
                     // HQ Upgrades
-                    ['base_hp', 'base_shield', 'auto_repair', 'base_spikes'].forEach(key => {
+                    ['base_hp', 'auto_repair', 'base_spikes'].forEach(key => {
                         if (UPGRADES[key]) upgradesContainer.appendChild(createUpgradeCard(key, UPGRADES[key]));
                     });
                 }

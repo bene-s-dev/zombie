@@ -773,15 +773,12 @@
                 </div>
 
                 <!-- Shop Navigation Tabs (Responsive Grid ohne horizontales Scrollen) -->
-                <div class="grid grid-cols-4 gap-1.5 sm:gap-2 border-b border-slate-800 pb-2.5 sm:pb-3 mb-2.5 sm:mb-4 w-full flex-shrink-0">
+                <div class="grid grid-cols-3 gap-1.5 sm:gap-2 border-b border-slate-800 pb-2.5 sm:pb-3 mb-2.5 sm:mb-4 w-full flex-shrink-0">
                     <button onclick="switchShopTab('weapons')" id="tab-btn-weapons" class="shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-red-600 text-white flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition shadow-lg shadow-red-950/40">
                         <i class="fa-solid fa-gun text-xs sm:text-sm"></i><span>Waffen</span>
                     </button>
                     <button onclick="switchShopTab('turrets')" id="tab-btn-turrets" class="shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition">
                         <i class="fa-solid fa-tower-observation text-xs sm:text-sm"></i><span>Türme</span>
-                    </button>
-                    <button onclick="switchShopTab('walls')" id="tab-btn-walls" class="shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition">
-                        <i class="fa-solid fa-cubes-stacked text-xs sm:text-sm"></i><span>Mauern</span>
                     </button>
                     <button onclick="switchShopTab('upgrades')" id="tab-btn-upgrades" class="shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition">
                         <i class="fa-solid fa-shield-halved text-xs sm:text-sm"></i><span>Upgrades</span>
@@ -798,11 +795,6 @@
                     <div id="shop-tab-turrets" class="shop-tab-content hidden">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Automatische Geschütztürme platzieren</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-turrets-container"></div>
-                    </div>
-
-                    <div id="shop-tab-walls" class="shop-tab-content hidden">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Schutzmauern & Barrikaden bauen (Blockiert Zombies & Schüsse)</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-walls-container"></div>
                     </div>
 
                     <div id="shop-tab-upgrades" class="shop-tab-content hidden">
