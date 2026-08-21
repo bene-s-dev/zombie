@@ -932,7 +932,7 @@ updateTacticalExtrasHUD();
             if (!btn || !textEl) return;
 
             const session = Storage.loadSession();
-            if (session && session.currentWave && session.baseHp > 0 && session.playerHp > 0) {
+            if (session && session.currentWave && (session.baseHp > 0 || (session.baseLives !== undefined && session.baseLives > 0)) && (session.playerHp > 0 || (session.playerLives !== undefined && session.playerLives > 0))) {
                 const m = Math.floor((session.gameSeconds || 0) / 60).toString().padStart(2, '0');
                 const s = ((session.gameSeconds || 0) % 60).toString().padStart(2, '0');
                 textEl.innerText = `SPIEL FORTSETZEN (WELLE ${session.currentWave} • ${m}:${s})`;
@@ -1001,6 +1001,7 @@ updateTacticalExtrasHUD();
                 if (sessionToRestore) {
                     gameInstance.restoreGameSession(sessionToRestore);
                 }
+                gameInstance.saveGameSession();
                 await new Promise(r => setTimeout(r, 200));
 
                 if (gameInstance && gameInstance.renderer && gameInstance.scene && gameInstance.camera) {
@@ -1067,3 +1068,29 @@ updateTacticalExtrasHUD();
             document.getElementById('game-over-modal').classList.add('hidden');
             startNewGame();
         }
+
+        // Auto-initialize resume button on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                updateMainMenuResumeButton();
+            });
+        } else {
+            updateMainMenuResumeButton();
+        }
+
+        // Auto-save session on page unload/hide (e.g. reload, close tab, switch apps)
+        window.addEventListener('beforeunload', () => {
+            if (gameInstance && gameInstance.isRunning && !gameInstance.isGameOver) {
+                gameInstance.saveGameSession();
+            }
+        });
+        window.addEventListener('pagehide', () => {
+            if (gameInstance && gameInstance.isRunning && !gameInstance.isGameOver) {
+                gameInstance.saveGameSession();
+            }
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && gameInstance && gameInstance.isRunning && !gameInstance.isGameOver) {
+                gameInstance.saveGameSession();
+            }
+        });
