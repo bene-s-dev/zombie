@@ -1680,52 +1680,65 @@
                             ud.holoMesh.rotation.y += dt * 1.5;
                         }
 
-                        // Hangar drones are permanently active
+                        // Hangar drones are permanently active with global range
                         if (ud.dronesActive) {
                             if (ud.dockedDrones) ud.dockedDrones.visible = false;
 
-                            // Find damaged turrets
-                            const damagedTurrets = this.turrets.filter(turret => 
-                                turret !== t && !turret.userData.isIndestructible && turret.userData.hp < turret.userData.maxHp
-                            );
+                            // Find damaged turrets and damaged walls anywhere on the entire map
+                            const damagedTargets = [];
+                            this.turrets.forEach(turret => {
+                                if (turret !== t && !turret.userData.isIndestructible && turret.userData.hp < turret.userData.maxHp) {
+                                    damagedTargets.push({ obj: turret, isWall: false });
+                                }
+                            });
+                            this.walls.forEach(wall => {
+                                if (wall && wall.userData && wall.userData.hp < wall.userData.maxHp) {
+                                    damagedTargets.push({ obj: wall, isWall: true });
+                                }
+                            });
 
                             if (ud.activeDronesList) {
                                 ud.activeDronesList.forEach((drone, idx) => {
                                     // Spin rotors
                                     if (drone.userData.rotors) {
-                                        drone.userData.rotors.forEach(r => { r.rotation.y += 0.4; });
+                                        drone.userData.rotors.forEach(r => { r.rotation.y += 0.45; });
                                     }
 
-                                    let targetTurret = null;
-                                    if (damagedTurrets.length > 0) {
-                                        targetTurret = damagedTurrets[idx % damagedTurrets.length];
+                                    let targetItem = null;
+                                    if (damagedTargets.length > 0) {
+                                        targetItem = damagedTargets[idx % damagedTargets.length];
                                     }
 
-                                    if (targetTurret) {
-                                        // Hover target position above turret with offset per drone
+                                    if (targetItem && targetItem.obj) {
+                                        const targetObj = targetItem.obj;
+                                        // Hover target position above structure with offset per drone
                                         const offAng = (idx * Math.PI * 2) / 3;
-                                        const targetX = targetTurret.position.x + Math.sin(offAng) * 0.8;
-                                        const targetZ = targetTurret.position.z + Math.cos(offAng) * 0.8;
+                                        const targetX = targetObj.position.x + Math.sin(offAng) * 0.8;
+                                        const targetZ = targetObj.position.z + Math.cos(offAng) * 0.8;
                                         const targetY = 3.2 + Math.sin(now * 0.005 + idx) * 0.2;
 
-                                        drone.position.x += (targetX - drone.position.x) * (dt * 3.5);
-                                        drone.position.z += (targetZ - drone.position.z) * (dt * 3.5);
-                                        drone.position.y += (targetY - drone.position.y) * (dt * 3.5);
+                                        // Fly rapidly across any distance on the map (no range limit)
+                                        const flySpeed = dt * 4.5;
+                                        drone.position.x += (targetX - drone.position.x) * Math.min(1.0, flySpeed);
+                                        drone.position.z += (targetZ - drone.position.z) * Math.min(1.0, flySpeed);
+                                        drone.position.y += (targetY - drone.position.y) * Math.min(1.0, flySpeed);
 
                                         // Check distance for repair
-                                        const distToTarget = Math.hypot(targetTurret.position.x - drone.position.x, targetTurret.position.z - drone.position.z);
-                                        if (distToTarget < 3.2) {
-                                            // Repair turret
-                                            targetTurret.userData.hp = Math.min(targetTurret.userData.maxHp, targetTurret.userData.hp + (65 * dt));
-                                            this.updateTurretHpBar(targetTurret);
+                                        const distToTarget = Math.hypot(targetObj.position.x - drone.position.x, targetObj.position.z - drone.position.z);
+                                        if (distToTarget < 3.5) {
+                                            // Repair structure (~75 HP/s per drone = ~225 HP/s total)
+                                            targetObj.userData.hp = Math.min(targetObj.userData.maxHp, targetObj.userData.hp + (75 * dt));
+                                            if (!targetItem.isWall) {
+                                                this.updateTurretHpBar(targetObj);
+                                            }
 
-                                            // Laser beam to turret
+                                            // Laser beam to target
                                             if (drone.userData.laserLine) {
                                                 drone.userData.laserLine.visible = true;
                                                 const localTarget = new THREE.Vector3(
-                                                    targetTurret.position.x - drone.position.x,
-                                                    (targetTurret.position.y + 1.2) - drone.position.y,
-                                                    targetTurret.position.z - drone.position.z
+                                                    targetObj.position.x - drone.position.x,
+                                                    (targetObj.position.y + 1.2) - drone.position.y,
+                                                    targetObj.position.z - drone.position.z
                                                 );
                                                 drone.userData.laserLine.geometry.setFromPoints([
                                                     new THREE.Vector3(0, 0, 0),
@@ -1733,16 +1746,16 @@
                                                 ]);
                                             }
 
-                                            // Spawn green sparks
+                                            // Spawn green repair sparks
                                             if (now - (drone.userData.lastSparks || 0) > 180) {
                                                 drone.userData.lastSparks = now;
-                                                this.createBloodSparks(targetTurret.position, 0x22c55e);
+                                                this.createBloodSparks(targetObj.position, 0x22c55e);
                                             }
                                         } else {
                                             if (drone.userData.laserLine) drone.userData.laserLine.visible = false;
                                         }
                                     } else {
-                                        // No damaged turrets: orbit above hangar
+                                        // No damaged targets: orbit above hangar
                                         if (drone.userData.laserLine) drone.userData.laserLine.visible = false;
                                         drone.userData.orbitAngle += dt * 1.8;
                                         const orbitR = 2.4;
@@ -1781,9 +1794,10 @@
                     subtitle.innerText = `Unzerstörbare Drohnenstation`;
                     stats.innerHTML = `
                         <div>• Drohnengeschwader: <strong class="text-emerald-400">3x Autonome Reparaturdrohnen</strong></div>
+                        <div>• Reichweite: <strong class="text-emerald-400">Global (Unbegrenzt)</strong></div>
                         <div>• Status: <strong class="text-emerald-400">Dauerhaft Aktiv</strong></div>
-                        <div>• Reparatur-Fokus: <strong class="text-sky-400">Alle beschädigten Geschütztürme</strong></div>
-                        <div>• Reparaturleistung: <strong class="text-emerald-400">~195 HP / Sekunde</strong></div>
+                        <div>• Reparatur-Fokus: <strong class="text-sky-400">Alle Türme & Barrikaden</strong></div>
+                        <div>• Reparaturleistung: <strong class="text-emerald-400">~225 HP / Sekunde</strong></div>
                         <div>• Panzerung: <strong class="text-teal-300">100% (UNZERSTÖRBAR)</strong></div>
                     `;
 
@@ -4567,14 +4581,16 @@
 
                         let bulletHit = false;
 
-                        for (let wi = 0; wi < this.walls.length; wi++) {
-                            const w = this.walls[wi];
-                            const dwx = b.position.x - w.position.x;
-                            const dwz = b.position.z - w.position.z;
-                            if (dwx * dwx + dwz * dwz < w.userData.radius * w.userData.radius) {
-                                bulletHit = true;
-                                this.createBloodSparks(b.position, 0x94a3b8);
-                                break;
+                        if (b.userData.isEnemy) {
+                            for (let wi = 0; wi < this.walls.length; wi++) {
+                                const w = this.walls[wi];
+                                const dwx = b.position.x - w.position.x;
+                                const dwz = b.position.z - w.position.z;
+                                if (dwx * dwx + dwz * dwz < w.userData.radius * w.userData.radius) {
+                                    bulletHit = true;
+                                    this.createBloodSparks(b.position, 0x94a3b8);
+                                    break;
+                                }
                             }
                         }
 
@@ -4640,7 +4656,9 @@
                                             if (dzx * dzx + dzz * dzz < hitRad * hitRad) {
                                                 bulletHit = true;
                                                 if (b.userData.isExplosive) {
-                                                    this.createExplosion(b.position, b.userData.splashRadius, b.userData.damage);
+                                                    const visRad = b.userData.isTurretBullet ? 5.2 : b.userData.splashRadius;
+                                                    const effRad = b.userData.isTurretBullet ? Math.min(6.0, b.userData.splashRadius || 5.5) : b.userData.splashRadius;
+                                                    this.createExplosion(b.position, effRad, b.userData.damage, visRad);
                                                 } else {
                                                     let finalDamage = b.userData.damage;
 

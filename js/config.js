@@ -13,19 +13,19 @@ const WEAPONS = {
 
 const TURRET_TYPES = {
     mg: { id: 'mg', name: 'Maschinengewehr-Turm', cost: 450, range: 27, damage: 26, firerate: 260, hp: 500, maxHp: 500, desc: 'Schnellfeuer-Turm. Feuert kontinuierlich auf nahe Feinde!' },
-    rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 1600, range: 36, damage: 200, firerate: 1300, isExplosive: true, splashRadius: 6.5, hp: 650, maxHp: 650, desc: 'Fernkampf-Flak. Verheerender Flächenschaden!' },
+    rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 1600, range: 36, damage: 260, firerate: 1300, isExplosive: true, splashRadius: 5.5, hp: 650, maxHp: 650, desc: 'Fernkampf-Flak. Massiver punktueller Explosionsschaden!' },
     drone_hangar: {
         id: 'drone_hangar',
         name: 'Reparatur-Drohnen-Hangar',
-        cost: 2200,
-        range: 60,
+        cost: 8000,
+        range: Infinity,
         damage: 0,
         firerate: 0,
         hp: 99999,
         maxHp: 99999,
         isIndestructible: true,
         isHangar: true,
-        desc: 'Unzerstörbare High-Tech Drohnenstation. Sendet permanent ein Geschwader autonomer Reparatur-Drohnen aus, die kontinuierlich alle beschädigten Geschütztürme im Feld reparieren!'
+        desc: 'Unzerstörbare High-Tech Drohnenstation. Sendet permanent ein Geschwader autonomer Reparatur-Drohnen aus, die kontinuierlich alle beschädigten Verteidigungsanlagen auf der gesamten Karte ohne Reichweitenbegrenzung reparieren!'
     }
 };
 

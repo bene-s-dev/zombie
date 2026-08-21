@@ -281,7 +281,7 @@ updateTacticalExtrasHUD();
                     const card = document.createElement('div');
                     card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
                     const statsLine = t.isHangar 
-                        ? `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Permanent aktiv | Reparatur ~195 HP/s</div>`
+                        ? `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Global (Unbegrenzte Reichweite) | Reparatur ~225 HP/s</div>`
                         : `<div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m | Kadenz: ${t.firerate}ms</div>`;
                     card.innerHTML = `
                         <div class="pr-2">
@@ -482,13 +482,12 @@ updateTacticalExtrasHUD();
 
             for (let lvl = currentLvl + 1; lvl <= targetLevel; lvl++) {
                 ud.level = lvl;
-                // High-impact upgrades: +70% dmg, +16% firerate, +3.5m range, +45% HP
-                ud.damage = Math.round(ud.damage * 1.70);
+                // High-impact upgrades: +85% dmg, +16% firerate, +3.5m range, +45% HP
+                // For rocket turrets: Damage scales powerfully (+85%), while explosion radius (splashRadius) remains constant
+                ud.damage = Math.round(ud.damage * 1.85);
                 ud.firerate = Math.max(70, Math.round(ud.firerate * 0.84));
                 ud.range += 3.5;
-                if (ud.splashRadius) {
-                    ud.splashRadius = Math.round((ud.splashRadius * 1.25) * 10) / 10;
-                }
+                // Splash radius stays fixed / does not grow on upgrade so explosions remain compact
                 const hpBonus = Math.round(ud.maxHp * 0.45);
                 ud.maxHp += hpBonus;
                 ud.hp += hpBonus;
