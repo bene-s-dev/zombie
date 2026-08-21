@@ -1808,6 +1808,14 @@
                     document.getElementById('inspect-upgrade-text').innerText = `Upgrade ($${upgCost})`;
                     document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Reparieren';
 
+                    const canUpgrade = this.money >= upgCost;
+                    upgradeBtn.disabled = !canUpgrade;
+                    upgradeBtn.className = `py-3 ${canUpgrade ? 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white cursor-pointer shadow-md shadow-amber-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
+                    const canRepair = repairCost > 0 && this.money >= repairCost;
+                    repairBtn.disabled = !canRepair;
+                    repairBtn.className = `py-3 ${canRepair ? 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white cursor-pointer shadow-md shadow-emerald-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
                     upgradeBtn.classList.remove('hidden');
                     repairBtn.classList.remove('hidden');
                 } else {
@@ -1823,6 +1831,11 @@
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.6);
                     document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Reparieren';
                     upgradeBtn.classList.add('hidden');
+
+                    const canRepair = repairCost > 0 && this.money >= repairCost;
+                    repairBtn.disabled = !canRepair;
+                    repairBtn.className = `py-3 ${canRepair ? 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white cursor-pointer shadow-md shadow-emerald-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
                     repairBtn.classList.remove('hidden');
                 }
 

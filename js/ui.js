@@ -243,6 +243,8 @@ updateTacticalExtrasHUD();
                 const lvl = gameInstance.weaponLevels[w.id] || 1;
                 const upgradeCost = Math.round(w.cost * 0.7 * lvl) || 120;
                 const currentDmg = Math.round(w.damage * (1 + (lvl - 1) * 0.35));
+                const canAffordBuy = gameInstance.money >= w.cost;
+                const canAffordUpgrade = gameInstance.money >= upgradeCost;
 
                 const card = document.createElement('div');
                 card.className = `p-4 rounded-2xl border flex justify-between items-center ${isEquipped ? 'bg-amber-950/30 border-amber-500' : 'bg-slate-950 border-slate-800'}`;
@@ -257,14 +259,14 @@ updateTacticalExtrasHUD();
                     </div>
                     <div class="flex items-center space-x-2">
                         ${isUnlocked ? `
-                            <button onclick="upgradeWeapon('${w.id}')" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px]">
+                            <button onclick="upgradeWeapon('${w.id}')" ${canAffordUpgrade ? '' : 'disabled'} class="px-3 py-2 ${canAffordUpgrade ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px] transition">
                                 <i class="fa-solid fa-arrow-up"></i><span>+$${upgradeCost}</span>
                             </button>
-                            <button onclick="equipWeapon('${w.id}')" class="px-3 py-2 ${isEquipped ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-default' : 'bg-slate-800 hover:bg-slate-700 text-white'} rounded-lg text-xs font-bold min-h-[36px]">
+                            <button onclick="equipWeapon('${w.id}')" class="px-3 py-2 ${isEquipped ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-default' : 'bg-slate-800 hover:bg-slate-700 text-white cursor-pointer'} rounded-lg text-xs font-bold min-h-[36px]">
                                 ${isEquipped ? 'Aktiv' : 'Wählen'}
                             </button>
                         ` : `
-                            <button onclick="buyWeapon('${w.id}')" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold min-h-[36px]">$${w.cost}</button>
+                            <button onclick="buyWeapon('${w.id}')" ${canAffordBuy ? '' : 'disabled'} class="px-4 py-2 ${canAffordBuy ? 'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-lg text-xs font-bold min-h-[36px] transition">$${w.cost}</button>
                         `}
                     </div>
                 `;
@@ -275,18 +277,19 @@ updateTacticalExtrasHUD();
             if (turretsContainer) {
                 turretsContainer.innerHTML = '';
                 Object.values(TURRET_TYPES).forEach(t => {
+                    const canAfford = gameInstance.money >= t.cost;
                     const card = document.createElement('div');
                     card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
                     const statsLine = t.isHangar 
                         ? `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Permanent aktiv | Reparatur ~195 HP/s</div>`
                         : `<div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m | Kadenz: ${t.firerate}ms</div>`;
                     card.innerHTML = `
-                        <div>
+                        <div class="pr-2">
                             <div class="font-bold text-white text-sm">${t.name}</div>
                             <div class="text-xs text-slate-400 mt-1">${t.desc}</div>
                             ${statsLine}
                         </div>
-                        <button onclick="startBuildPlacement('turret', '${t.id}')" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px]">
+                        <button onclick="startBuildPlacement('turret', '${t.id}')" ${canAfford ? '' : 'disabled'} class="px-4 py-2 ${canAfford ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px] flex-shrink-0 transition">
                             <i class="fa-solid fa-hammer text-xs"></i>
                             <span>Bauen $${t.cost}</span>
                         </button>
@@ -330,6 +333,8 @@ updateTacticalExtrasHUD();
                     const currentLvl = (key === 'companion_dog') ? Math.max(1, gameInstance.upgrades[key] || 1) : (gameInstance.upgrades[key] || 0);
                     const cost = getUpgradeCost(key, currentLvl);
                     const isMax = currentLvl >= upg.maxLevel;
+                    const canAfford = gameInstance.money >= cost;
+                    const isDisabled = isMax || !canAfford;
 
                     let descText = upg.desc;
                     if (key === 'companion_dog') {
@@ -356,7 +361,7 @@ updateTacticalExtrasHUD();
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1 leading-snug">${descText}</div>
                         </div>
-                        <button onclick="buyUpgrade('${key}')" ${isMax ? 'disabled' : ''} class="px-3.5 py-2 ${isMax ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-950/40'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0">
+                        <button onclick="buyUpgrade('${key}')" ${isDisabled ? 'disabled' : ''} class="px-3.5 py-2 ${isDisabled ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50' : 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-950/40 cursor-pointer'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 transition">
                             ${isMax ? 'MAX' : '$' + cost}
                         </button>
                     `;
@@ -368,6 +373,7 @@ updateTacticalExtrasHUD();
                     if (cat === 'all') upgradesContainer.appendChild(createSectionHeader('fa-solid fa-person-rifle', '👤 Überlebender & Spieler-Status', 'text-cyan-400'));
 
                     // Medkit Sofortheilung
+                    const canHeal = gameInstance.playerHp < gameInstance.maxPlayerHp && gameInstance.money >= 80;
                     const healCard = document.createElement('div');
                     healCard.className = "p-3.5 rounded-2xl border bg-slate-950 border-emerald-900/40 flex justify-between items-center";
                     healCard.innerHTML = `
@@ -377,7 +383,7 @@ updateTacticalExtrasHUD();
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1">Stellt volle Spieler-HP wieder her.</div>
                         </div>
-                        <button onclick="healPlayer()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 shadow-md shadow-emerald-950/40">$80</button>
+                        <button onclick="healPlayer()" ${canHeal ? '' : 'disabled'} class="px-3.5 py-2 ${canHeal ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 transition">$80</button>
                     `;
                     upgradesContainer.appendChild(healCard);
 
@@ -392,6 +398,7 @@ updateTacticalExtrasHUD();
                     if (cat === 'all') upgradesContainer.appendChild(createSectionHeader('fa-solid fa-building-shield', '🏰 Hauptquartier & Basis-Verteidigung', 'text-sky-400'));
 
                     // Basis Sofort-Reparatur
+                    const canRepair = gameInstance.baseHp < gameInstance.maxBaseHp && gameInstance.money >= 120;
                     const repairCard = document.createElement('div');
                     repairCard.className = "p-3.5 rounded-2xl border bg-slate-950 border-sky-900/40 flex justify-between items-center";
                     repairCard.innerHTML = `
@@ -401,7 +408,7 @@ updateTacticalExtrasHUD();
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1">Stellt Basis-Gesundheit im Notfall wieder her.</div>
                         </div>
-                        <button onclick="repairBase()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 shadow-md shadow-sky-950/40">$120</button>
+                        <button onclick="repairBase()" ${canRepair ? '' : 'disabled'} class="px-3.5 py-2 ${canRepair ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 transition">$120</button>
                     `;
                     upgradesContainer.appendChild(repairCard);
 
@@ -429,6 +436,8 @@ updateTacticalExtrasHUD();
 
         function startBuildPlacement(kind, specId) {
             if (!gameInstance) return;
+            const spec = kind === 'turret' ? TURRET_TYPES[specId] : WALL_TYPES[specId];
+            if (!spec || gameInstance.money < spec.cost) return;
             gameInstance.startPlacementMode(kind, specId);
         }
 
@@ -822,31 +831,34 @@ updateTacticalExtrasHUD();
         function buyWeapon(id) {
             if (!gameInstance) return;
             const w = WEAPONS[id];
-            if (gameInstance.money >= w.cost) {
-                gameInstance.money -= w.cost;
-                gameInstance.unlockedWeapons.push(id);
-                gameInstance.currentWeapon = w;
-                gameInstance.syncHUD();
-                renderShopCatalog();
-                gameInstance.saveGameSession();
-                showPurchaseToast(`${w.name} gekauf & ausgerüstet!`);
-            }
+            if (!w || gameInstance.money < w.cost) return;
+
+            gameInstance.money -= w.cost;
+            gameInstance.unlockedWeapons.push(id);
+            gameInstance.currentWeapon = w;
+            gameInstance.syncHUD();
+            renderShopCatalog();
+            gameInstance.saveGameSession();
+            showPurchaseToast(`${w.name} gekauft & ausgerüstet!`);
+            if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') audio.playCoin();
         }
 
         function upgradeWeapon(id) {
             if (!gameInstance) return;
             const w = WEAPONS[id];
+            if (!w) return;
             const lvl = gameInstance.weaponLevels[id] || 1;
             const cost = Math.round(w.cost * 0.7 * lvl) || 120;
 
-            if (gameInstance.money >= cost && lvl < w.maxLevel) {
-                gameInstance.money -= cost;
-                gameInstance.weaponLevels[id] = lvl + 1;
-                gameInstance.syncHUD();
-                renderShopCatalog();
-                gameInstance.saveGameSession();
-                showPurchaseToast(`${w.name} auf Level ${lvl + 1} verbessert!`);
-            }
+            if (lvl >= w.maxLevel || gameInstance.money < cost) return;
+
+            gameInstance.money -= cost;
+            gameInstance.weaponLevels[id] = lvl + 1;
+            gameInstance.syncHUD();
+            renderShopCatalog();
+            gameInstance.saveGameSession();
+            showPurchaseToast(`${w.name} auf Level ${lvl + 1} verbessert!`);
+            if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') audio.playCoin();
         }
 
         function equipWeapon(id) {
@@ -872,58 +884,58 @@ updateTacticalExtrasHUD();
         function buyUpgrade(key) {
             if (!gameInstance) return;
             const upg = UPGRADES[key];
+            if (!upg) return;
             const currentLvl = (key === 'companion_dog') ? Math.max(1, gameInstance.upgrades[key] || 1) : (gameInstance.upgrades[key] || 0);
             const cost = getUpgradeCost(key, currentLvl);
 
-            if (gameInstance.money >= cost && currentLvl < upg.maxLevel) {
-                gameInstance.money -= cost;
-                gameInstance.upgrades[key] = currentLvl + 1;
+            if (currentLvl >= upg.maxLevel || gameInstance.money < cost) return;
 
-                if (key === 'companion_dog') {
-                    if (!gameInstance.dogGroup) gameInstance.createDogMesh();
-                    audio.playDogBark();
-                }
-                if (key === 'combat_drone') {
-                    if (!gameInstance.droneGroup) gameInstance.createDroneMesh();
-                }
-                if (key === 'player_hp') {
-                    gameInstance.maxPlayerHp += 35;
-                    gameInstance.playerHp += 35;
-                }
-                if (key === 'base_hp') {
-                    gameInstance.maxBaseHp += 600;
-                    gameInstance.baseHp += 600;
-                }
+            gameInstance.money -= cost;
+            gameInstance.upgrades[key] = currentLvl + 1;
 
-                gameInstance.syncHUD();
-                renderShopCatalog();
-                gameInstance.saveGameSession();
-                showPurchaseToast(`${upg.name} auf Level ${currentLvl + 1} verbessert!`);
+            if (key === 'companion_dog') {
+                if (!gameInstance.dogGroup) gameInstance.createDogMesh();
+                audio.playDogBark();
             }
+            if (key === 'combat_drone') {
+                if (!gameInstance.droneGroup) gameInstance.createDroneMesh();
+            }
+            if (key === 'player_hp') {
+                gameInstance.maxPlayerHp += 35;
+                gameInstance.playerHp += 35;
+            }
+            if (key === 'base_hp') {
+                gameInstance.maxBaseHp += 600;
+                gameInstance.baseHp += 600;
+            }
+
+            gameInstance.syncHUD();
+            renderShopCatalog();
+            gameInstance.saveGameSession();
+            showPurchaseToast(`${upg.name} auf Level ${currentLvl + 1} verbessert!`);
+            if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') audio.playCoin();
         }
 
         function repairBase() {
             if (!gameInstance) return;
-            if (gameInstance.money >= 120 && gameInstance.baseHp < gameInstance.maxBaseHp) {
-                gameInstance.money -= 120;
-                gameInstance.baseHp = Math.min(gameInstance.maxBaseHp, gameInstance.baseHp + 600);
-                gameInstance.syncHUD();
-                gameInstance.saveGameSession();
-                renderShopCatalog();
-                showPurchaseToast("Basis repariert! (+600 HP)");
-            }
+            if (gameInstance.baseHp >= gameInstance.maxBaseHp || gameInstance.money < 120) return;
+            gameInstance.money -= 120;
+            gameInstance.baseHp = Math.min(gameInstance.maxBaseHp, gameInstance.baseHp + 600);
+            gameInstance.syncHUD();
+            gameInstance.saveGameSession();
+            renderShopCatalog();
+            showPurchaseToast("Basis repariert! (+600 HP)");
         }
 
         function healPlayer() {
             if (!gameInstance) return;
-            if (gameInstance.money >= 80 && gameInstance.playerHp < gameInstance.maxPlayerHp) {
-                gameInstance.money -= 80;
-                gameInstance.playerHp = gameInstance.maxPlayerHp;
-                gameInstance.syncHUD();
-                gameInstance.saveGameSession();
-                renderShopCatalog();
-                showPurchaseToast("Spieler vollständig geheilt!");
-            }
+            if (gameInstance.playerHp >= gameInstance.maxPlayerHp || gameInstance.money < 80) return;
+            gameInstance.money -= 80;
+            gameInstance.playerHp = gameInstance.maxPlayerHp;
+            gameInstance.syncHUD();
+            gameInstance.saveGameSession();
+            renderShopCatalog();
+            showPurchaseToast("Spieler vollständig geheilt!");
         }
 
         function updateMainMenuResumeButton() {
