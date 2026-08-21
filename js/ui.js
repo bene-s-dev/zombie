@@ -446,13 +446,22 @@ updateTacticalExtrasHUD();
             gameInstance.cancelPlacement();
         }
 
-        function closeInspectModal() {
-            document.getElementById('inspect-modal').classList.add('hidden');
+        function closeInspectModal(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            const modal = document.getElementById('inspect-modal');
+            if (modal) modal.classList.add('hidden');
             if (gameInstance) {
                 gameInstance.selectedStructure = null;
+                gameInstance.ignoreNextSelectionUntil = Date.now() + 250;
                 if (!gameInstance.isPlacementMode && !isShopOpen && !isPauseModalOpen) {
                     gameInstance.isPaused = false;
                 }
+            }
+            if (typeof updateMusicDucking === 'function') {
+                updateMusicDucking();
             }
         }
 

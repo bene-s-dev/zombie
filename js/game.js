@@ -206,8 +206,16 @@
                         else toggleShop();
                     }
                     if (e.code === 'Escape') {
-                        if (this.isPlacementMode) cancelPlacement();
-                        else togglePauseModal();
+                        const inspectModal = document.getElementById('inspect-modal');
+                        if (inspectModal && !inspectModal.classList.contains('hidden')) {
+                            closeInspectModal();
+                        } else if (this.isPlacementMode) {
+                            cancelPlacement();
+                        } else if (isShopOpen) {
+                            toggleShop(false);
+                        } else {
+                            togglePauseModal();
+                        }
                     }
                 });
 
@@ -270,11 +278,13 @@
                     }
                 };
 
-                const handleSelection = (clientX, clientY) => {
+                const handleSelection = (clientX, clientY, e) => {
+                    if (this.ignoreNextSelectionUntil && Date.now() < this.ignoreNextSelectionUntil) return;
+                    if (e && isUiTarget(e)) return;
                     if (this.isPaused && !this.isPlacementMode) return;
 
                     const targetEl = document.elementFromPoint(clientX, clientY);
-                    if (targetEl && targetEl.closest('button, input, #shop-modal, #main-menu, #pause-modal, #inspect-modal, #placement-hud')) return;
+                    if (targetEl && targetEl.closest('button, input, select, textarea, label, a, #game-hud, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto')) return;
 
                     if (this.isPlacementMode) {
                         if (this.placementJustStarted) return;
@@ -315,7 +325,7 @@
                 };
 
                 window.addEventListener('pointermove', onPointerMove);
-                window.addEventListener('click', (e) => handleSelection(e.clientX, e.clientY));
+                window.addEventListener('click', (e) => handleSelection(e.clientX, e.clientY, e));
 
                 const isUiTarget = (e, touch) => {
                     const uiSelector = 'button, input, select, textarea, label, a, #game-hud, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto';
@@ -555,6 +565,7 @@
                     } else if (!this.isPaused && !this.isGameOver) {
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
+                            if (this.ignoreNextSelectionUntil && Date.now() < this.ignoreNextSelectionUntil) continue;
                             if (isUiTarget(e, touch)) continue;
 
                             if (this.gameplayTouchStart && touch.identifier === this.gameplayTouchStart.id) {

@@ -354,7 +354,7 @@
         </div>
 
         <!-- ================= STRUCTURE INSPECT / UPGRADE / SELL MODAL ================= -->
-        <div id="inspect-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md safe-area-padding">
+        <div id="inspect-modal" onclick="if(event.target === this) closeInspectModal(event)" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md safe-area-padding">
             <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3 sm:space-y-4 text-center max-h-[92dvh] overflow-y-auto custom-scroll">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <div class="flex items-center space-x-2 text-left">
@@ -364,7 +364,7 @@
                             <span id="inspect-subtitle" class="text-[10px] text-amber-400 font-mono">Level 1</span>
                         </div>
                     </div>
-                    <button type="button" onclick="closeInspectModal()" class="text-slate-400 hover:text-white p-2 text-2xl"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" id="inspect-close-btn" onclick="closeInspectModal(event)" class="text-slate-400 hover:text-white p-2 text-2xl cursor-pointer" aria-label="Schließen"><i class="fa-solid fa-xmark pointer-events-none"></i></button>
                 </div>
 
                 <div id="inspect-stats" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1 text-left font-mono">
