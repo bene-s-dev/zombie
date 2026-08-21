@@ -1703,9 +1703,18 @@
                     phaseIcon = 'fa-cloud-moon text-orange-400 animate-pulse';
                     phaseTextColor = 'text-orange-400';
                 } else {
-                    phaseText = 'NACHT';
-                    phaseIcon = 'fa-moon text-indigo-300';
-                    phaseTextColor = 'text-indigo-300';
+                    phaseText = 'NACHT (ZOMBIES +50% SPEED)';
+                    phaseIcon = 'fa-moon text-red-400 animate-pulse';
+                    phaseTextColor = 'text-red-400 font-bold';
+                }
+
+                // Zombie Speed Scaling: Fast & aggressive at night (+50% speed boost)
+                if (dayFactor > 0.40) {
+                    const dayNorm = (dayFactor - 0.40) / 0.60;
+                    this.nightSpeedMult = 1.0 + 0.10 * (1.0 - dayNorm);
+                } else {
+                    const nightNorm = 1.0 - (dayFactor / 0.40);
+                    this.nightSpeedMult = 1.10 + 0.45 * nightNorm; // Up to 1.55x at midnight
                 }
 
                 if (this._lastDayNightPhase !== phaseText) {
@@ -4868,7 +4877,8 @@
                         const target = distToPlayerSq < 324 ? playerPos : basePos; // 18^2 = 324
 
                         const directAngle = Math.atan2(target.x - z.position.x, target.z - z.position.z);
-                        const stepSize = z.userData.speed * (dt * 60);
+                        const nightSpeedMult = this.nightSpeedMult || 1.0;
+                        const stepSize = z.userData.speed * nightSpeedMult * (dt * 60);
                         const zRadius = 0.4 * z.userData.scale;
 
                         let chosenAngle = null;
@@ -4966,7 +4976,7 @@
 
                         // Walk bob: skip on mobile when >25 zombies
                         if (!isMob || this.zombies.length <= 25) {
-                            z.userData.walkCycle += 0.15;
+                            z.userData.walkCycle += 0.15 * nightSpeedMult;
                             z.rotation.z = Math.sin(z.userData.walkCycle) * 0.08;
                         }
 
