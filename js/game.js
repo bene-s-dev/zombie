@@ -2044,7 +2044,7 @@
 
                 const now = performance.now();
                 const droneLvl = this.upgrades.combat_drone;
-                const firerate = Math.max(160, 360 - droneLvl * 40);
+                const firerate = Math.max(140, 340 - droneLvl * 35);
                 if (now < this.lastDroneFired + firerate) return;
 
                 let closestZombie = null;
@@ -2078,7 +2078,7 @@
                     bullet.position.y -= 0.18;
                     bullet.rotation.y = angle;
 
-                    const droneDmg = 28 + (droneLvl * 14);
+                    const droneDmg = 30 + (droneLvl * 16);
 
                     bullet.userData = {
                         dir: new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)),
@@ -2368,8 +2368,8 @@
                             this.dogGroup.position.y = 0.45;
 
                             // Deal Damage
-                            const baseDogDmg = 48 + (dogLvl * 26);
-                            const isCrit = Math.random() < (0.15 + (this.upgrades.crit_chance || 0) * 0.1);
+                            const baseDogDmg = 50 + (dogLvl * 28);
+                            const isCrit = Math.random() < 0.15;
                             const finalDamage = isCrit ? baseDogDmg * 2 : baseDogDmg;
 
                             targetZombie.userData.hp -= finalDamage;
@@ -4746,7 +4746,7 @@
                                     }
 
                                     if (this.upgrades.base_spikes > 0) {
-                                        const spikeDmg = (this.upgrades.base_spikes * 18) * dt;
+                                        const spikeDmg = (this.upgrades.base_spikes * 22) * dt;
                                         z.userData.hp -= spikeDmg;
                                         if (z.userData.hp <= 0) this.killZombie(z);
                                     }
@@ -4933,7 +4933,7 @@
                 this.gameSeconds++;
 
                 if (this.upgrades.auto_repair > 0 && this.baseHp < this.maxBaseHp) {
-                    this.baseHp = Math.min(this.maxBaseHp, this.baseHp + (this.upgrades.auto_repair * 5));
+                    this.baseHp = Math.min(this.maxBaseHp, this.baseHp + (this.upgrades.auto_repair * 6));
                 }
 
                 if (this.gameSeconds > Storage.data.highScoreSeconds) {

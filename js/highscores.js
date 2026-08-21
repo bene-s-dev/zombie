@@ -101,16 +101,6 @@ function updateHighscoreUI() {
             const em = Math.floor(entry.time / 60).toString().padStart(2, '0');
             const es = (entry.time % 60).toString().padStart(2, '0');
             
-            let diffText = 'M';
-            let diffClass = 'text-amber-500';
-            if (entry.difficulty === 'easy') {
-                diffText = 'L';
-                diffClass = 'text-emerald-400';
-            } else if (entry.difficulty === 'hard') {
-                diffText = 'S';
-                diffClass = 'text-rose-500';
-            }
-            
             const row = document.createElement('tr');
             row.className = "border-b border-slate-900/60 hover:bg-slate-800/40 transition-colors";
             row.innerHTML = `
@@ -119,7 +109,6 @@ function updateHighscoreUI() {
                 <td class="py-2 px-2 font-mono text-amber-400">${em}:${es}</td>
                 <td class="py-2 px-2 font-mono text-center text-slate-300">${entry.wave}</td>
                 <td class="py-2 px-2 font-mono text-center text-emerald-400">${entry.kills}</td>
-                <td class="py-2 px-1 text-center font-bold text-[10px] sm:text-xs ${diffClass}" title="${entry.difficulty}">${diffText}</td>
             `;
             tbody.appendChild(row);
         });

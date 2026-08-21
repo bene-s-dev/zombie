@@ -333,12 +333,12 @@ updateTacticalExtrasHUD();
 
                     let descText = upg.desc;
                     if (key === 'companion_dog') {
-                        const currentDmg = 48 + (currentLvl * 26);
+                        const currentDmg = 50 + (currentLvl * 28);
                         if (currentLvl < upg.maxLevel) {
-                            const nextDmg = 48 + ((currentLvl + 1) * 26);
+                            const nextDmg = 50 + ((currentLvl + 1) * 28);
                             descText = `Dein treuer K9-Begleiter kämpft an deiner Seite! (Aktuell: <b>${currentDmg} Dmg / Biss</b>). Nächste Stufe: <b>${nextDmg} Dmg</b>, schnelleres Anstürmen & stärkere Verlangsamung!`;
                         } else {
-                            const maxDmg = 48 + (currentLvl * 26);
+                            const maxDmg = 50 + (currentLvl * 28);
                             descText = `MAX-STUFE: K9-Alpha-Rudelführer (<b>${maxDmg} Dmg</b>, maximaler Sprungradius, Verlangsamung & Reißbiss).`;
                         }
                     } else if (key === 'scavenger') {
@@ -397,7 +397,7 @@ updateTacticalExtrasHUD();
                     repairCard.innerHTML = `
                         <div class="pr-2">
                             <div class="font-bold text-sky-400 text-xs sm:text-sm flex items-center space-x-1.5">
-                                <i class="fa-solid fa-wrench"></i><span>Basis Schnell-Reparatur (+500 HP)</span>
+                                <i class="fa-solid fa-wrench"></i><span>Basis Schnell-Reparatur (+600 HP)</span>
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1">Stellt Basis-Gesundheit im Notfall wieder her.</div>
                         </div>
@@ -878,20 +878,12 @@ updateTacticalExtrasHUD();
                     if (!gameInstance.droneGroup) gameInstance.createDroneMesh();
                 }
                 if (key === 'player_hp') {
-                    gameInstance.maxPlayerHp += 30;
-                    gameInstance.playerHp += 30;
-                }
-                if (key === 'player_shield') {
-                    gameInstance.maxPlayerShield += 100;
-                    gameInstance.playerShield = gameInstance.maxPlayerShield;
+                    gameInstance.maxPlayerHp += 35;
+                    gameInstance.playerHp += 35;
                 }
                 if (key === 'base_hp') {
-                    gameInstance.maxBaseHp += 500;
-                    gameInstance.baseHp += 500;
-                }
-                if (key === 'base_shield') {
-                    gameInstance.maxBaseShield += 200;
-                    gameInstance.baseShield = gameInstance.maxBaseShield;
+                    gameInstance.maxBaseHp += 600;
+                    gameInstance.baseHp += 600;
                 }
 
                 gameInstance.syncHUD();
@@ -901,74 +893,27 @@ updateTacticalExtrasHUD();
             }
         }
 
-        function refillPlayerShield() {
-            if (!gameInstance) return;
-            if (gameInstance.maxPlayerShield <= 0) {
-                showWarningToast("Zuerst Spieler-Schild Upgrade kaufen!");
-                return;
-            }
-            const cost = Math.round(40 + (gameInstance.maxPlayerShield * 0.25));
-            if (gameInstance.playerShield >= gameInstance.maxPlayerShield) {
-                showWarningToast("Spieler-Schild ist bereits voll!");
-                return;
-            }
-            if (gameInstance.money >= cost) {
-                gameInstance.money -= cost;
-                gameInstance.playerShield = gameInstance.maxPlayerShield;
-                gameInstance.syncHUD();
-                gameInstance.saveGameSession();
-                renderShopCatalog();
-                showPurchaseToast("Spieler-Schild neu aufgeladen! (100% Schutz)");
-            } else {
-                showWarningToast(`Zu wenig Geld! Benötigt: $${cost}`);
-            }
-        }
-
-        function refillBaseShield() {
-            if (!gameInstance) return;
-            if (gameInstance.maxBaseShield <= 0) {
-                showWarningToast("Zuerst Basis-Schild Upgrade kaufen!");
-                return;
-            }
-            const cost = Math.round(60 + (gameInstance.maxBaseShield * 0.25));
-            if (gameInstance.baseShield >= gameInstance.maxBaseShield) {
-                showWarningToast("Basis-Kraftfeld ist bereits voll!");
-                return;
-            }
-            if (gameInstance.money >= cost) {
-                gameInstance.money -= cost;
-                gameInstance.baseShield = gameInstance.maxBaseShield;
-                gameInstance.syncHUD();
-                gameInstance.saveGameSession();
-                renderShopCatalog();
-                showPurchaseToast("Basis-Kraftfeld neu aufgeladen! (100% Schutz)");
-            } else {
-                showWarningToast(`Zu wenig Geld! Benötigt: $${cost}`);
-            }
-        }
-
         function repairBase() {
             if (!gameInstance) return;
             if (gameInstance.money >= 120 && gameInstance.baseHp < gameInstance.maxBaseHp) {
                 gameInstance.money -= 120;
-                gameInstance.baseHp = Math.min(gameInstance.maxBaseHp, gameInstance.baseHp + 500);
+                gameInstance.baseHp = Math.min(gameInstance.maxBaseHp, gameInstance.baseHp + 600);
                 gameInstance.syncHUD();
                 gameInstance.saveGameSession();
                 renderShopCatalog();
-                showPurchaseToast("Basis repariert! (+500 HP)");
+                showPurchaseToast("Basis repariert! (+600 HP)");
             }
         }
 
         function healPlayer() {
             if (!gameInstance) return;
-            if (gameInstance.money >= 80 && (gameInstance.playerHp < gameInstance.maxPlayerHp || gameInstance.playerShield < gameInstance.maxPlayerShield)) {
+            if (gameInstance.money >= 80 && gameInstance.playerHp < gameInstance.maxPlayerHp) {
                 gameInstance.money -= 80;
                 gameInstance.playerHp = gameInstance.maxPlayerHp;
-                gameInstance.playerShield = gameInstance.maxPlayerShield;
                 gameInstance.syncHUD();
                 gameInstance.saveGameSession();
                 renderShopCatalog();
-                showPurchaseToast("Spieler & Schild vollständig wiederhergestellt!");
+                showPurchaseToast("Spieler vollständig geheilt!");
             }
         }
 
