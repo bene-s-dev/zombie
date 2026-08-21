@@ -280,9 +280,14 @@ updateTacticalExtrasHUD();
                     const canAfford = gameInstance.money >= t.cost;
                     const card = document.createElement('div');
                     card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
-                    const statsLine = t.isHangar 
-                        ? `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Global (Unbegrenzte Reichweite) | Reparatur ~225 HP/s</div>`
-                        : `<div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m | Kadenz: ${t.firerate}ms</div>`;
+                    let statsLine = '';
+                    if (t.isHangar) {
+                        statsLine = `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Global (Unbegrenzte Reichweite) | Reparatur ~225 HP/s</div>`;
+                    } else if (t.isLightMast) {
+                        statsLine = `<div class="text-[10px] text-amber-300 font-mono mt-0.5"><i class="fa-solid fa-lightbulb mr-1"></i>360° Rundum-LED-Flutlicht | Leuchtradius: ${t.range}m | Nacht-Beleuchtung</div>`;
+                    } else {
+                        statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m | Kadenz: ${t.firerate}ms</div>`;
+                    }
                     card.innerHTML = `
                         <div class="pr-2">
                             <div class="font-bold text-white text-sm">${t.name}</div>
@@ -484,10 +489,20 @@ updateTacticalExtrasHUD();
                 ud.level = lvl;
                 // High-impact upgrades: +85% dmg, +16% firerate, +3.5m range, +45% HP
                 // For rocket turrets: Damage scales powerfully (+85%), while explosion radius (splashRadius) remains constant
-                ud.damage = Math.round(ud.damage * 1.85);
-                ud.firerate = Math.max(70, Math.round(ud.firerate * 0.84));
-                ud.range += 3.5;
-                // Splash radius stays fixed / does not grow on upgrade so explosions remain compact
+                if (ud.isLightMast) {
+                    ud.range += 6.0;
+                    if (ud.lightSource) {
+                        ud.lightSource.distance = ud.range + 8;
+                        ud.lightSource.intensity *= 1.25;
+                    }
+                    if (ud.groundGlow) {
+                        ud.groundGlow.scale.multiplyScalar(1.15);
+                    }
+                } else {
+                    ud.damage = Math.round(ud.damage * 1.85);
+                    ud.firerate = Math.max(70, Math.round(ud.firerate * 0.84));
+                    ud.range += 3.5;
+                }
                 const hpBonus = Math.round(ud.maxHp * 0.45);
                 ud.maxHp += hpBonus;
                 ud.hp += hpBonus;

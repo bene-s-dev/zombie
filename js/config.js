@@ -14,6 +14,18 @@ const WEAPONS = {
 const TURRET_TYPES = {
     mg: { id: 'mg', name: 'Maschinengewehr-Turm', cost: 450, range: 27, damage: 26, firerate: 260, hp: 500, maxHp: 500, desc: 'Schnellfeuer-Turm. Feuert kontinuierlich auf nahe Feinde!' },
     rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 1600, range: 36, damage: 260, firerate: 1300, isExplosive: true, splashRadius: 5.5, hp: 650, maxHp: 650, desc: 'Fernkampf-Flak. Massiver punktueller Explosionsschaden!' },
+    light_mast: {
+        id: 'light_mast',
+        name: 'Katastrophenschutz-Lichtmast',
+        cost: 120,
+        range: 34,
+        damage: 0,
+        firerate: 0,
+        hp: 450,
+        maxHp: 450,
+        isLightMast: true,
+        desc: 'Mobiler Katastrophen-Lichtmast mit 360° Hochleistungs-LED-Flutlicht. Erleuchtet nachts das Umfeld taghell!'
+    },
     drone_hangar: {
         id: 'drone_hangar',
         name: 'Reparatur-Drohnen-Hangar',

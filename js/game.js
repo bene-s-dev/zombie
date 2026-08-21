@@ -61,9 +61,9 @@
                 this.ac130AimPos = new THREE.Vector3(0, 0, 0);
                 this.ac130Projectiles = [];
 
-                // Day / Night Cycle State (90s full cycle: Day -> Dusk -> Night -> Dawn)
-                this.dayNightTime = 22; // Starts in daylight
-                this.dayNightCycleDuration = 90;
+                // Day / Night Cycle State (180s full cycle: 2.5 min Tag / Dämmerung, 30s Nacht)
+                this.dayNightTime = 20; // Starts in bright pleasant daylight
+                this.dayNightCycleDuration = 180;
                 this._lastDayNightPhase = null;
                 this._skyColor = new THREE.Color();
 
@@ -964,6 +964,7 @@
 
                 this.turrets.forEach(turret => {
                     const ud = turret.userData;
+                    if (ud.isHangar || ud.isLightMast || ud.firerate <= 0 || ud.damage <= 0) return;
                     if (now < ud.lastFired + ud.firerate) return;
 
                     let closestZombie = null;
@@ -1207,12 +1208,14 @@
                     let bodyGeo;
                     if (spec.id === 'drone_hangar') {
                         bodyGeo = new THREE.CylinderGeometry(1.6, 1.8, 0.45, 8);
+                    } else if (spec.id === 'light_mast') {
+                        bodyGeo = new THREE.CylinderGeometry(0.18, 0.6, 4.6, 8);
                     } else {
                         bodyGeo = new THREE.CylinderGeometry(1.1, 1.4, 1.2, 8);
                     }
                     const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.5 });
                     const body = new THREE.Mesh(bodyGeo, bodyMat);
-                    body.position.y = spec.id === 'drone_hangar' ? 0.25 : 0.6;
+                    body.position.y = spec.id === 'drone_hangar' ? 0.25 : (spec.id === 'light_mast' ? 2.3 : 0.6);
                     this.ghostMesh.add(body);
 
                     materials.push(ringMat, bodyMat);
@@ -1453,6 +1456,134 @@
                     return turretGroup;
                 }
 
+                if (spec.id === 'light_mast') {
+                    // Mobile Disaster Relief Floodlight Trailer (THW / Katastrophenschutz)
+                    // 1. Trailer Chassis (Emergency Blue & Safety Yellow)
+                    const chassisMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.35 });
+                    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.55, 1.4), chassisMat);
+                    chassis.position.y = 0.45;
+                    chassis.castShadow = true;
+                    turretGroup.add(chassis);
+
+                    // Emergency Generator Top Panel (Safety Yellow)
+                    const genTopMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.5, roughness: 0.4 });
+                    const genTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.12, 1.2), genTopMat);
+                    genTop.position.y = 0.78;
+                    turretGroup.add(genTop);
+
+                    // 4 Trailer Rubber Wheels
+                    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+                    const wheelGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.14, 12);
+                    wheelGeo.rotateZ(Math.PI / 2);
+                    [[-0.62, 0.24, -0.4], [-0.62, 0.24, 0.4], [0.62, 0.24, -0.4], [0.62, 0.24, 0.4]].forEach(pos => {
+                        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                        wheel.position.set(pos[0], pos[1], pos[2]);
+                        turretGroup.add(wheel);
+                    });
+
+                    // 4 Corner Outrigger Feet (Stabilisatoren)
+                    const footMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
+                    [[ -0.75, 0.08, -0.8 ], [ 0.75, 0.08, -0.8 ], [ -0.75, 0.08, 0.8 ], [ 0.75, 0.08, 0.8 ]].forEach(pos => {
+                        const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.16, 6), footMat);
+                        foot.position.set(pos[0], pos[1], pos[2]);
+                        turretGroup.add(foot);
+                        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6), footMat);
+                        strut.position.set(pos[0] * 0.7, 0.35, pos[2] * 0.7);
+                        turretGroup.add(strut);
+                    });
+
+                    // 2. High Telescopic Steel Mast (approx 4.8m height)
+                    const mastMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.92, roughness: 0.15 });
+                    const mastPole1 = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 2.4, 8), mastMat);
+                    mastPole1.position.y = 1.9;
+                    turretGroup.add(mastPole1);
+
+                    const mastPole2 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 2.6, 8), mastMat);
+                    mastPole2.position.y = 3.6;
+                    turretGroup.add(mastPole2);
+
+                    // 3. 360° Hexagonal LED Floodlight Crown (Lichtkopf)
+                    const headGroup = new THREE.Group();
+                    headGroup.position.y = 4.7;
+
+                    const headCenterMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
+                    const headCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.25, 8), headCenterMat);
+                    headGroup.add(headCenter);
+
+                    // 6 Directional High-Power LED Floodlight Panels in 360° Ring
+                    const ledMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+                    const ledCaseMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 });
+
+                    for (let f = 0; f < 6; f++) {
+                        const ang = (f * Math.PI * 2) / 6;
+                        const panelGroup = new THREE.Group();
+                        panelGroup.position.set(Math.sin(ang) * 0.45, 0, Math.cos(ang) * 0.45);
+                        panelGroup.rotation.y = ang;
+                        panelGroup.rotation.x = 0.25; // tilted slightly downwards to illuminate ground
+
+                        const casing = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.12), ledCaseMat);
+                        const ledPanel = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.18), ledMat);
+                        ledPanel.position.z = 0.065;
+                        panelGroup.add(casing);
+                        panelGroup.add(ledPanel);
+                        headGroup.add(panelGroup);
+                    }
+                    turretGroup.add(headGroup);
+
+                    // 4. Real-time Dynamic 360° Floodlight (PointLight)
+                    const floodLight = new THREE.PointLight(0xf8fafc, 3.4, spec.range + 8, 1.2);
+                    floodLight.position.set(0, 4.8, 0);
+                    turretGroup.add(floodLight);
+
+                    // Soft Ground Illumination Halo
+                    const glowMat = new THREE.MeshBasicMaterial({ color: 0xf1f5f9, transparent: true, opacity: 0.14, side: THREE.DoubleSide });
+                    const groundGlow = new THREE.Mesh(new THREE.CircleGeometry(spec.range * 0.45, 24), glowMat);
+                    groundGlow.rotation.x = -Math.PI / 2;
+                    groundGlow.position.y = 0.03;
+                    turretGroup.add(groundGlow);
+
+                    // Health Bar
+                    const hpBarGroup = new THREE.Group();
+                    hpBarGroup.position.set(0, 5.3, 0);
+
+                    const hpBgMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, side: THREE.DoubleSide });
+                    const hpBgMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.2), hpBgMat);
+                    const hpFillMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide });
+                    const hpFillMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.42, 0.14), hpFillMat);
+                    hpFillMesh.position.z = 0.01;
+
+                    hpBarGroup.add(hpBgMesh);
+                    hpBarGroup.add(hpFillMesh);
+                    turretGroup.add(hpBarGroup);
+
+                    turretGroup.userData = {
+                        isTurret: true,
+                        isLightMast: true,
+                        turretTypeId: spec.id,
+                        typeId: spec.id,
+                        name: spec.name,
+                        hitBox: hitBox,
+                        head: headGroup,
+                        lightSource: floodLight,
+                        groundGlow: groundGlow,
+                        range: spec.range,
+                        damage: 0,
+                        firerate: 0,
+                        hp: spec.hp,
+                        maxHp: spec.maxHp,
+                        level: 1,
+                        totalInvested: spec.cost,
+                        lastFired: 0,
+                        hpBarGroup: hpBarGroup,
+                        hpBarFill: hpFillMesh,
+                        hpBarMat: hpFillMat
+                    };
+
+                    this.turrets.push(turretGroup);
+                    this.scene.add(turretGroup);
+                    return turretGroup;
+                }
+
                 const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
                 const baseMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 1.2, 8), baseMat);
                 baseMesh.position.y = 0.6;
@@ -1676,34 +1807,48 @@
 
             updateDayNightCycle(dt) {
                 if (this.isPaused || this.isGameOver) return;
-                this.dayNightTime = ((this.dayNightTime || 0) + dt) % (this.dayNightCycleDuration || 90);
+                const totalDuration = this.dayNightCycleDuration || 180;
+                this.dayNightTime = ((this.dayNightTime || 0) + dt) % totalDuration;
 
-                const progress = this.dayNightTime / (this.dayNightCycleDuration || 90); // 0.0 to 1.0
-                const sunAngle = progress * Math.PI * 2; // 0 to 2PI
+                const dayDuration = 150; // 2.5 minutes Tag/Dämmerung
+                const nightDuration = 30; // 30 seconds Nacht
+                const t = this.dayNightTime;
 
-                // Normalized Day factor: 0.0 = Deep Midnight, 1.0 = High Noon
-                const rawFactor = Math.sin(sunAngle); // -1 (night) to +1 (day)
-                const dayFactor = (rawFactor + 1) / 2; // 0.0 (night) to 1.0 (day)
-
-                // Determine Phase Text & Icon for HUD
+                let dayFactor = 1.0;
                 let phaseText = 'TAG';
                 let phaseIcon = 'fa-sun text-amber-300';
                 let phaseTextColor = 'text-amber-300';
+                let sunAngle = 0;
 
-                if (progress < 0.15) {
+                if (t < 15) {
+                    // Morgendämmerung / Sonnenaufgang (0..15s)
+                    const trans = t / 15;
+                    dayFactor = trans;
+                    sunAngle = (t / dayDuration) * Math.PI;
                     phaseText = 'DÄMMERUNG';
                     phaseIcon = 'fa-cloud-sun text-amber-400 animate-pulse';
                     phaseTextColor = 'text-amber-400';
-                } else if (progress < 0.45) {
+                } else if (t < 135) {
+                    // Strahlender Tag (15..135s = 2 Min voller Tag)
+                    dayFactor = 1.0;
+                    sunAngle = (t / dayDuration) * Math.PI;
                     phaseText = 'TAG';
                     phaseIcon = 'fa-sun text-amber-300';
                     phaseTextColor = 'text-amber-300';
-                } else if (progress < 0.60) {
+                } else if (t < 150) {
+                    // Abenddämmerung / Sonnenuntergang (135..150s)
+                    const trans = 1.0 - ((t - 135) / 15);
+                    dayFactor = trans;
+                    sunAngle = (t / dayDuration) * Math.PI;
                     phaseText = 'DÄMMERUNG';
                     phaseIcon = 'fa-cloud-moon text-orange-400 animate-pulse';
                     phaseTextColor = 'text-orange-400';
                 } else {
-                    phaseText = 'NACHT (ZOMBIES +50% SPEED)';
+                    // Nacht (150..180s = 30s)
+                    dayFactor = 0.0;
+                    sunAngle = Math.PI + ((t - dayDuration) / nightDuration) * Math.PI;
+                    const nightSecLeft = Math.ceil(totalDuration - t);
+                    phaseText = `NACHT (${nightSecLeft}s - ZOMBIES SCHNELL)`;
                     phaseIcon = 'fa-moon text-red-400 animate-pulse';
                     phaseTextColor = 'text-red-400 font-bold';
                 }
@@ -1711,10 +1856,10 @@
                 // Zombie Speed Scaling: Fast & aggressive at night (+50% speed boost)
                 if (dayFactor > 0.40) {
                     const dayNorm = (dayFactor - 0.40) / 0.60;
-                    this.nightSpeedMult = 1.0 + 0.10 * (1.0 - dayNorm);
+                    this.nightSpeedMult = 1.0 + 0.08 * (1.0 - dayNorm);
                 } else {
                     const nightNorm = 1.0 - (dayFactor / 0.40);
-                    this.nightSpeedMult = 1.10 + 0.45 * nightNorm; // Up to 1.55x at midnight
+                    this.nightSpeedMult = 1.08 + 0.45 * nightNorm; // Up to 1.53x at midnight
                 }
 
                 if (this._lastDayNightPhase !== phaseText) {
@@ -1820,6 +1965,28 @@
                     if (this.scene.fog) {
                         this.scene.fog.color.copy(this._skyColor);
                         this.scene.fog.density = dayFactor > 0.40 ? 0.005 : 0.008;
+                    }
+                }
+
+                // 5. KATASTROPHENSCHUTZ-LICHTMASTEN (360° LED Flutlicht-Automatik bei Nacht/Dämmerung)
+                if (this.turrets && this.turrets.length > 0) {
+                    for (let ti = 0; ti < this.turrets.length; ti++) {
+                        const t = this.turrets[ti];
+                        if (t && t.userData && t.userData.isLightMast && t.userData.lightSource) {
+                            const light = t.userData.lightSource;
+                            const glow = t.userData.groundGlow;
+                            if (dayFactor > 0.45) {
+                                light.intensity = 0.3;
+                                if (glow) glow.visible = false;
+                            } else {
+                                const nightPower = 1.0 - (dayFactor / 0.45);
+                                light.intensity = 3.8 * (0.6 + 0.4 * nightPower);
+                                if (glow) {
+                                    glow.visible = true;
+                                    glow.material.opacity = 0.16 * nightPower;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1961,6 +2128,34 @@
                         hangarBox.classList.remove('hidden');
                     }
                     if (stdActions) stdActions.classList.add('hidden');
+                } else if (ud.isLightMast) {
+                    if (hangarBox) hangarBox.classList.add('hidden');
+                    if (stdActions) stdActions.classList.remove('hidden');
+
+                    subtitle.innerText = `Lvl ${ud.level} Katastrophenschutz-Lichtmast`;
+                    stats.innerHTML = `
+                        <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
+                        <div>• Beleuchtung: <strong class="text-amber-300">360° Rundum-LED-Flutlicht</strong></div>
+                        <div>• Leuchtradius: <strong class="text-sky-400">${ud.range}m</strong></div>
+                        <div>• Lichttechnik: <strong class="text-emerald-400">High-Power SMD-LEDs</strong></div>
+                        <div>• Nacht-Sensor: <strong class="text-emerald-400">Automatische Aktivierung</strong></div>
+                    `;
+                    const upgCost = Math.round(ud.totalInvested * 0.80);
+                    const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
+
+                    document.getElementById('inspect-upgrade-text').innerText = `Upgrade ($${upgCost})`;
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Reparieren';
+
+                    const canUpgrade = this.money >= upgCost;
+                    upgradeBtn.disabled = !canUpgrade;
+                    upgradeBtn.className = `py-3 ${canUpgrade ? 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white cursor-pointer shadow-md shadow-amber-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
+                    const canRepair = repairCost > 0 && this.money >= repairCost;
+                    repairBtn.disabled = !canRepair;
+                    repairBtn.className = `py-3 ${canRepair ? 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white cursor-pointer shadow-md shadow-emerald-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
+                    upgradeBtn.classList.remove('hidden');
+                    repairBtn.classList.remove('hidden');
                 } else if (ud.isTurret) {
                     if (hangarBox) hangarBox.classList.add('hidden');
                     if (stdActions) stdActions.classList.remove('hidden');
@@ -4864,6 +5059,11 @@
                     // Use fewer angle offsets on mobile (5 vs 9) to halve zombie AI cost
                     const angleOffsets = isMob ? this._angleOffsetsMob : this._angleOffsets;
 
+                    // Active Light Masts (THW Flutlichtmasten verlangsamen Zombies bei Nacht im Lichtkegel auf Normal-Tempo)
+                    const activeLightMasts = (this.nightSpeedMult > 1.0 && this.turrets.length > 0)
+                        ? this.turrets.filter(t => t && t.userData && t.userData.isLightMast && t.userData.hp > 0)
+                        : null;
+
                     for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
                         const z = this.zombies[zi];
                         if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) {
@@ -4877,8 +5077,23 @@
                         const target = distToPlayerSq < 324 ? playerPos : basePos; // 18^2 = 324
 
                         const directAngle = Math.atan2(target.x - z.position.x, target.z - z.position.z);
-                        const nightSpeedMult = this.nightSpeedMult || 1.0;
-                        const stepSize = z.userData.speed * nightSpeedMult * (dt * 60);
+                        
+                        let zombieSpeedMult = this.nightSpeedMult || 1.0;
+                        if (activeLightMasts && activeLightMasts.length > 0 && zombieSpeedMult > 1.0) {
+                            for (let mi = 0; mi < activeLightMasts.length; mi++) {
+                                const lm = activeLightMasts[mi];
+                                const lmdx = z.position.x - lm.position.x;
+                                const lmdz = z.position.z - lm.position.z;
+                                const lmRange = lm.userData.range || 34;
+                                if (lmdx * lmdx + lmdz * lmdz <= lmRange * lmRange) {
+                                    // Zombie befindet sich im Flutlichtkegel: Geblendet und auf normales Tempo gedrosselt!
+                                    zombieSpeedMult = 1.0;
+                                    break;
+                                }
+                            }
+                        }
+
+                        const stepSize = z.userData.speed * zombieSpeedMult * (dt * 60);
                         const zRadius = 0.4 * z.userData.scale;
 
                         let chosenAngle = null;
@@ -4976,7 +5191,7 @@
 
                         // Walk bob: skip on mobile when >25 zombies
                         if (!isMob || this.zombies.length <= 25) {
-                            z.userData.walkCycle += 0.15 * nightSpeedMult;
+                            z.userData.walkCycle += 0.15 * zombieSpeedMult;
                             z.rotation.z = Math.sin(z.userData.walkCycle) * 0.08;
                         }
 
