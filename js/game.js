@@ -533,8 +533,13 @@
                     if (this.isAc130Active) {
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
-                            if (touch.identifier === this.ac130TouchAimId) {
-                                this.ac130TouchAimId = null;
+                            if (this.touchJoystick.active && touch.identifier === this.touchJoystick.touchId) {
+                                this.touchJoystick.active = false;
+                                this.touchJoystick.touchId = null;
+                                this.touchJoystick.vectorX = 0;
+                                this.touchJoystick.vectorY = 0;
+                                const container = document.getElementById('joystick-container');
+                                if (container) container.classList.add('hidden');
                             }
                         }
                         return;
@@ -4511,49 +4516,73 @@
 
                     // Mission Over after 40 Seconds
                     if (this.ac130MissionTimer <= 0) {
-                        this.isAc130Active = false;
-                        const overlay = document.getElementById('ac130-overlay');
-                        if (overlay) overlay.classList.add('hidden');
-                        document.body.classList.remove('thermal-active');
-
-                        // Restore Normal Gameplay HUD
-                        const gameHud = document.getElementById('game-hud');
-                        if (gameHud) gameHud.classList.remove('hidden');
-
-                        // Restore original materials to zombies, player & dog
-                        for (let z of this.zombies) {
-                            z.traverse((child) => {
-                                if (child.isMesh && child.userData.ac130OrigMat) {
-                                    child.material = child.userData.ac130OrigMat;
-                                }
-                            });
-                        }
-                        if (this.playerGroup) {
-                            this.playerGroup.traverse((child) => {
-                                if (child.isMesh && child.userData.ac130OrigMat) {
-                                    child.material = child.userData.ac130OrigMat;
-                                }
-                            });
-                        }
-                        if (this.dogGroup) {
-                            this.dogGroup.traverse((child) => {
-                                if (child.isMesh && child.userData.ac130OrigMat) {
-                                    child.material = child.userData.ac130OrigMat;
-                                }
-                            });
-                        }
-
-                        // Stop Continuous AC-130 Turboprop Sound
-                        if (typeof audio !== 'undefined' && audio.stopAc130EngineSound) {
-                            audio.stopAc130EngineSound();
-                        }
-
-                        this.updateCameraSettings();
-                        if (typeof showPurchaseToast === 'function') {
-                            showPurchaseToast('✈️ AC-130 Gunship: Treibstoff verbraucht, Rückkehr zur Basis!');
-                        }
+                        this.exitAc130();
                     }
                 }
+            }
+
+            exitAc130() {
+                if (!this.isAc130Active) return;
+                this.isAc130Active = false;
+
+                // Completely reset touch, joystick, mouse and keys state
+                this.touchJoystick.active = false;
+                this.touchJoystick.touchId = null;
+                this.touchJoystick.vectorX = 0;
+                this.touchJoystick.vectorY = 0;
+                this.isTouchFiring = false;
+                this.fireTouchId = null;
+                this.isAc130TouchFiring = false;
+                this.isMouseDown = false;
+                this.keys = {};
+                this.lockedAimTarget = null;
+
+                const joystickContainer = document.getElementById('joystick-container');
+                if (joystickContainer) joystickContainer.classList.add('hidden');
+                const fireFeedback = document.getElementById('fire-touch-feedback');
+                if (fireFeedback) fireFeedback.classList.add('hidden');
+
+                const overlay = document.getElementById('ac130-overlay');
+                if (overlay) overlay.classList.add('hidden');
+                document.body.classList.remove('thermal-active');
+
+                // Restore Normal Gameplay HUD
+                const gameHud = document.getElementById('game-hud');
+                if (gameHud) gameHud.classList.remove('hidden');
+
+                // Restore original materials to zombies, player & dog
+                for (let z of this.zombies) {
+                    z.traverse((child) => {
+                        if (child.isMesh && child.userData.ac130OrigMat) {
+                            child.material = child.userData.ac130OrigMat;
+                        }
+                    });
+                }
+                if (this.playerGroup) {
+                    this.playerGroup.traverse((child) => {
+                        if (child.isMesh && child.userData.ac130OrigMat) {
+                            child.material = child.userData.ac130OrigMat;
+                        }
+                    });
+                }
+                if (this.dogGroup) {
+                    this.dogGroup.traverse((child) => {
+                        if (child.isMesh && child.userData.ac130OrigMat) {
+                            child.material = child.userData.ac130OrigMat;
+                        }
+                    });
+                }
+
+                // Stop Continuous AC-130 Turboprop Sound
+                if (typeof audio !== 'undefined' && audio.stopAc130EngineSound) {
+                    audio.stopAc130EngineSound();
+                }
+
+                this.updateCameraSettings();
+                if (typeof showPurchaseToast === 'function') {
+                    showPurchaseToast('✈️ AC-130 Gunship: Treibstoff verbraucht, Rückkehr zur Basis!');
+                }
+                this.syncHUD();
             }
 
             showTacticalIntel(type) {
@@ -5762,6 +5791,7 @@
             destroy() {
                 this.isRunning = false;
                 this.isGameOver = true;
+                if (this.isAc130Active) this.exitAc130();
                 if (this.secondTimer) clearInterval(this.secondTimer);
                 if (this.spawnTimer) clearInterval(this.spawnTimer);
                 if (this.turretTimer) clearInterval(this.turretTimer);
@@ -5781,6 +5811,7 @@
                 this.isGameOver = true;
                 this.isRunning = false;
                 this.isPaused = true;
+                if (this.isAc130Active) this.exitAc130();
                 clearInterval(this.secondTimer);
                 clearInterval(this.spawnTimer);
                 clearInterval(this.turretTimer);
