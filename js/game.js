@@ -5862,18 +5862,22 @@
                     difficulty: Storage.data.difficulty
                 };
 
+                const currentPlayer = Storage.data.lastPlayerName || 'SPIELER';
                 const qualifies = checkHighscoreQualification(this.currentWave, this.totalKills, this.gameSeconds);
                 const hsEntryEl = document.getElementById('highscore-entry');
-                if (hsEntryEl) {
-                    if (qualifies) {
+                if (qualifies) {
+                    if (typeof submitHighscore === 'function') {
+                        submitHighscore(currentPlayer, false);
+                    }
+                    if (hsEntryEl) {
                         hsEntryEl.classList.remove('hidden');
                         const nameInput = document.getElementById('hs-player-name');
                         if (nameInput) {
-                            nameInput.value = Storage.data.lastPlayerName || 'SPIELER';
+                            nameInput.value = currentPlayer;
                         }
-                    } else {
-                        hsEntryEl.classList.add('hidden');
                     }
+                } else if (hsEntryEl) {
+                    hsEntryEl.classList.add('hidden');
                 }
 
                 document.getElementById('game-over-modal').classList.remove('hidden');

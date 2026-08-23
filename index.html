@@ -409,7 +409,7 @@
                 </div>
                 <div class="bg-slate-900/90 border border-slate-800 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center space-x-2 text-[11px] sm:text-xs font-bold shadow-md">
                     <i class="fa-solid fa-trophy text-amber-400"></i>
-                    <span class="text-slate-400">Bestzeit: <strong id="menu-highscore" class="text-amber-400 font-mono">00:00</strong></span>
+                    <span class="text-slate-400">Rekord: <strong id="menu-highscore" class="text-amber-400 font-mono">Kein Rekord</strong></span>
                 </div>
             </div>
 
@@ -425,6 +425,13 @@
                             <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
                                 Verteidige deine Festung, baue automatische Geschütze und schalte mächtige Waffen frei!
                             </p>
+                        </div>
+
+                        <!-- PLAYER NAME INPUT -->
+                        <div class="flex items-center space-x-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl text-left">
+                            <i class="fa-solid fa-user-astronaut text-amber-400 text-xs sm:text-sm"></i>
+                            <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Spieler:</span>
+                            <input type="text" id="menu-player-name" maxlength="12" placeholder="SPIELER" onchange="setPlayerName(this.value)" oninput="setPlayerName(this.value)" class="flex-1 bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1 text-xs text-white font-bold uppercase tracking-wider focus:outline-none focus:border-amber-500">
                         </div>
 
                         <!-- START BUTTONS -->
@@ -449,7 +456,7 @@
                             <span class="flex items-center space-x-1.5">
                                 <i class="fa-solid fa-earth-americas text-emerald-400 mr-1 animate-pulse"></i>
                                 <span>Online Highscores</span>
-                                <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider font-teko leading-none">Season 2</span>
+                                <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider font-teko leading-none">Top 30</span>
                             </span>
                             <div class="flex items-center space-x-2">
                                 <span class="inline-flex items-center text-[9px] sm:text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
@@ -479,7 +486,7 @@
                             </div>
                             
                             <!-- Tabelle mit dynamischer max-h und Scrollbar -->
-                            <div id="highscore-list-table-wrapper" class="hidden overflow-y-auto max-h-40 sm:max-h-60 md:max-h-72 w-full custom-scroll">
+                            <div id="highscore-list-table-wrapper" class="hidden overflow-y-auto max-h-52 sm:max-h-64 md:max-h-80 w-full custom-scroll">
                                 <table class="w-full text-left text-xs font-semibold">
                                     <thead>
                                         <tr class="text-slate-500 border-b border-slate-800 text-[8px] sm:text-[9px] uppercase tracking-wider sticky top-0 bg-slate-900/95 backdrop-blur-sm">
@@ -858,13 +865,16 @@
                             </div>
                         </div>
                         <div id="highscore-entry" class="hidden bg-slate-950 p-2.5 sm:p-4 rounded-xl border border-amber-500/40 space-y-2 text-left">
-                            <div class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
-                                <i class="fa-solid fa-trophy mr-1.5 animate-pulse"></i>
-                                <span>Neuer Highscore!</span>
+                            <div class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                                <span class="flex items-center">
+                                    <i class="fa-solid fa-trophy mr-1.5 animate-pulse text-amber-400"></i>
+                                    <span>Neuer Rekord!</span>
+                                </span>
+                                <span class="text-[10px] text-emerald-400 font-mono font-bold">✓ Gespeichert</span>
                             </div>
                             <div class="flex space-x-2">
-                                <input type="text" id="hs-player-name" maxlength="12" placeholder="Dein Name" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-bold uppercase tracking-wider">
-                                <button onclick="submitHighscore()" class="bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition active:scale-95">Speichern</button>
+                                <input type="text" id="hs-player-name" maxlength="12" placeholder="Dein Name" onkeydown="if(event.key==='Enter') submitHighscore(this.value, true)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-bold uppercase tracking-wider">
+                                <button onclick="submitHighscore(document.getElementById('hs-player-name').value, true)" class="bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition active:scale-95 whitespace-nowrap">Name ändern</button>
                             </div>
                         </div>
                     </div>

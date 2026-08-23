@@ -759,6 +759,10 @@ updateTacticalExtrasHUD();
         }
 
         function returnToMainMenu() {
+            const hsEntry = document.getElementById('highscore-entry');
+            if (hsEntry && !hsEntry.classList.contains('hidden') && window.lastRunStats && typeof submitHighscore === 'function') {
+                submitHighscore();
+            }
             if (isPauseModalOpen) togglePauseModal();
             if (isShopOpen) toggleShop();
             const goModal = document.getElementById('game-over-modal');
@@ -1091,6 +1095,10 @@ updateTacticalExtrasHUD();
         }
 
         function restartGame() {
+            const hsEntry = document.getElementById('highscore-entry');
+            if (hsEntry && !hsEntry.classList.contains('hidden') && window.lastRunStats && typeof submitHighscore === 'function') {
+                submitHighscore();
+            }
             document.getElementById('game-over-modal').classList.add('hidden');
             startNewGame();
         }
