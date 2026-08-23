@@ -894,7 +894,7 @@ updateTacticalExtrasHUD();
                 return Math.round(upg.costBase * Math.pow(1.6, Math.max(0, currentLvl - 1)));
             }
             if (key === 'scavenger') {
-                return Math.round(upg.costBase * Math.pow(1.45, currentLvl));
+                return Math.round(upg.costBase * Math.pow(1.40, currentLvl));
             }
             return Math.round(upg.costBase * Math.pow(1.6, currentLvl));
         }
@@ -925,6 +925,16 @@ updateTacticalExtrasHUD();
             if (key === 'base_hp') {
                 gameInstance.maxBaseHp += 600;
                 gameInstance.baseHp += 600;
+                if (gameInstance.turrets) {
+                    gameInstance.turrets.forEach(t => {
+                        if (t && t.userData && !t.userData.isIndestructible) {
+                            const hpBonus = Math.round(t.userData.maxHp * 0.15);
+                            t.userData.maxHp += hpBonus;
+                            t.userData.hp += hpBonus;
+                            gameInstance.updateTurretHpBar(t);
+                        }
+                    });
+                }
             }
 
             gameInstance.syncHUD();

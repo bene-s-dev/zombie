@@ -678,8 +678,8 @@
                     z = edgeOffset;
                 }
 
-                const waveHpScale = Math.pow(1.13, this.currentWave - 1);
-                const waveDmgScale = Math.pow(1.08, this.currentWave - 1);
+                const waveHpScale = Math.pow(1.095, this.currentWave - 1);
+                const waveDmgScale = Math.pow(1.04, this.currentWave - 1);
 
                 const isBossWave = (this.currentWave % 7 === 0) && (this.zombiesLeftToSpawn === 0);
 
@@ -903,8 +903,8 @@
 
             spawnMinionCrawler(x, z) {
                 if (this.isPaused || this.isGameOver) return;
-                const waveHpScale = Math.pow(1.20, this.currentWave - 1);
-                const waveDmgScale = Math.pow(1.12, this.currentWave - 1);
+                const waveHpScale = Math.pow(1.10, this.currentWave - 1);
+                const waveDmgScale = Math.pow(1.05, this.currentWave - 1);
 
                 const zombieGroup = new THREE.Group();
                 zombieGroup.position.set(x, 0, z);
@@ -1142,7 +1142,7 @@
                             if (distTSq <= radiusSq) {
                                 const distT = Math.sqrt(distTSq);
                                 const falloff = 1 - (distT / radius) * 0.5;
-                                t.userData.hp -= damage * 1.5 * falloff;
+                                t.userData.hp -= damage * 0.65 * falloff;
                                 this.createBloodSparks(t.position, 0xf59e0b);
                                 if (t.userData.hp <= 0) {
                                     audio.playExplosion();
@@ -1158,7 +1158,7 @@
                             if (distWSq <= radiusSq) {
                                 const distW = Math.sqrt(distWSq);
                                 const falloff = 1 - (distW / radius) * 0.5;
-                                w.userData.hp -= damage * 1.5 * falloff;
+                                w.userData.hp -= damage * 0.65 * falloff;
                                 this.createBloodSparks(w.position, 0xeab308);
                                 if (w.userData.hp <= 0) {
                                     this.destroyWall(w);
@@ -1561,6 +1561,10 @@
                     hpBarGroup.add(hpFillMesh);
                     turretGroup.add(hpBarGroup);
 
+                    const waveHpBonus = 1 + (this.currentWave - 1) * 0.12;
+                    const hqArmorBonus = 1 + ((this.upgrades && this.upgrades.base_hp) || 0) * 0.15;
+                    const scaledMaxHp = Math.round(spec.hp * waveHpBonus * hqArmorBonus);
+
                     turretGroup.userData = {
                         isTurret: true,
                         isLightMast: true,
@@ -1574,8 +1578,8 @@
                         range: spec.range,
                         damage: 0,
                         firerate: 0,
-                        hp: spec.hp,
-                        maxHp: spec.maxHp,
+                        hp: scaledMaxHp,
+                        maxHp: scaledMaxHp,
                         level: 1,
                         totalInvested: spec.cost,
                         lastFired: 0,
@@ -1646,6 +1650,10 @@
                 hpBarGroup.add(hpFillMesh);
                 turretGroup.add(hpBarGroup);
 
+                const waveHpBonus = 1 + (this.currentWave - 1) * 0.12;
+                const hqArmorBonus = 1 + ((this.upgrades && this.upgrades.base_hp) || 0) * 0.15;
+                const scaledMaxHp = Math.round(spec.hp * waveHpBonus * hqArmorBonus);
+
                 turretGroup.userData = {
                     isTurret: true,
                     turretTypeId: spec.id,
@@ -1659,8 +1667,8 @@
                     isExplosive: spec.isExplosive,
                     splashRadius: spec.splashRadius,
                     isTesla: spec.isTesla,
-                    hp: spec.hp,
-                    maxHp: spec.maxHp,
+                    hp: scaledMaxHp,
+                    maxHp: scaledMaxHp,
                     level: 1,
                     totalInvested: spec.cost,
                     lastFired: 0,
@@ -2234,7 +2242,7 @@
                     this.createExplosion(z.position, 3.8, 85 * (z.userData.dmgMult || 1), 3.8, false, true);
                 }
                 const scavengerLvl = this.upgrades.scavenger || 0;
-                const scavengerMult = Math.pow(1.035, scavengerLvl);
+                const scavengerMult = Math.pow(1.055, scavengerLvl);
                 this.money += Math.round(z.userData.reward * scavengerMult);
                 this.totalKills++;
                 audio.playCoin();

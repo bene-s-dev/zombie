@@ -56,10 +56,10 @@ const UPGRADES = {
     // CATEGORY: PLAYER
     player_hp: { category: 'player', name: 'Kampfweste & Max HP', level: 0, maxLevel: Infinity, costBase: 180, desc: 'Erhöht maximale Spieler-Gesundheit um +35 HP' },
     player_speed: { category: 'player', name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 140, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
-    scavenger: { category: 'player', name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 250, desc: 'Erhöht erbeutetes Geld pro Zombie um +3.5% multiplikativ pro Stufe (Kein Stufenlimit)' },
+    scavenger: { category: 'player', name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 250, desc: 'Erhöht erbeutetes Geld pro Zombie um +5.5% multiplikativ pro Stufe (Kein Stufenlimit)' },
 
     // CATEGORY: HQ / BASE
-    base_hp: { category: 'hq', name: 'Basis-Panzerung', level: 0, maxLevel: Infinity, costBase: 220, desc: 'Erhöht maximale Basis-Gesundheit massiv um +600 HP' },
+    base_hp: { category: 'hq', name: 'Basis & Turm-Panzerung', level: 0, maxLevel: Infinity, costBase: 220, desc: 'Erhöht maximale Basis-HP um +600 HP und verstärkt Panzerung aller Türme um +15% pro Stufe' },
     auto_repair: { category: 'hq', name: 'Nano-Reparatur-Drohnen', level: 0, maxLevel: 5, costBase: 450, desc: 'Repariert die Basis kontinuierlich im Kampf (+6 HP/Sek)' },
     base_spikes: { category: 'hq', name: 'Dornen-Perimeter', level: 0, maxLevel: 5, costBase: 300, desc: 'Fügt Zombies Schaden zu, die die Basis-Grenze angreifen' },
 
