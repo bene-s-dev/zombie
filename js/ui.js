@@ -981,13 +981,25 @@ updateTacticalExtrasHUD();
             if (statusEl && text) statusEl.innerText = text;
         }
 
+        function triggerFullscreen() {
+            try {
+                const el = document.documentElement;
+                if (el.requestFullscreen) {
+                    el.requestFullscreen().catch(() => {});
+                } else if (el.webkitRequestFullscreen) {
+                    el.webkitRequestFullscreen().catch(() => {});
+                } else if (el.msRequestFullscreen) {
+                    el.msRequestFullscreen().catch(() => {});
+                }
+                window.scrollTo(0, 0);
+            } catch(e) {}
+        }
+
         async function loadAndStartGame(sessionToRestore = null) {
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) loadingScreen.classList.remove('hidden');
 
-            if (document.documentElement && document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(err => console.log(err));
-            }
+            triggerFullscreen();
 
             const startTime = performance.now();
             const totalDurationMs = 2200;

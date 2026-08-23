@@ -8,7 +8,13 @@
     <meta name="description" content="Taskforce: Undead - 3D Zombie Survival & Base Defense Game. Kämpfe mit deinem K9-Kampfhund, baue Geschütztürme und überlebe die Apokalypse!">
     <meta name="theme-color" content="#020617">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Taskforce: Undead">
+    <meta name="apple-touch-fullscreen" content="yes">
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
 
     <!-- Favicon & Icons -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -519,33 +525,67 @@
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between select-none">
             <!-- Top HUD Bar: Safe-area aware, Scalable flex container with unbreakable left/center/right flow -->
-            <header class="w-full flex items-start justify-between p-1.5 sm:p-2.5 safe-area-padding-x safe-area-padding-top gap-1 sm:gap-2 pointer-events-none">
-                <!-- Left Dock: Wave & Timer (No background, No border, clean pure HUD text) -->
-                <div id="hud-wave-container" class="flex-shrink-0 flex items-center space-x-2 sm:space-x-3 h-8 sm:h-10 pointer-events-auto drop-shadow-md">
-                    <div id="hud-timer" class="font-mono text-[11px] sm:text-xs text-slate-300 whitespace-nowrap">00:00</div>
-                    <div class="h-3.5 w-px bg-slate-700/70"></div>
-                    <div id="hud-zombies-left" class="font-teko text-lg sm:text-2xl font-bold text-white leading-none whitespace-nowrap">0 UNTOTE</div>
-                    <div class="h-3.5 w-px bg-slate-700/70"></div>
-                    <div id="hud-wave-title-wrap" class="flex items-center justify-start">
-                        <div id="hud-wave-title" class="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1 whitespace-nowrap">
-                            <i class="fa-solid fa-skull"></i>
-                            <span>WELLE 1</span>
+            <header class="w-full flex items-start justify-between p-1 sm:p-2.5 safe-area-padding-x safe-area-padding-top gap-1 sm:gap-2 pointer-events-none">
+                <!-- Left Dock: Compact Health (Player + Base) + Wave & Timer -->
+                <div id="hud-wave-container" class="flex-shrink-0 flex flex-col items-start space-y-1 pointer-events-auto drop-shadow-md max-w-[50vw] sm:max-w-none">
+                    <!-- Compact Health Box: Player & Base (Top Left) -->
+                    <div class="bg-slate-950/90 border border-slate-800/90 p-1 sm:p-1.5 px-1.5 sm:px-2 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg flex flex-col space-y-1 w-full max-w-[150px] sm:max-w-[200px]">
+                        <!-- Player HP Row -->
+                        <div class="flex items-center justify-between text-[8px] sm:text-[10px] font-bold leading-none">
+                            <div class="flex items-center space-x-1 min-w-0">
+                                <i class="fa-solid fa-user-shield text-emerald-400 text-[8px] sm:text-[10px] flex-shrink-0"></i>
+                                <span class="text-slate-300 font-semibold text-[8px] sm:text-[9px] uppercase truncate">Spieler</span>
+                                <div id="hud-player-lives-hearts" class="flex items-center space-x-0.5 text-[7px] sm:text-[9px] text-red-500 flex-shrink-0"></div>
+                            </div>
+                            <span id="hud-player-hp-text" class="text-emerald-400 font-mono text-[7.5px] sm:text-[10px] whitespace-nowrap font-bold pl-1">200/200</span>
+                        </div>
+                        <div class="w-full h-1 sm:h-1.5 bg-slate-800 rounded-full overflow-hidden relative">
+                            <div id="hud-player-hp-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%;"></div>
+                            <div id="hud-player-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
+                        </div>
+
+                        <!-- Base HP Row -->
+                        <div class="flex items-center justify-between text-[8px] sm:text-[10px] font-bold leading-none pt-0.5">
+                            <div class="flex items-center space-x-1 min-w-0">
+                                <i class="fa-solid fa-building-shield text-sky-400 text-[8px] sm:text-[10px] flex-shrink-0"></i>
+                                <span class="text-slate-300 font-semibold text-[8px] sm:text-[9px] uppercase truncate">Basis</span>
+                                <div id="hud-base-lives-hearts" class="flex items-center space-x-0.5 text-[7px] sm:text-[9px] text-sky-400 flex-shrink-0"></div>
+                            </div>
+                            <span id="hud-base-hp-text" class="text-sky-400 font-mono text-[7.5px] sm:text-[10px] whitespace-nowrap font-bold pl-1">2500/2500</span>
+                        </div>
+                        <div class="w-full h-1 sm:h-1.5 bg-slate-800 rounded-full overflow-hidden relative">
+                            <div id="hud-base-hp-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 100%;"></div>
+                            <div id="hud-base-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
                         </div>
                     </div>
-                    <div class="h-3.5 w-px bg-slate-700/70"></div>
-                    <div id="hud-daynight-wrap" class="flex items-center space-x-1 text-[10px] sm:text-xs font-bold uppercase font-mono whitespace-nowrap">
-                        <i id="hud-daynight-icon" class="fa-solid fa-sun text-amber-400"></i>
-                        <span id="hud-daynight-text" class="text-amber-300">TAG</span>
+
+                    <!-- Wave & Timer Strip -->
+                    <div class="bg-slate-950/80 border border-slate-800/80 px-1.5 sm:px-2 py-0.5 rounded-lg backdrop-blur-sm flex items-center space-x-1 sm:space-x-2 text-[8px] sm:text-xs">
+                        <div id="hud-timer" class="font-mono text-[8.5px] sm:text-xs text-slate-300 whitespace-nowrap">00:00</div>
+                        <div class="h-2.5 sm:h-3 w-px bg-slate-700/70"></div>
+                        <div id="hud-zombies-left" class="font-teko text-xs sm:text-lg font-bold text-white leading-none whitespace-nowrap">0 UNTOTE</div>
+                        <div class="h-2.5 sm:h-3 w-px bg-slate-700/70"></div>
+                        <div id="hud-wave-title-wrap" class="flex items-center justify-start">
+                            <div id="hud-wave-title" class="text-[8px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1 whitespace-nowrap">
+                                <i class="fa-solid fa-skull"></i>
+                                <span>WELLE 1</span>
+                            </div>
+                        </div>
+                        <div class="h-2.5 sm:h-3 w-px bg-slate-700/70"></div>
+                        <div id="hud-daynight-wrap" class="flex items-center space-x-1 text-[8px] sm:text-xs font-bold uppercase font-mono whitespace-nowrap">
+                            <i id="hud-daynight-icon" class="fa-solid fa-sun text-amber-400"></i>
+                            <span id="hud-daynight-text" class="text-amber-300">TAG</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Center Dock: Tactical Abilities (Slim / thin profile matching wave & timer HUD line) -->
-                <div id="hud-tactical-skills" class="flex-1 min-w-0 max-w-fit flex items-center justify-center space-x-1 sm:space-x-1.5 h-8 sm:h-10 pointer-events-auto px-0.5 sm:px-1">
+                <!-- Center Dock: Tactical Abilities (Slim & compact for mobile landscape) -->
+                <div id="hud-tactical-skills" class="flex-1 min-w-0 max-w-fit flex items-center justify-center space-x-1 sm:space-x-1.5 h-7 sm:h-9 pointer-events-auto px-0.5">
                     <!-- AC-130 Gunship Button [V] -->
-                    <button id="hud-ac130-btn" onclick="triggerAc130()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/85 hover:bg-slate-900 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 px-1.5 sm:px-2 py-0.5 rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 min-w-[50px] sm:min-w-[68px] max-w-[85px] flex-shrink cursor-pointer" title="AC-130 Gunship [V]">
+                    <button id="hud-ac130-btn" onclick="triggerAc130()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/90 hover:bg-slate-900 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 px-1 sm:px-2 py-0.5 rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 min-w-[42px] sm:min-w-[64px] max-w-[70px] sm:max-w-[85px] flex-shrink cursor-pointer" title="AC-130 Gunship [V]">
                         <div id="ac130-progress-fill" class="absolute top-0 left-0 bottom-0 bg-cyan-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="ac130-icon" class="relative z-10 flex items-center text-cyan-400">
-                            <i class="fa-solid fa-crosshairs text-[9px] sm:text-[10px]"></i>
+                            <i class="fa-solid fa-crosshairs text-[8px] sm:text-[10px]"></i>
                         </div>
                         <div class="relative z-10 flex items-center space-x-1 text-left truncate leading-none">
                             <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase tracking-tight">AC-130</span>
@@ -554,10 +594,10 @@
                     </button>
 
                     <!-- Luftschlag Button [E] -->
-                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/85 hover:bg-slate-900 active:bg-slate-900 border border-amber-500/60 text-amber-400 px-1.5 sm:px-2 py-0.5 rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 min-w-[50px] sm:min-w-[68px] max-w-[85px] flex-shrink cursor-pointer" title="Luftschlag [E]">
+                    <button id="hud-airstrike-btn" onclick="triggerAirstrike()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/90 hover:bg-slate-900 active:bg-slate-900 border border-amber-500/60 text-amber-400 px-1 sm:px-2 py-0.5 rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 min-w-[42px] sm:min-w-[64px] max-w-[70px] sm:max-w-[85px] flex-shrink cursor-pointer" title="Luftschlag [E]">
                         <div id="airstrike-progress-fill" class="absolute top-0 left-0 bottom-0 bg-amber-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="airstrike-icon" class="relative z-10 flex items-center text-amber-400 airstrike-ready-blink">
-                            <i class="fa-solid fa-plane-up text-[9px] sm:text-[10px]"></i>
+                            <i class="fa-solid fa-plane-up text-[8px] sm:text-[10px]"></i>
                         </div>
                         <div class="relative z-10 flex items-center space-x-1 text-left truncate leading-none">
                             <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase tracking-tight">Schlag</span>
@@ -566,10 +606,10 @@
                     </button>
 
                     <!-- Nuke Ultimate Button [Q] -->
-                    <button id="hud-nuke-btn" onclick="triggerNuke()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/85 hover:bg-slate-900 active:bg-slate-900 border border-red-500/60 text-red-400 px-1.5 sm:px-2 py-0.5 rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 min-w-[50px] sm:min-w-[68px] max-w-[85px] flex-shrink cursor-pointer" title="Atombombe [Q]">
+                    <button id="hud-nuke-btn" onclick="triggerNuke()" style="touch-action: manipulation;" class="relative overflow-hidden bg-slate-950/90 hover:bg-slate-900 active:bg-slate-900 border border-red-500/60 text-red-400 px-1 sm:px-2 py-0.5 rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 min-w-[42px] sm:min-w-[64px] max-w-[70px] sm:max-w-[85px] flex-shrink cursor-pointer" title="Atombombe [Q]">
                         <div id="nuke-progress-fill" class="absolute top-0 left-0 bottom-0 bg-red-500/25 pointer-events-none transition-all duration-150" style="width: 0%;"></div>
                         <div id="nuke-icon" class="relative z-10 flex items-center text-red-500 animate-spin">
-                            <i class="fa-solid fa-radiation text-[9px] sm:text-[10px]"></i>
+                            <i class="fa-solid fa-radiation text-[8px] sm:text-[10px]"></i>
                         </div>
                         <div class="relative z-10 flex items-center space-x-1 text-left truncate leading-none">
                             <span class="text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase tracking-tight">Nuke</span>
@@ -578,69 +618,43 @@
                     </button>
                 </div>
 
-                <!-- Right Dock: Actions (ALWAYS visible, never pushed off-screen, flex-shrink-0) -->
+                <!-- Right Dock: Actions (Money, Shop, Pause, Early wave) -->
                 <div class="flex-shrink-0 flex items-start space-x-1 sm:space-x-1.5 ml-auto pointer-events-auto">
                     <!-- Money Badge -->
-                    <div class="bg-slate-950/80 border border-amber-500/60 px-1.5 sm:px-2.5 rounded-lg sm:rounded-xl backdrop-blur-sm shadow-lg flex items-center space-x-1 h-8 sm:h-10 text-amber-400 font-bold text-[11px] sm:text-sm font-mono">
-                        <i class="fa-solid fa-coins text-amber-400 text-[10px] sm:text-xs"></i>
+                    <div class="bg-slate-950/90 border border-amber-500/60 px-1.5 sm:px-2.5 rounded-lg sm:rounded-xl backdrop-blur-sm shadow-lg flex items-center space-x-1 h-7 sm:h-9 text-amber-400 font-bold text-[10px] sm:text-xs font-mono">
+                        <i class="fa-solid fa-coins text-amber-400 text-[9px] sm:text-xs"></i>
                         <span id="hud-money">$ 0</span>
                     </div>
 
                     <!-- Shop Button -->
-                    <button id="hud-shop-btn" onclick="toggleShop()" style="touch-action: manipulation;" class="bg-slate-950/80 hover:bg-slate-900 active:bg-slate-950 text-red-400 border border-red-500/60 p-1 sm:px-2 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-8 sm:h-10 min-w-[34px] sm:min-w-[42px] cursor-pointer" title="Laden öffnen [B]">
+                    <button id="hud-shop-btn" onclick="toggleShop()" style="touch-action: manipulation;" class="bg-slate-950/90 hover:bg-slate-900 active:bg-slate-950 text-red-400 border border-red-500/60 p-1 sm:px-2 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-7 sm:h-9 min-w-[30px] sm:min-w-[38px] cursor-pointer" title="Laden öffnen [B]">
                         <i class="fa-solid fa-store text-xs sm:text-sm"></i>
                     </button>
 
-                    <!-- Stacked Pause Button & Early Wave Trigger (Both large and full-sized) -->
+                    <!-- Stacked Pause Button & Early Wave Trigger -->
                     <div class="flex flex-col space-y-1 items-center justify-center">
-                        <button id="hud-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-slate-950/85 hover:bg-slate-800 active:bg-slate-950 text-amber-300 hover:text-white border border-amber-400/80 px-1.5 sm:px-2 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-8 sm:h-10 min-w-[34px] sm:min-w-[42px] cursor-pointer" title="Pause [ESC]">
+                        <button id="hud-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-slate-950/90 hover:bg-slate-800 active:bg-slate-950 text-amber-300 hover:text-white border border-amber-400/80 px-1.5 sm:px-2 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-7 sm:h-9 min-w-[30px] sm:min-w-[38px] cursor-pointer" title="Pause [ESC]">
                             <i class="fa-solid fa-pause text-xs sm:text-sm text-amber-400"></i>
                         </button>
-                        <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-lg sm:rounded-xl border border-amber-500/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex flex-col items-center justify-center h-8 sm:h-10 min-w-[34px] sm:min-w-[42px] px-1 cursor-pointer" title="Nächste Welle sofort starten (Max. 3 gleichzeitig)">
+                        <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-lg sm:rounded-xl border border-amber-500/60 shadow-lg backdrop-blur-sm transition active:scale-95 flex flex-col items-center justify-center h-7 sm:h-9 min-w-[30px] sm:min-w-[38px] px-1 cursor-pointer" title="Nächste Welle sofort starten (Max. 3 gleichzeitig)">
                             <div class="flex items-center space-x-0.5 leading-none mb-0.5">
-                                <i class="fa-solid fa-plus text-[7px] sm:text-[8px] text-amber-400 font-bold"></i>
-                                <i class="fa-solid fa-skull text-[7px] sm:text-[8px] text-red-400"></i>
+                                <i class="fa-solid fa-plus text-[6.5px] sm:text-[8px] text-amber-400 font-bold"></i>
+                                <i class="fa-solid fa-skull text-[6.5px] sm:text-[8px] text-red-400"></i>
                             </div>
-                            <span id="early-wave-badge" class="font-mono text-[7px] sm:text-[8px] font-bold text-amber-300 leading-none">1/3</span>
+                            <span id="early-wave-badge" class="font-mono text-[6.5px] sm:text-[8px] font-bold text-amber-300 leading-none">1/3</span>
                         </button>
                     </div>
                 </div>
             </header>
 
-            <!-- Bottom HUD -->
-            <footer class="w-full flex justify-between items-end p-1.5 sm:p-3 safe-area-padding-x safe-area-padding-bottom gap-1 sm:gap-2 pointer-events-none">
-                <!-- Player Stats Box (Left) -->
-                <div class="bg-slate-950/85 border border-slate-800 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[85px] sm:min-w-[130px] max-w-[170px] flex-shrink pointer-events-auto">
-                    <div class="flex justify-between text-[8px] sm:text-[11px] font-bold mb-0.5 sm:mb-1 items-center">
-                        <span class="text-slate-300 flex items-center truncate"><i class="fa-solid fa-user-shield text-emerald-400 mr-1 text-[9px] sm:text-xs"></i> SPIELER</span>
-                        <div id="hud-player-lives-hearts" class="flex items-center space-x-0.5 text-[9px] sm:text-xs text-red-500 mx-1"></div>
-                        <span id="hud-player-hp-text" class="text-emerald-400 font-mono text-[8px] sm:text-[11px] whitespace-nowrap">200/200</span>
-                    </div>
-                    <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
-                        <div id="hud-player-hp-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%;"></div>
-                        <div id="hud-player-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
-                    </div>
-                </div>
-
+            <!-- Bottom HUD (Center Weapon Pill only - Bottom corners completely free for touch controls) -->
+            <footer class="w-full flex justify-center items-end p-1 sm:p-2.5 safe-area-padding-x safe-area-padding-bottom pointer-events-none">
                 <!-- Weapon Stats Pill (Center) -->
-                <div class="bg-slate-950/85 border border-slate-800 px-2.5 sm:px-4 py-1 sm:py-2 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-1.5 sm:space-x-2.5 text-[9px] sm:text-xs max-w-[45vw] flex-shrink min-w-0">
-                    <div class="text-slate-400 uppercase font-semibold hidden md:block">Waffe:</div>
-                    <div id="hud-weapon-name" class="font-bold text-amber-400 text-[9px] sm:text-xs whitespace-nowrap truncate">Pistole (Lvl 1)</div>
-                    <div class="h-3 w-px bg-slate-700 flex-shrink-0"></div>
-                    <div id="hud-weapon-stats" class="text-[8px] sm:text-[11px] font-mono text-slate-300 whitespace-nowrap truncate"><i class="fa-solid fa-bolt text-amber-400 mr-0.5"></i> Dmg: 32</div>
-                </div>
-
-                <!-- Base Stats Box (Right) -->
-                <div class="bg-slate-950/85 border border-slate-800 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg min-w-[85px] sm:min-w-[130px] max-w-[170px] flex-shrink pointer-events-auto">
-                    <div class="flex justify-between text-[8px] sm:text-[11px] font-bold mb-0.5 sm:mb-1 items-center">
-                        <span class="text-slate-300 flex items-center truncate"><i class="fa-solid fa-building-shield text-sky-400 mr-1 text-[9px] sm:text-xs"></i> BASIS</span>
-                        <div id="hud-base-lives-hearts" class="flex items-center space-x-0.5 text-[9px] sm:text-xs text-sky-400 mx-1"></div>
-                        <span id="hud-base-hp-text" class="text-sky-400 font-mono text-[8px] sm:text-[11px] whitespace-nowrap">2500/2500</span>
-                    </div>
-                    <div class="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative">
-                        <div id="hud-base-hp-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 100%;"></div>
-                        <div id="hud-base-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
-                    </div>
+                <div class="bg-slate-950/90 border border-slate-800 px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-1.5 sm:space-x-2.5 text-[8px] sm:text-xs max-w-[85vw] sm:max-w-[50vw] flex-shrink min-w-0">
+                    <div class="text-slate-400 uppercase font-semibold hidden md:block text-[9px]">Waffe:</div>
+                    <div id="hud-weapon-name" class="font-bold text-amber-400 text-[8px] sm:text-xs whitespace-nowrap truncate">Pistole (Lvl 1)</div>
+                    <div class="h-2.5 w-px bg-slate-700 flex-shrink-0"></div>
+                    <div id="hud-weapon-stats" class="text-[7.5px] sm:text-[10.5px] font-mono text-slate-300 whitespace-nowrap truncate"><i class="fa-solid fa-bolt text-amber-400 mr-0.5"></i> Dmg: 32</div>
                 </div>
             </footer>
         </div>
@@ -697,6 +711,16 @@
                         <!-- RIGHT COLUMN: Steuerung & Audio -->
                         <div class="space-y-2.5">
                             <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Steuerung & Audio</h3>
+                            <div class="bg-slate-950 p-2 sm:p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <div class="text-[11px] sm:text-xs font-bold text-slate-200"><i class="fa-solid fa-expand text-amber-400 mr-1.5"></i> Vollbildmodus</div>
+                                    <div class="text-[8.5px] sm:text-[9.5px] text-slate-400">Maximale Ansicht (iPhone: "Zum Home-Bildschirm")</div>
+                                </div>
+                                <button type="button" onclick="triggerFullscreen()" class="px-2.5 py-1 bg-amber-600/30 hover:bg-amber-600/50 active:bg-amber-600 text-amber-400 font-bold text-[11px] rounded-lg border border-amber-500/40">
+                                    Vollbild
+                                </button>
+                            </div>
+
                             <div class="mobile-only bg-slate-950 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex justify-between items-center">
                                 <div>
                                     <div class="text-[11px] sm:text-xs font-bold text-slate-200"><i class="fa-solid fa-mobile-screen text-amber-400 mr-1.5"></i> Touch-Layout</div>
