@@ -3075,12 +3075,12 @@
 
                         if (this.airstrikeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-8 h-8 sm:w-10 sm:h-10 rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-7 h-7 sm:w-9 sm:h-9 rounded-lg opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
                             if (statusText) statusText.innerText = "";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-amber-400 airstrike-ready-blink text-xs sm:text-sm";
-                            if (btn) btn.className = "relative overflow-hidden bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 border-2 border-amber-400 text-amber-300 w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-amber-400 airstrike-ready-blink text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 border-2 border-amber-400 text-amber-300 w-7 h-7 sm:w-9 sm:h-9 rounded-lg shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraAirstrikeEnabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
@@ -3743,12 +3743,12 @@
 
                         if (this.nukeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-8 h-8 sm:w-10 sm:h-10 rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-7 h-7 sm:w-9 sm:h-9 rounded-lg opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
                             if (statusText) statusText.innerText = "";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-red-500 animate-spin text-xs sm:text-sm";
-                            if (btn) btn.className = "relative overflow-hidden bg-red-500/20 hover:bg-red-500/30 active:scale-95 border-2 border-red-400 text-red-300 w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-red-500 animate-spin text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-red-500/20 hover:bg-red-500/30 active:scale-95 border-2 border-red-400 text-red-300 w-7 h-7 sm:w-9 sm:h-9 rounded-lg shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraNukeEnabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
@@ -4311,12 +4311,12 @@
 
                         if (this.ac130Cooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-8 h-8 sm:w-10 sm:h-10 rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-7 h-7 sm:w-9 sm:h-9 rounded-lg opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
                             if (statusText) statusText.innerText = "";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-cyan-400 text-xs sm:text-sm";
-                            if (btn) btn.className = "relative overflow-hidden bg-cyan-500/20 hover:bg-cyan-500/30 active:scale-95 border-2 border-cyan-400 text-cyan-300 w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-cyan-400 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-cyan-500/20 hover:bg-cyan-500/30 active:scale-95 border-2 border-cyan-400 text-cyan-300 w-7 h-7 sm:w-9 sm:h-9 rounded-lg shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraAc130Enabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
