@@ -3069,18 +3069,18 @@
                         const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.airstrikeCooldown) / maxCd) * 100)));
 
                         if (progressFill) {
-                            progressFill.style.width = `${fillPct}%`;
+                            progressFill.style.height = `${fillPct}%`;
+                            progressFill.style.width = '100%';
                         }
 
                         if (this.airstrikeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-8 h-8 sm:w-10 sm:h-10 rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
-                            const isMobile = window.matchMedia('(pointer: coarse)').matches;
-                            if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[E] BEREIT";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-amber-400 airstrike-ready-blink";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-amber-500/60 text-amber-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
+                            if (statusText) statusText.innerText = "";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-amber-400 airstrike-ready-blink text-xs sm:text-sm";
+                            if (btn) btn.className = "relative overflow-hidden bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 border-2 border-amber-400 text-amber-300 w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraAirstrikeEnabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
@@ -3089,7 +3089,10 @@
                 } else if (this._lastAirstrikeCdSec !== 0) {
                     this._lastAirstrikeCdSec = 0;
                     const progressFill = document.getElementById('airstrike-progress-fill');
-                    if (progressFill) progressFill.style.width = "0%";
+                    if (progressFill) {
+                        progressFill.style.height = "100%";
+                        progressFill.style.width = "100%";
+                    }
                 }
 
                 if (this.targetMarkerGroup) {
@@ -3734,18 +3737,18 @@
                         const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.nukeCooldown) / maxCd) * 100)));
 
                         if (progressFill) {
-                            progressFill.style.width = `${fillPct}%`;
+                            progressFill.style.height = `${fillPct}%`;
+                            progressFill.style.width = '100%';
                         }
 
                         if (this.nukeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center pr-0.5 text-slate-500 opacity-60";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-8 h-8 sm:w-10 sm:h-10 rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
-                            const isMobile = window.matchMedia('(pointer: coarse)').matches;
-                            if (statusText) statusText.innerText = isMobile ? "BEREIT" : "[Q] BEREIT";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-red-500 animate-spin";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-red-500/60 text-red-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
+                            if (statusText) statusText.innerText = "";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-red-500 animate-spin text-xs sm:text-sm";
+                            if (btn) btn.className = "relative overflow-hidden bg-red-500/20 hover:bg-red-500/30 active:scale-95 border-2 border-red-400 text-red-300 w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraNukeEnabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
@@ -3754,7 +3757,10 @@
                 } else if (this._lastNukeCdSec !== 0) {
                     this._lastNukeCdSec = 0;
                     const progressFill = document.getElementById('nuke-progress-fill');
-                    if (progressFill) progressFill.style.width = "0%";
+                    if (progressFill) {
+                        progressFill.style.height = "100%";
+                        progressFill.style.width = "100%";
+                    }
                 }
 
                 // Update Target Ground Ring animation
@@ -4298,17 +4304,19 @@
                         const maxCd = (typeof AC130_CONFIG !== 'undefined' && AC130_CONFIG.cooldown) || 80.0;
                         const fillPct = Math.min(100, Math.max(0, Math.round(((maxCd - this.ac130Cooldown) / maxCd) * 100)));
 
-                        if (progressFill) progressFill.style.width = `${fillPct}%`;
+                        if (progressFill) {
+                            progressFill.style.height = `${fillPct}%`;
+                            progressFill.style.width = '100%';
+                        }
 
                         if (this.ac130Cooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-slate-500 opacity-60";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 border border-slate-700/60 text-slate-500 rounded-lg sm:rounded-xl opacity-80 cursor-not-allowed flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-8 h-8 sm:w-10 sm:h-10 rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
-                            const isMobile = window.matchMedia('(pointer: coarse)').matches;
-                            if (statusText) statusText.innerText = isMobile ? "BEREIT" : "BEREIT [V]";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center text-cyan-400";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/70 hover:bg-slate-900/90 active:bg-slate-900 border border-cyan-500/60 text-cyan-400 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 sm:space-x-1.5 h-9 sm:h-11 min-w-[74px] sm:w-[94px] px-1.5 sm:px-2 py-1 pointer-events-auto animate-pulse";
+                            if (statusText) statusText.innerText = "";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-cyan-400 text-xs sm:text-sm";
+                            if (btn) btn.className = "relative overflow-hidden bg-cyan-500/20 hover:bg-cyan-500/30 active:scale-95 border-2 border-cyan-400 text-cyan-300 w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraAc130Enabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
@@ -4317,7 +4325,10 @@
                 } else if (this._lastAc130CdSec !== 0) {
                     this._lastAc130CdSec = 0;
                     const progressFill = document.getElementById('ac130-progress-fill');
-                    if (progressFill) progressFill.style.width = "0%";
+                    if (progressFill) {
+                        progressFill.style.height = "100%";
+                        progressFill.style.width = "100%";
+                    }
                 }
 
                 // Update Flying Projectiles (25mm, 40mm and AGM-114 Missile)
