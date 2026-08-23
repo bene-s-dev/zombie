@@ -526,7 +526,7 @@
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between select-none">
             <!-- Top HUD Bar: Safe-area aware, Scalable flex container with unbreakable left/center/right flow -->
             <header class="w-full flex items-start justify-between p-1.5 sm:p-2.5 md:p-3.5 safe-area-padding-x safe-area-padding-top gap-1.5 sm:gap-3 pointer-events-none">
-                <!-- Left Dock: Health Bar & Timer/Wave (Stacked Vertically) -->
+                <!-- Left Dock: Health Bar & Timer (Stacked Vertically) -->
                 <div id="hud-wave-container" class="flex-shrink-0 flex flex-col space-y-1 sm:space-y-1.5 items-start pointer-events-auto drop-shadow-md">
                     <!-- Top Row: Compact Health Strip -->
                     <div class="bg-slate-950/90 border border-slate-800/90 px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded-xl sm:rounded-2xl backdrop-blur-md shadow-lg flex items-center space-x-2 sm:space-x-3 md:space-x-4 text-[9px] sm:text-xs md:text-sm font-bold">
@@ -555,17 +555,22 @@
                         </div>
                     </div>
 
-                    <!-- Bottom Row: Timer, Zombie Count & Wave Title (Stacked directly under Health Bar) -->
-                    <div class="bg-slate-950/80 border border-slate-800/80 px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl backdrop-blur-sm shadow flex items-center space-x-1.5 sm:space-x-2.5 text-[8.5px] sm:text-xs font-mono">
-                        <div id="hud-timer" class="font-mono text-[8.5px] sm:text-xs text-slate-300 whitespace-nowrap"><i class="fa-solid fa-clock mr-1 text-slate-400"></i>00:00</div>
-                        <div class="h-3 w-px bg-slate-700/60"></div>
-                        <div id="hud-zombies-left" class="font-teko text-xs sm:text-sm md:text-base font-bold text-white leading-none whitespace-nowrap">0 UNTOTE</div>
-                        <div class="h-3 w-px bg-slate-700/60"></div>
-                        <div id="hud-wave-title-wrap" class="w-24 sm:w-32 flex items-center justify-center flex-shrink-0 text-center overflow-hidden">
-                            <div id="hud-wave-title" class="text-[8.5px] sm:text-xs font-bold text-red-400 uppercase tracking-wider flex items-center justify-center space-x-1 whitespace-nowrap truncate w-full text-center">
-                                <i class="fa-solid fa-skull"></i>
-                                <span>WELLE 1</span>
-                            </div>
+                    <!-- Bottom Row: Timer / Clock (Stacked directly under Health Bar) -->
+                    <div class="bg-slate-950/80 border border-slate-800/80 px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl backdrop-blur-sm shadow flex items-center space-x-1.5 text-[8.5px] sm:text-xs font-mono">
+                        <i class="fa-solid fa-clock text-slate-400 text-[9px] sm:text-xs"></i>
+                        <div id="hud-timer" class="font-mono text-[8.5px] sm:text-xs text-slate-300 whitespace-nowrap">00:00</div>
+                    </div>
+                </div>
+
+                <!-- Center Dock: Zombie Count & Fixed-width Wave Title (Centered in Middle) -->
+                <div class="flex-shrink-0 flex items-center justify-center space-x-1.5 sm:space-x-2 md:space-x-3 text-[9px] sm:text-xs md:text-sm px-1 pointer-events-none mt-0.5">
+                    <div id="hud-zombies-left" class="font-teko text-xs sm:text-lg md:text-xl font-bold text-white leading-none whitespace-nowrap drop-shadow">0 UNTOTE</div>
+                    <div class="h-3 sm:h-4 w-px bg-slate-700/60"></div>
+                    <!-- Scalable fixed width container for Wave Title so text changes never jump layout -->
+                    <div id="hud-wave-title-wrap" class="w-28 sm:w-36 md:w-44 flex items-center justify-center flex-shrink-0 text-center overflow-hidden">
+                        <div id="hud-wave-title" class="text-[9px] sm:text-xs md:text-sm font-bold text-red-400 uppercase tracking-wider flex items-center justify-center space-x-1 whitespace-nowrap truncate w-full text-center drop-shadow">
+                            <i class="fa-solid fa-skull"></i>
+                            <span>WELLE 1</span>
                         </div>
                     </div>
                 </div>
