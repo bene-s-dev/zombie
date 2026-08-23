@@ -1,3 +1,15 @@
+const RANDOM_NAME_PREFIXES = [
+    'VIPER', 'GHOST', 'HUNTER', 'SHADOW', 'ALPHA', 'TITAN', 'SURVIVOR', 'RAVEN',
+    'EAGLE', 'RECON', 'WOLF', 'STORM', 'SPECTRE', 'VALKYRIE', 'HAWK', 'BLAZE',
+    'STRIKER', 'PHANTOM', 'CYPHER', 'APEX', 'NOVA', 'ROGUE', 'SENTINEL', 'FALCON'
+];
+
+function generateRandomPlayerName() {
+    const prefix = RANDOM_NAME_PREFIXES[Math.floor(Math.random() * RANDOM_NAME_PREFIXES.length)];
+    const num = Math.floor(Math.random() * 90 + 10);
+    return `${prefix}-${num}`;
+}
+
 function ensureDefaultHighscores() {
     if (!Storage.data || !Storage.data.highscores) {
         Storage.load();
@@ -6,14 +18,19 @@ function ensureDefaultHighscores() {
         Storage.data.highscores = [];
         Storage.save();
     }
-    if (!Storage.data.lastPlayerName) {
-        Storage.data.lastPlayerName = 'SPIELER';
+    if (Storage.data.customPlayerName === undefined) {
+        if (Storage.data.lastPlayerName && Storage.data.lastPlayerName !== 'SPIELER') {
+            Storage.data.customPlayerName = Storage.data.lastPlayerName;
+        } else {
+            Storage.data.customPlayerName = '';
+        }
+        Storage.save();
     }
 }
 
 function setPlayerName(name) {
     let clean = (name || '').toString().trim().toUpperCase().slice(0, 12);
-    if (!clean) clean = 'SPIELER';
+    Storage.data.customPlayerName = clean;
     Storage.data.lastPlayerName = clean;
     Storage.save();
     
@@ -42,7 +59,7 @@ function isRunBetter(a, b) {
 function deduplicateAndSortScores(list) {
     if (!Array.isArray(list)) return [];
     const normalized = list.map(item => ({
-        name: (item.name || 'SPIELER').toString().trim().toUpperCase().slice(0, 12) || 'SPIELER',
+        name: (item.name || '').toString().trim().toUpperCase().slice(0, 12) || generateRandomPlayerName(),
         time: Number(item.time) || 0,
         wave: Number(item.wave) || 1,
         kills: Number(item.kills) || 0,
@@ -161,8 +178,8 @@ function updateHighscoreUI() {
     }
 
     const menuNameInput = document.getElementById('menu-player-name');
-    if (menuNameInput && !menuNameInput.value) {
-        menuNameInput.value = Storage.data.lastPlayerName || 'SPIELER';
+    if (menuNameInput) {
+        menuNameInput.value = Storage.data.customPlayerName || '';
     }
     
     const tbody = document.getElementById('highscore-list-body');
@@ -179,7 +196,7 @@ function updateHighscoreUI() {
         if (tableWrapper) tableWrapper.classList.remove('hidden');
         
         tbody.innerHTML = '';
-        const currentPlayer = (Storage.data.lastPlayerName || 'SPIELER').trim().toUpperCase();
+        const currentPlayer = (Storage.data.customPlayerName || Storage.data.lastPlayerName || '').trim().toUpperCase();
         
         list.forEach((entry, idx) => {
             let rankBadge = '';
@@ -191,7 +208,7 @@ function updateHighscoreUI() {
             const em = Math.floor(entry.time / 60).toString().padStart(2, '0');
             const es = (entry.time % 60).toString().padStart(2, '0');
             
-            const isMe = entry.name === currentPlayer;
+            const isMe = !!currentPlayer && entry.name === currentPlayer;
             const rowClass = isMe
                 ? "border-b border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
                 : "border-b border-slate-900/60 hover:bg-slate-800/40 transition-colors";
@@ -226,14 +243,29 @@ function checkHighscoreQualification(wave, kills, sec) {
 async function submitHighscore(customName, hideUI = true) {
     const entryEl = document.getElementById('highscore-entry');
     const nameInput = document.getElementById('hs-player-name');
-    let name = (customName || (nameInput ? nameInput.value : '') || Storage.data.lastPlayerName || 'SPIELER').toString().trim().toUpperCase().slice(0, 12);
-    if (!name) name = 'SPIELER';
     
-    Storage.data.lastPlayerName = name;
-    if (nameInput) nameInput.value = name;
+    let rawName = customName !== undefined && customName !== null ? customName : (nameInput ? nameInput.value : '');
+    if (!rawName && Storage.data.customPlayerName) {
+        rawName = Storage.data.customPlayerName;
+    }
+    
+    let name = (rawName || '').toString().trim().toUpperCase().slice(0, 12);
+    if (!name || name === 'SPIELER') {
+        name = generateRandomPlayerName();
+    } else {
+        Storage.data.customPlayerName = name;
+        Storage.data.lastPlayerName = name;
+        Storage.save();
+    }
+    
+    if (nameInput && Storage.data.customPlayerName) {
+        nameInput.value = Storage.data.customPlayerName;
+    }
     
     const menuNameInput = document.getElementById('menu-player-name');
-    if (menuNameInput) menuNameInput.value = name;
+    if (menuNameInput && Storage.data.customPlayerName) {
+        menuNameInput.value = Storage.data.customPlayerName;
+    }
     
     if (window.lastRunStats) {
         const stats = window.lastRunStats;

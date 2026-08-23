@@ -13,7 +13,8 @@ const Storage = {
         extraAirstrikeEnabled: true,
         extraNukeEnabled: true,
         highscores: [],
-        lastPlayerName: 'SPIELER'
+        lastPlayerName: '',
+        customPlayerName: ''
     },
     load() {
         try {
@@ -26,7 +27,9 @@ const Storage = {
             if (this.data.extraAirstrikeEnabled === undefined) this.data.extraAirstrikeEnabled = true;
             if (this.data.extraNukeEnabled === undefined) this.data.extraNukeEnabled = true;
             if (!this.data.highscores) this.data.highscores = [];
-            if (!this.data.lastPlayerName) this.data.lastPlayerName = 'SPIELER';
+            if (this.data.customPlayerName === undefined) {
+                this.data.customPlayerName = (this.data.lastPlayerName && this.data.lastPlayerName !== 'SPIELER') ? this.data.lastPlayerName : '';
+            }
         } catch(e) { console.error("Could not load save profile", e); }
         return this.data;
     },

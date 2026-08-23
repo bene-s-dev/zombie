@@ -430,8 +430,8 @@
                         <!-- PLAYER NAME INPUT -->
                         <div class="flex items-center space-x-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl text-left">
                             <i class="fa-solid fa-user-astronaut text-amber-400 text-xs sm:text-sm"></i>
-                            <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Spieler:</span>
-                            <input type="text" id="menu-player-name" maxlength="12" placeholder="SPIELER" onchange="setPlayerName(this.value)" oninput="setPlayerName(this.value)" class="flex-1 bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1 text-xs text-white font-bold uppercase tracking-wider focus:outline-none focus:border-amber-500">
+                            <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Name:</span>
+                            <input type="text" id="menu-player-name" maxlength="12" placeholder="z. B. VIPER-07" onchange="setPlayerName(this.value)" oninput="setPlayerName(this.value)" class="flex-1 bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1 text-xs text-white placeholder-slate-500 font-bold uppercase tracking-wider focus:outline-none focus:border-amber-500">
                         </div>
 
                         <!-- START BUTTONS -->
@@ -872,8 +872,9 @@
                                 </span>
                                 <span class="text-[10px] text-emerald-400 font-mono font-bold">✓ Gespeichert</span>
                             </div>
-                            <div class="flex space-x-2">
-                                <input type="text" id="hs-player-name" maxlength="12" placeholder="Dein Name" onkeydown="if(event.key==='Enter') submitHighscore(this.value, true)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-bold uppercase tracking-wider">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">Name:</span>
+                                <input type="text" id="hs-player-name" maxlength="12" placeholder="z. B. VIPER-07" onkeydown="if(event.key==='Enter') submitHighscore(this.value, true)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-bold uppercase tracking-wider">
                                 <button onclick="submitHighscore(document.getElementById('hs-player-name').value, true)" class="bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition active:scale-95 whitespace-nowrap">Name ändern</button>
                             </div>
                         </div>

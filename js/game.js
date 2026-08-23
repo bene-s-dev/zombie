@@ -5862,7 +5862,7 @@
                     difficulty: Storage.data.difficulty
                 };
 
-                const currentPlayer = Storage.data.lastPlayerName || 'SPIELER';
+                const currentPlayer = Storage.data.customPlayerName || Storage.data.lastPlayerName || '';
                 const qualifies = checkHighscoreQualification(this.currentWave, this.totalKills, this.gameSeconds);
                 const hsEntryEl = document.getElementById('highscore-entry');
                 if (qualifies) {
@@ -5873,7 +5873,7 @@
                         hsEntryEl.classList.remove('hidden');
                         const nameInput = document.getElementById('hs-player-name');
                         if (nameInput) {
-                            nameInput.value = currentPlayer;
+                            nameInput.value = Storage.data.customPlayerName || '';
                         }
                     }
                 } else if (hsEntryEl) {
