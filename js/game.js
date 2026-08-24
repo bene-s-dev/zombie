@@ -1887,7 +1887,7 @@
                 }
 
                 // 1. FLASHLIGHT (TASCHENLAMPE):
-                // Tagsüber AUS (wenn dayFactor > 0.40). Nachts / Dunkelheit AN mit taktischem Lichtkegel.
+                // Tagsüber AUS (wenn dayFactor > 0.40). Nachts / Dunkelheit AN mit hochintensivem taktischen LED-Lichtkegel.
                 if (this.flashlight) {
                     if (dayFactor > 0.40) {
                         this.flashlight.visible = false;
@@ -1895,7 +1895,7 @@
                     } else {
                         this.flashlight.visible = true;
                         const nightIntensity = 1.0 - (dayFactor / 0.40);
-                        this.flashlight.intensity = 2.8 * nightIntensity;
+                        this.flashlight.intensity = 6.5 * nightIntensity;
                     }
                 }
 
@@ -3083,12 +3083,12 @@
 
                         if (this.airstrikeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm md:text-base";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 rounded-lg sm:rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-md sm:rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
                             if (statusText) statusText.innerText = "";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-amber-400 airstrike-ready-blink text-xs sm:text-sm md:text-base";
-                            if (btn) btn.className = "relative overflow-hidden bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 border-2 border-amber-400 text-amber-300 w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-amber-400 airstrike-ready-blink text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 hover:bg-slate-900 active:scale-95 border border-amber-500/60 text-amber-400 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-md sm:rounded-lg shadow backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraAirstrikeEnabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
@@ -3751,12 +3751,12 @@
 
                         if (this.nukeCooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm md:text-base";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 rounded-lg sm:rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-md sm:rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
                             if (statusText) statusText.innerText = "";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-red-500 animate-spin text-xs sm:text-sm md:text-base";
-                            if (btn) btn.className = "relative overflow-hidden bg-red-500/20 hover:bg-red-500/30 active:scale-95 border-2 border-red-400 text-red-300 w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-red-500 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 hover:bg-slate-900 active:scale-95 border border-red-500/60 text-red-400 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-md sm:rounded-lg shadow backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraNukeEnabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
@@ -4319,12 +4319,12 @@
 
                         if (this.ac130Cooldown > 0) {
                             if (statusText) statusText.innerText = `${cdSec}s`;
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-xs sm:text-sm md:text-base";
-                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 rounded-lg sm:rounded-xl opacity-70 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-slate-400 opacity-60 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 border border-slate-700/60 text-slate-500 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-md sm:rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center flex-shrink-0 pointer-events-auto";
                         } else {
                             if (statusText) statusText.innerText = "";
-                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-cyan-400 text-xs sm:text-sm md:text-base";
-                            if (btn) btn.className = "relative overflow-hidden bg-cyan-500/20 hover:bg-cyan-500/30 active:scale-95 border-2 border-cyan-400 text-cyan-300 w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 rounded-lg sm:rounded-xl shadow-lg backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto animate-pulse cursor-pointer";
+                            if (btnIcon) btnIcon.className = "relative z-10 flex items-center justify-center text-cyan-400 text-[10px] sm:text-xs";
+                            if (btn) btn.className = "relative overflow-hidden bg-slate-950/90 hover:bg-slate-900 active:scale-95 border border-cyan-500/60 text-cyan-400 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-md sm:rounded-lg shadow backdrop-blur-sm transition flex items-center justify-center flex-shrink-0 pointer-events-auto cursor-pointer";
                         }
                         if (typeof Storage !== 'undefined' && Storage.data.extraAc130Enabled === false) {
                             if (btn && !btn.classList.contains('hidden')) btn.classList.add('hidden');
@@ -5142,6 +5142,27 @@
                                     // Zombie befindet sich im Flutlichtkegel: Geblendet und auf normales Tempo gedrosselt!
                                     zombieSpeedMult = 1.0;
                                     break;
+                                }
+                            }
+                        }
+
+                        // Taktische Taschenlampe des Spielers: Starker Blend- und Verlangsamungseffekt nachts
+                        if (this.flashlight && this.flashlight.visible && this.flashlight.intensity > 1.0) {
+                            const pDx = z.position.x - playerPos.x;
+                            const pDz = z.position.z - playerPos.z;
+                            const distToP = Math.sqrt(pDx * pDx + pDz * pDz);
+                            const flashRange = 40.0;
+
+                            if (distToP > 0.5 && distToP <= flashRange) {
+                                const pRot = this.playerGroup.rotation.y;
+                                const facingX = Math.sin(pRot);
+                                const facingZ = Math.cos(pRot);
+                                const dot = (pDx * facingX + pDz * facingZ) / distToP;
+                                const coneThreshold = Math.cos(this.flashlight.angle || (Math.PI / 4.2));
+
+                                if (dot >= coneThreshold) {
+                                    // Zombie wird direkt vom Scheinwerferkegel geblendet und stark verlangsamt!
+                                    zombieSpeedMult *= 0.45;
                                 }
                             }
                         }
@@ -6240,9 +6261,9 @@
                 this.gunMesh = gunGroup;
                 this.playerGroup.add(gunGroup);
 
-                this.flashlight = new THREE.SpotLight(0xfffbe1, 2.5, 30, Math.PI / 5, 0.3);
+                this.flashlight = new THREE.SpotLight(0xfffbe8, 6.0, 45, Math.PI / 4.2, 0.45, 1.2);
                 this.flashlight.position.set(0.38, 1.45, 1.0);
-                this.flashlight.target.position.set(0.38, 1.45, 15);
+                this.flashlight.target.position.set(0.38, 1.45, 20);
                 this.playerGroup.add(this.flashlight);
                 this.playerGroup.add(this.flashlight.target);
 
