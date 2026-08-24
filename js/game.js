@@ -1984,14 +1984,22 @@
                             this.flashlightFill.visible = false;
                             this.flashlightFill.intensity = 0;
                         }
+                        if (this.flashlightGroundBeam) {
+                            this.flashlightGroundBeam.visible = false;
+                            this.flashlightGroundBeam.material.opacity = 0;
+                        }
                     } else {
                         const nightIntensity = 1.0 - (dayFactor / 0.40);
                         this.flashlight.visible = true;
-                        this.flashlight.intensity = 24.0 * nightIntensity;
+                        this.flashlight.intensity = 28.0 * nightIntensity;
 
                         if (this.flashlightFill) {
                             this.flashlightFill.visible = true;
-                            this.flashlightFill.intensity = 5.5 * nightIntensity;
+                            this.flashlightFill.intensity = 6.5 * nightIntensity;
+                        }
+                        if (this.flashlightGroundBeam) {
+                            this.flashlightGroundBeam.visible = true;
+                            this.flashlightGroundBeam.material.opacity = 0.65 * nightIntensity;
                         }
                     }
                 }
@@ -6295,7 +6303,7 @@
             buildClassicEnvironment() {
                 // 1. Expansive Outer Wasteland Bed (eliminates any visible map edges)
                 const outerGroundGeo = new THREE.PlaneGeometry(900, 900);
-                const outerMat = new THREE.MeshLambertMaterial({ color: 0x070b14 });
+                const outerMat = new THREE.MeshStandardMaterial({ color: 0x070b14, roughness: 0.95, metalness: 0.05 });
                 const outerGround = new THREE.Mesh(outerGroundGeo, outerMat);
                 outerGround.rotation.x = -Math.PI / 2;
                 outerGround.position.y = -0.05;
@@ -6358,7 +6366,7 @@
                     texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
                 }
 
-                const groundMat = new THREE.MeshLambertMaterial({ map: texture });
+                const groundMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.85, metalness: 0.05 });
                 const ground = new THREE.Mesh(groundGeo, groundMat);
                 ground.rotation.x = -Math.PI / 2;
                 ground.position.y = 0;
@@ -6366,6 +6374,11 @@
                 ground.matrixAutoUpdate = false;
                 ground.updateMatrix();
                 this.environmentGroup.add(ground);
+
+                this.environmentGroup.traverse(child => {
+                    child.matrixAutoUpdate = false;
+                    child.updateMatrix();
+                });
             }
 
             buildTacticalEnvironment() {
@@ -6374,7 +6387,7 @@
                 // Extends far past fog distance to guarantee ZERO hard edge at the horizon
                 // ==========================================
                 const outerGroundGeo = new THREE.PlaneGeometry(900, 900);
-                const outerMat = new THREE.MeshLambertMaterial({ color: 0x050811 });
+                const outerMat = new THREE.MeshStandardMaterial({ color: 0x050811, roughness: 0.95, metalness: 0.05 });
                 const outerGround = new THREE.Mesh(outerGroundGeo, outerMat);
                 outerGround.rotation.x = -Math.PI / 2;
                 outerGround.position.y = -0.05;
@@ -6543,7 +6556,7 @@
                     texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
                 }
 
-                const groundMat = new THREE.MeshLambertMaterial({ map: texture });
+                const groundMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.85, metalness: 0.05 });
                 const ground = new THREE.Mesh(groundGeo, groundMat);
                 ground.rotation.x = -Math.PI / 2;
                 ground.position.y = 0;
@@ -6794,6 +6807,12 @@
                     sGroup.updateMatrix();
                     this.environmentGroup.add(sGroup);
                 }
+
+                // Global Matrix Freeze: Completely prevent per-frame matrix recalculations on static scenery
+                this.environmentGroup.traverse(child => {
+                    child.matrixAutoUpdate = false;
+                    child.updateMatrix();
+                });
             }
 
             createBaseCore() {
@@ -7040,16 +7059,49 @@
                 this.playerGroup.add(gunGroup);
 
                 // 1. Massive Tactical Xenon / LED High-Power Spotlight (Richtiger Fluter)
-                this.flashlight = new THREE.SpotLight(0xfffaed, 24.0, 70, Math.PI / 3.4, 0.35, 0.85);
+                this.flashlight = new THREE.SpotLight(0xfffaed, 28.0, 75, Math.PI / 3.4, 0.35, 0.85);
                 this.flashlight.position.set(0.38, 1.45, 0.8);
                 this.flashlight.target.position.set(0.38, 1.45, 25);
                 this.playerGroup.add(this.flashlight);
                 this.playerGroup.add(this.flashlight.target);
 
                 // 2. Wide Forward Floodlight Fill PointLight
-                this.flashlightFill = new THREE.PointLight(0xfff8e7, 0, 22, 1.0);
+                this.flashlightFill = new THREE.PointLight(0xfff8e7, 0, 24, 1.0);
                 this.flashlightFill.position.set(0.38, 1.5, 4.0);
                 this.playerGroup.add(this.flashlightFill);
+
+                // 3. Ultra-Smooth Projected Flashlight Ground Beam (Atmospheric Cone)
+                const beamCanvas = document.createElement('canvas');
+                beamCanvas.width = 256;
+                beamCanvas.height = 512;
+                const bCtx = beamCanvas.getContext('2d');
+                const bGrad = bCtx.createRadialGradient(128, 30, 8, 128, 280, 250);
+                bGrad.addColorStop(0, 'rgba(255, 250, 230, 0.7)');
+                bGrad.addColorStop(0.35, 'rgba(255, 242, 205, 0.4)');
+                bGrad.addColorStop(0.7, 'rgba(220, 238, 255, 0.12)');
+                bGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                bCtx.fillStyle = bGrad;
+                bCtx.beginPath();
+                bCtx.moveTo(128, 10);
+                bCtx.lineTo(245, 500);
+                bCtx.quadraticCurveTo(128, 512, 11, 500);
+                bCtx.closePath();
+                bCtx.fill();
+
+                const beamTexture = new THREE.CanvasTexture(beamCanvas);
+                const beamMat = new THREE.MeshBasicMaterial({
+                    map: beamTexture,
+                    transparent: true,
+                    opacity: 0,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                });
+                const beamGeo = new THREE.PlaneGeometry(18, 34);
+                this.flashlightGroundBeam = new THREE.Mesh(beamGeo, beamMat);
+                this.flashlightGroundBeam.rotation.x = -Math.PI / 2;
+                this.flashlightGroundBeam.position.set(0.38, 0.04, 17);
+                this.playerGroup.add(this.flashlightGroundBeam);
 
                 this.playerGroup.position.set(12, 0, 0);
                 this.scene.add(this.playerGroup);
