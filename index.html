@@ -404,7 +404,7 @@
         </div>
 
         <!-- ================= START SCREEN / MAIN MENU OVERLAY ================= -->
-        <div id="main-menu" class="absolute inset-0 z-50 flex flex-col justify-between p-3 sm:p-5 md:p-6 bg-slate-950/90 backdrop-blur-md transition-opacity duration-500 overflow-y-auto custom-scroll safe-area-padding">
+        <div id="main-menu" class="absolute inset-0 z-50 flex flex-col justify-between p-3 sm:p-5 md:p-6 bg-cover bg-center bg-no-repeat transition-opacity duration-500 overflow-y-auto custom-scroll safe-area-padding" style="background-image: linear-gradient(to bottom, rgba(2, 6, 23, 0.35) 0%, rgba(2, 6, 23, 0.72) 42%, rgba(2, 6, 23, 0.94) 100%), url('og-image.jpg');">
             <!-- Header Bar -->
             <div class="flex justify-between items-center w-full max-w-6xl mx-auto mb-2 sm:mb-4 flex-shrink-0">
                 <div class="flex items-center space-x-2.5 sm:space-x-3">
@@ -423,12 +423,13 @@
             <div class="max-w-6xl mx-auto w-full flex-1 flex flex-col justify-center my-1 sm:my-2">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 lg:gap-6 items-stretch w-full">
                     <!-- LEFT COLUMN: Title, Extras & Start Action -->
-                    <div class="flex flex-col justify-between space-y-3 sm:space-y-4 text-center md:text-left bg-slate-900/60 border border-slate-800/80 p-3.5 sm:p-5 rounded-2xl backdrop-blur-sm shadow-xl">
+                    <div class="flex flex-col justify-between space-y-3 sm:space-y-4 text-center md:text-left bg-slate-950/80 border border-slate-800/90 p-3.5 sm:p-5 rounded-2xl backdrop-blur-md shadow-2xl">
                         <div class="space-y-1 sm:space-y-1.5">
-                            <h1 class="font-teko text-4xl sm:text-5xl md:text-6xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 uppercase leading-none drop-shadow-lg text-center md:text-left">
-                                Taskforce: Undead
-                            </h1>
-                            <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                            <div class="inline-flex items-center space-x-2 bg-red-950/60 border border-red-500/30 px-2.5 py-1 rounded-lg text-[11px] font-bold text-red-400 tracking-wider uppercase mb-1">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span>3D Base Defense & Tactical Survival</span>
+                            </div>
+                            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
                                 Verteidige deine Festung, baue automatische Geschütze und schalte mächtige Waffen frei!
                             </p>
                         </div>
