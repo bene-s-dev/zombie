@@ -1390,14 +1390,11 @@
 
             confirmPlacement() {
                 if (!this.isPlacementMode || !this.pendingPlacement || !this.ghostMesh) return;
-                if (!this.ghostMesh.userData.isValid) {
-                    if (typeof showPurchaseToast === 'function') showPurchaseToast('❌ Position ungültig (zu nah an Basis/Turm)!');
-                    return;
-                }
+                if (!this.ghostMesh.userData.isValid) return;
 
                 const { kind, specId, cost, spec } = this.pendingPlacement;
                 if (this.money < cost) {
-                    if (typeof showPurchaseToast === 'function') showPurchaseToast('❌ Nicht genug Geld!');
+                    this.cancelPlacement();
                     return;
                 }
 
@@ -1419,13 +1416,13 @@
                 this.syncHUD();
                 this.saveGameSession();
 
-                if (typeof showPurchaseToast === 'function') {
-                    showPurchaseToast(`✅ ${spec?.name || 'Struktur'} erfolgreich gebaut!`);
+                // Multi-Bau: Bleibt aktiv, solange genug Geld für weitere Türme/Mauern vorhanden ist
+                if (this.money >= cost) {
+                    this.updateGhostPosition(x, z);
+                } else {
+                    this.ignoreNextSelectionUntil = Date.now() + 400;
+                    this.cancelPlacement();
                 }
-
-                // Prevent 300ms delayed synthetic mobile click from re-triggering placement
-                this.ignoreNextSelectionUntil = Date.now() + 500;
-                this.cancelPlacement();
             }
 
             cancelPlacement() {
