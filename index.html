@@ -561,16 +561,18 @@
                     </div>
                 </div>
 
-                <!-- Center Dock: Middle HUD (NO BACKGROUND as requested) -->
-                <div class="absolute left-1/2 -translate-x-1/2 top-1 sm:top-2 pointer-events-none z-10 flex items-center justify-center space-x-1.5 sm:space-x-2.5 text-[9px] sm:text-xs md:text-sm font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                    <div id="hud-wave-title-wrap" class="flex items-center">
-                        <div id="hud-wave-title" class="font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1 whitespace-nowrap drop-shadow">
+                <!-- Center Dock: Middle HUD (Fixed layout slots, tabular numbers, NO background, absolutely ZERO jumping) -->
+                <div class="absolute left-1/2 -translate-x-1/2 top-1 sm:top-2 pointer-events-none z-10 flex items-center justify-center w-52 sm:w-64 text-[9px] sm:text-xs md:text-sm font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                    <div id="hud-wave-title-wrap" class="w-26 sm:w-32 flex items-center justify-end pr-2 overflow-hidden flex-shrink-0 text-right">
+                        <div id="hud-wave-title" class="font-bold text-red-400 uppercase tracking-wider flex items-center justify-end space-x-1 whitespace-nowrap truncate drop-shadow">
                             <i class="fa-solid fa-skull text-[8px] sm:text-xs"></i>
                             <span>WELLE 1</span>
                         </div>
                     </div>
-                    <div class="h-3 w-px bg-slate-500/50"></div>
-                    <div id="hud-zombies-left" class="font-teko text-xs sm:text-base md:text-lg font-bold text-white leading-none whitespace-nowrap drop-shadow">0 UNTOTE</div>
+                    <div class="h-3 w-px bg-slate-500/60 flex-shrink-0"></div>
+                    <div class="w-26 sm:w-32 flex items-center justify-start pl-2 overflow-hidden flex-shrink-0 text-left">
+                        <div id="hud-zombies-left" class="font-teko text-xs sm:text-base md:text-lg font-bold text-white leading-none whitespace-nowrap drop-shadow tabular-nums">0 UNTOTE</div>
+                    </div>
                 </div>
 
                 <!-- Right Dock: Single-Row Actions Bar (Compact for small screens, all buttons in viewport) -->

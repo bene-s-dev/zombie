@@ -5763,7 +5763,7 @@
 
                 const waveTitle = document.getElementById('hud-wave-title');
                 if (waveTitle) {
-                    waveTitle.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mr-1"></i> <span class="text-emerald-400 animate-bounce">WELLE ${this.currentWave} ÜBERLEBT!</span>`;
+                    waveTitle.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mr-1"></i> <span class="text-emerald-400 font-bold">WELLE ${this.currentWave} ✓</span>`;
                 }
 
                 setTimeout(() => {
