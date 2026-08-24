@@ -112,6 +112,7 @@
                 this.bulletPool = [];
                 this.particlePool = [];
                 this.beaconLights = [];
+                this.environmentObstacles = [];
                 this._frameCount = 0;
                 this._shadowNeedsUpdate = true;
 
@@ -1357,6 +1358,15 @@
                         if (Math.hypot(w.position.x - x, w.position.z - z) < r + w.userData.radius) isValid = false;
                     }
                 });
+
+                if (isValid && this.environmentObstacles) {
+                    for (let obs of this.environmentObstacles) {
+                        if (Math.hypot(obs.x - x, obs.z - z) < r + obs.radius) {
+                            isValid = false;
+                            break;
+                        }
+                    }
+                }
 
                 this.ghostMesh.userData.isValid = isValid;
                 const colorHex = isValid ? 0x22c55e : 0xef4444;
@@ -4984,11 +4994,20 @@
                                 }
                             }
 
-                            const dbx = nextX - this.baseGroup.position.x;
-                            const dbz = nextZ - this.baseGroup.position.z;
-                            const blockedByBase = (dbx * dbx + dbz * dbz) < 27.04;
+                            let blockedByObstacle = false;
+                            if (this.environmentObstacles) {
+                                for (let obs of this.environmentObstacles) {
+                                    const odx = nextX - obs.x;
+                                    const odz = nextZ - obs.z;
+                                    const minD = obs.radius + 0.5;
+                                    if (odx * odx + odz * odz < minD * minD) {
+                                        blockedByObstacle = true;
+                                        break;
+                                    }
+                                }
+                            }
 
-                            if (!blockedByWall && !blockedByBase) {
+                            if (!blockedByWall && !blockedByBase && !blockedByObstacle) {
                                 this.playerGroup.position.x = nextX;
                                 this.playerGroup.position.z = nextZ;
                             }
@@ -5388,6 +5407,21 @@
                             } else {
                                 z.position.x = nextX;
                                 z.position.z = nextZ;
+
+                                if (this.environmentObstacles) {
+                                    for (let oi = 0; oi < this.environmentObstacles.length; oi++) {
+                                        const obs = this.environmentObstacles[oi];
+                                        const ox = z.position.x - obs.x;
+                                        const oz = z.position.z - obs.z;
+                                        const minDist = obs.radius + zRadius;
+                                        const distSq = ox * ox + oz * oz;
+                                        if (distSq < minDist * minDist && distSq > 0.001) {
+                                            const d = Math.sqrt(distSq);
+                                            z.position.x = obs.x + (ox / d) * minDist;
+                                            z.position.z = obs.z + (oz / d) * minDist;
+                                        }
+                                    }
+                                }
                             }
                         } else if (hitWallTarget) {
                             z.rotation.y = directAngle;
@@ -6206,107 +6240,77 @@
             }
 
             buildEnvironment() {
-                // ==========================================
-                // 1. EXTENDED VAST WASTELAND HORIZON (650x650m)
-                // ==========================================
-                const outerGeo = new THREE.PlaneGeometry(650, 650);
-                const outerCanvas = document.createElement('canvas');
-                outerCanvas.width = 512;
-                outerCanvas.height = 512;
-                const oCtx = outerCanvas.getContext('2d');
-
-                // Dark rugged wasteland soil & rocky terrain
-                oCtx.fillStyle = '#060911';
-                oCtx.fillRect(0, 0, 512, 512);
-
-                // Rocky noise & soil grain
-                for (let i = 0; i < 4000; i++) {
-                    const nx = Math.random() * 512;
-                    const ny = Math.random() * 512;
-                    const nr = Math.random() * 2.5 + 0.5;
-                    oCtx.fillStyle = Math.random() > 0.4 ? '#0c121e' : '#141d2d';
-                    oCtx.beginPath();
-                    oCtx.arc(nx, ny, nr, 0, Math.PI * 2);
-                    oCtx.fill();
-                }
-
-                // Dried fissures & dark crater fissures
-                oCtx.strokeStyle = '#030509';
-                oCtx.lineWidth = 1.8;
-                for (let i = 0; i < 16; i++) {
-                    let fx = Math.random() * 512;
-                    let fy = Math.random() * 512;
-                    oCtx.beginPath();
-                    oCtx.moveTo(fx, fy);
-                    for (let step = 0; step < 6; step++) {
-                        fx += (Math.random() - 0.5) * 45;
-                        fy += (Math.random() - 0.5) * 45;
-                        oCtx.lineTo(fx, fy);
-                    }
-                    oCtx.stroke();
-                }
-
-                const outerTex = new THREE.CanvasTexture(outerCanvas);
-                outerTex.wrapS = THREE.RepeatWrapping;
-                outerTex.wrapT = THREE.RepeatWrapping;
-                outerTex.repeat.set(12, 12);
-                outerTex.generateMipmaps = true;
-
-                const outerMat = new THREE.MeshStandardMaterial({
-                    map: outerTex,
-                    roughness: 0.96,
-                    metalness: 0.05
-                });
-                const outerGround = new THREE.Mesh(outerGeo, outerMat);
-                outerGround.rotation.x = -Math.PI / 2;
-                outerGround.position.y = -0.06;
-                outerGround.receiveShadow = true;
-                outerGround.matrixAutoUpdate = false;
-                outerGround.updateMatrix();
-                this.scene.add(outerGround);
+                // Clear any previous environment obstacle bounds
+                this.environmentObstacles = [];
 
                 // ==========================================
-                // 2. MAIN INNER TACTICAL COMBAT TARMAC (160x160m)
+                // UNIFIED EXPANSIVE GROUND PLANE (750x750m)
+                // Seamless radial fade into wasteland & horizon fog - NO square border, NO tile grid!
                 // ==========================================
-                const groundGeo = new THREE.PlaneGeometry(160, 160);
+                const groundGeo = new THREE.PlaneGeometry(750, 750);
                 const canvas = document.createElement('canvas');
                 canvas.width = 2048;
                 canvas.height = 2048;
                 const ctx = canvas.getContext('2d');
 
-                // Base Deep Military Asphalt
-                ctx.fillStyle = '#0b0f19';
+                // 1. Base Outer Wasteland Dark Soil & Fissures
+                ctx.fillStyle = '#060911';
                 ctx.fillRect(0, 0, 2048, 2048);
 
-                // Concrete Slab Expansion Grid (128x128px per tile = 10x10m slabs)
-                for (let gx = 0; gx < 2048; gx += 128) {
-                    for (let gy = 0; gy < 2048; gy += 128) {
-                        const slabTone = 12 + Math.floor((Math.sin(gx * 0.03 + gy * 0.05) + 1) * 3);
-                        ctx.fillStyle = `rgb(${slabTone}, ${slabTone + 4}, ${slabTone + 11})`;
-                        ctx.fillRect(gx + 2, gy + 2, 124, 124);
+                // Rugged wasteland rocky noise & gravel
+                for (let i = 0; i < 18000; i++) {
+                    const nx = Math.random() * 2048;
+                    const ny = Math.random() * 2048;
+                    const nr = Math.random() * 2.8 + 0.4;
+                    ctx.fillStyle = Math.random() > 0.4 ? '#0c121e' : '#141d2d';
+                    ctx.beginPath();
+                    ctx.arc(nx, ny, nr, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Dried Earth Fissures & Deep Cracks in Outer Wasteland
+                ctx.strokeStyle = '#020408';
+                ctx.lineWidth = 2.2;
+                for (let i = 0; i < 36; i++) {
+                    let fx = Math.random() * 2048;
+                    let fy = Math.random() * 2048;
+                    // Keep cracks mostly in outer wasteland (away from immediate center)
+                    const distFromC = Math.hypot(fx - 1024, fy - 1024);
+                    if (distFromC < 400) continue;
+                    ctx.beginPath();
+                    ctx.moveTo(fx, fy);
+                    for (let step = 0; step < 7; step++) {
+                        fx += (Math.random() - 0.5) * 55;
+                        fy += (Math.random() - 0.5) * 55;
+                        ctx.lineTo(fx, fy);
                     }
-                }
-
-                // Weathered Joint Lines between slabs
-                ctx.strokeStyle = '#05070c';
-                ctx.lineWidth = 3;
-                for (let x = 0; x <= 2048; x += 128) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, 0); ctx.lineTo(x, 2048);
-                    ctx.stroke();
-                }
-                for (let y = 0; y <= 2048; y += 128) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, y); ctx.lineTo(2048, y);
                     ctx.stroke();
                 }
 
-                // Surface Asphalt Grunge & Micro-Pebbles
-                for (let i = 0; i < 15000; i++) {
-                    const px = Math.random() * 2048;
-                    const py = Math.random() * 2048;
-                    const pr = Math.random() * 2.2 + 0.5;
-                    ctx.fillStyle = Math.random() > 0.5 ? '#1e293b' : '#060911';
+                // 2. Smooth Radial Organic Transition: Wasteland -> Tactical Tarmac
+                const centerX = 1024;
+                const centerY = 1024;
+
+                // Create smooth radial gradient from dark military tarmac out to wasteland
+                const tarmacGrad = ctx.createRadialGradient(centerX, centerY, 150, centerX, centerY, 880);
+                tarmacGrad.addColorStop(0, 'rgba(17, 24, 39, 0.98)');
+                tarmacGrad.addColorStop(0.55, 'rgba(15, 23, 42, 0.94)');
+                tarmacGrad.addColorStop(0.80, 'rgba(11, 16, 26, 0.70)');
+                tarmacGrad.addColorStop(1.0, 'rgba(6, 9, 17, 0)');
+
+                ctx.fillStyle = tarmacGrad;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 880, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Surface Asphalt Grunge & Micro-Pebbles (No square grid!)
+                for (let i = 0; i < 12000; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const rDist = Math.random() * 850;
+                    const px = centerX + Math.cos(ang) * rDist;
+                    const py = centerY + Math.sin(ang) * rDist;
+                    const pr = Math.random() * 2.2 + 0.4;
+                    ctx.fillStyle = Math.random() > 0.5 ? '#1e293b' : '#030712';
                     ctx.beginPath();
                     ctx.arc(px, py, pr, 0, Math.PI * 2);
                     ctx.fill();
@@ -6314,14 +6318,14 @@
 
                 // Scorched Blast Decals & Explosions Marks on Ground
                 const blastPositions = [
-                    [650, 720, 75], [1420, 680, 85], [780, 1380, 90], [1350, 1400, 70],
-                    [420, 1050, 110], [1680, 980, 100], [1050, 480, 95], [980, 1620, 85],
-                    [520, 450, 65], [1580, 1560, 80], [350, 1550, 75], [1650, 420, 70]
+                    [650, 720, 95], [1420, 680, 110], [780, 1380, 115], [1350, 1400, 90],
+                    [420, 1050, 140], [1680, 980, 130], [1050, 480, 120], [980, 1620, 110],
+                    [520, 450, 85], [1580, 1560, 105], [350, 1550, 95], [1650, 420, 90]
                 ];
                 for (let b of blastPositions) {
                     const [bx, by, br] = b;
-                    const bGrad = ctx.createRadialGradient(bx, by, br * 0.15, bx, by, br);
-                    bGrad.addColorStop(0, 'rgba(5, 7, 12, 0.92)');
+                    const bGrad = ctx.createRadialGradient(bx, by, br * 0.1, bx, by, br);
+                    bGrad.addColorStop(0, 'rgba(3, 5, 10, 0.95)');
                     bGrad.addColorStop(0.5, 'rgba(15, 23, 42, 0.55)');
                     bGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
                     ctx.fillStyle = bGrad;
@@ -6330,14 +6334,16 @@
                     ctx.fill();
                 }
 
-                // Oil Spills & Hydraulic Stains
-                for (let i = 0; i < 18; i++) {
-                    const ox = 300 + Math.random() * 1448;
-                    const oy = 300 + Math.random() * 1448;
-                    const or = 20 + Math.random() * 35;
+                // Oil Spills & Hydraulic Fluid Stains
+                for (let i = 0; i < 22; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const dist = 180 + Math.random() * 600;
+                    const ox = centerX + Math.cos(ang) * dist;
+                    const oy = centerY + Math.sin(ang) * dist;
+                    const or = 20 + Math.random() * 45;
                     const oGrad = ctx.createRadialGradient(ox, oy, 2, ox, oy, or);
-                    oGrad.addColorStop(0, 'rgba(3, 4, 8, 0.85)');
-                    oGrad.addColorStop(0.7, 'rgba(10, 15, 26, 0.4)');
+                    oGrad.addColorStop(0, 'rgba(2, 4, 8, 0.88)');
+                    oGrad.addColorStop(0.7, 'rgba(10, 15, 26, 0.45)');
                     oGrad.addColorStop(1, 'rgba(10, 15, 26, 0)');
                     ctx.fillStyle = oGrad;
                     ctx.beginPath();
@@ -6346,13 +6352,10 @@
                 }
 
                 // ----------------------------------------------------
-                // CENTRAL HQ BASE APRON & HAZARD PERIMETER
+                // 3. CENTRAL HQ APRON & HAZARD PERIMETER
                 // ----------------------------------------------------
-                const centerX = 1024;
-                const centerY = 1024;
-
-                // Circular Tactical Apron Backplate (Radius ~160px = ~12.5m)
-                ctx.fillStyle = '#111827';
+                // Circular Tactical Apron Backplate
+                ctx.fillStyle = '#0f172a';
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, 195, 0, Math.PI * 2);
                 ctx.fill();
@@ -6366,7 +6369,7 @@
                 ctx.clip();
 
                 // Draw 45deg Hazard Stripes
-                ctx.fillStyle = '#0f172a';
+                ctx.fillStyle = '#090d16';
                 ctx.fillRect(centerX - 200, centerY - 200, 400, 400);
                 ctx.fillStyle = '#eab308';
                 for (let s = -400; s < 400; s += 24) {
@@ -6382,58 +6385,47 @@
 
                 // Inner Tactical Guidance Rings
                 ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 3.5;
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, 145, 0, Math.PI * 2);
                 ctx.stroke();
 
                 ctx.strokeStyle = '#0284c7';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 2.5;
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, 215, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // Outer Defense Distance Markers (30m, 50m, 70m radii)
-                const radii = [384, 640, 896]; // in pixels
-                ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+                // Concentric Defense Distance Markers (30m, 50m, 70m radii)
+                const defenseRadii = [384, 640, 850];
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
                 ctx.lineWidth = 2;
-                ctx.setLineDash([16, 16]);
-                for (let r of radii) {
+                ctx.setLineDash([16, 20]);
+                for (let r of defenseRadii) {
                     ctx.beginPath();
                     ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
                     ctx.stroke();
                 }
                 ctx.setLineDash([]);
 
-                // Cardinal Axis Tarmac Line Markings
-                ctx.strokeStyle = 'rgba(234, 179, 8, 0.45)';
+                // Cardinal Axis Tarmac Guide Lines (fading out softly)
+                ctx.strokeStyle = 'rgba(234, 179, 8, 0.4)';
                 ctx.lineWidth = 3;
-                ctx.setLineDash([20, 16]);
-                // North line
-                ctx.beginPath(); ctx.moveTo(centerX, centerY - 215); ctx.lineTo(centerX, 80); ctx.stroke();
-                // South line
-                ctx.beginPath(); ctx.moveTo(centerX, centerY + 215); ctx.lineTo(centerX, 1968); ctx.stroke();
-                // West line
-                ctx.beginPath(); ctx.moveTo(centerX - 215, centerY); ctx.lineTo(80, centerY); ctx.stroke();
-                // East line
-                ctx.beginPath(); ctx.moveTo(centerX + 215, centerY); ctx.lineTo(1968, centerY); ctx.stroke();
+                ctx.setLineDash([22, 18]);
+                ctx.beginPath(); ctx.moveTo(centerX, centerY - 215); ctx.lineTo(centerX, centerY - 800); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(centerX, centerY + 215); ctx.lineTo(centerX, centerY + 800); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(centerX - 215, centerY); ctx.lineTo(centerX - 800, centerY); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(centerX + 215, centerY); ctx.lineTo(centerX + 800, centerY); ctx.stroke();
                 ctx.setLineDash([]);
 
                 // Stenciled Military Markings & Sector Labels
-                ctx.font = 'bold 22px monospace';
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.65)';
+                ctx.font = 'bold 24px monospace';
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.7)';
                 ctx.textAlign = 'center';
                 ctx.fillText('[ SECTOR-01 // COMMAND HQ ]', centerX, centerY - 235);
                 ctx.fillText('[ SECTOR-02 // WEST DEFENSE ]', centerX - 360, centerY - 20);
                 ctx.fillText('[ SECTOR-03 // EAST DEFENSE ]', centerX + 360, centerY - 20);
-                ctx.fillText('[ SECTOR-04 // SOUTH PERIMETER ]', centerX, centerY + 250);
-
-                ctx.font = 'bold 18px monospace';
-                ctx.fillStyle = 'rgba(234, 179, 8, 0.6)';
-                ctx.fillText('▲ NORTH ENTRY ▲', centerX, 110);
-                ctx.fillText('▼ SOUTH ENTRY ▼', centerX, 1940);
-                ctx.fillText('◄ WEST WING', 120, centerY);
-                ctx.fillText('EAST WING ►', 1928, centerY);
+                ctx.fillText('[ SECTOR-04 // SOUTH PERIMETER ]', centerX, centerY + 255);
 
                 const texture = new THREE.CanvasTexture(canvas);
                 texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -6447,206 +6439,402 @@
 
                 const groundMat = new THREE.MeshStandardMaterial({ 
                     map: texture, 
-                    roughness: 0.82, 
-                    metalness: 0.18 
+                    roughness: 0.85, 
+                    metalness: 0.15 
                 });
                 const ground = new THREE.Mesh(groundGeo, groundMat);
                 ground.rotation.x = -Math.PI / 2;
+                ground.position.y = 0;
                 ground.receiveShadow = true;
                 ground.matrixAutoUpdate = false;
                 ground.updateMatrix();
                 this.scene.add(ground);
 
                 // ==========================================
-                // 3. BUILD MILITARY & INDUSTRIAL ARTIFACTS
+                // 4. BUILD DETAILED MILITARY & INDUSTRIAL ARTIFACTS
                 // ==========================================
                 this.buildBattlefieldProps();
             }
 
             buildBattlefieldProps() {
-                // Shared Materials for Low GPU Overhead & High Performance
-                const rustMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8, metalness: 0.6 });
-                const charredMetalMat = new THREE.MeshStandardMaterial({ color: 0x18202c, roughness: 0.7, metalness: 0.75 });
-                const concreteMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, metalness: 0.1 });
-                const barrelRedMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.4, metalness: 0.7 });
+                // Shared High-Detail Materials
+                const rustMat = new THREE.MeshStandardMaterial({ color: 0x3b4352, roughness: 0.82, metalness: 0.55 });
+                const darkArmorMat = new THREE.MeshStandardMaterial({ color: 0x18202c, roughness: 0.65, metalness: 0.8 });
+                const treadMat = new THREE.MeshStandardMaterial({ color: 0x111620, roughness: 0.9, metalness: 0.3 });
+                const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222d3d, roughness: 0.6, metalness: 0.7 });
+                const concreteMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.92, metalness: 0.1 });
+                const barrelRedMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.45, metalness: 0.65 });
                 const barrelDarkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.7 });
+                const barrelYellowMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5, metalness: 0.6 });
                 const containerOlive = new THREE.MeshStandardMaterial({ color: 0x283618, roughness: 0.65, metalness: 0.45 });
                 const containerRust = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7, metalness: 0.4 });
                 const containerNavy = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.5 });
+                const sandbagMat = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.95, metalness: 0.05 });
                 const beaconMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.9 });
                 const siloMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8, metalness: 0.3 });
 
                 // Shared Geometries
-                const beamGeo = new THREE.BoxGeometry(0.16, 0.16, 1.9);
-                const barrelGeo = new THREE.CylinderGeometry(0.36, 0.36, 1.05, 10);
-                const containerGeo = new THREE.BoxGeometry(2.4, 2.5, 6.0);
-                const barrierGeo = new THREE.BoxGeometry(2.4, 0.85, 0.75);
+                const beamGeo = new THREE.BoxGeometry(0.18, 0.18, 2.1);
+                const barrelBodyGeo = new THREE.CylinderGeometry(0.38, 0.38, 1.1, 12);
+                const barrelRimGeo = new THREE.TorusGeometry(0.38, 0.03, 8, 12);
+                const sandbagGeo = new THREE.BoxGeometry(0.7, 0.28, 0.42);
+
+                // Helper to create corrugated shipping container with 3D ribs, frame & door rods
+                const createDetailedContainer = (mat) => {
+                    const cGroup = new THREE.Group();
+                    
+                    // Main Solid Inner Box
+                    const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.35, 2.45, 5.95), mat);
+                    mainBody.position.y = 1.225;
+                    cGroup.add(mainBody);
+
+                    // 4 Corner Structural Steel Posts
+                    const postGeo = new THREE.BoxGeometry(0.14, 2.5, 0.14);
+                    const posts = [
+                        [-1.15, 1.25, -2.95], [1.15, 1.25, -2.95],
+                        [-1.15, 1.25, 2.95], [1.15, 1.25, 2.95]
+                    ];
+                    for (let p of posts) {
+                        const post = new THREE.Mesh(postGeo, darkArmorMat);
+                        post.position.set(p[0], p[1], p[2]);
+                        cGroup.add(post);
+                    }
+
+                    // 12 Corrugated Vertical Steel Ribs on Left & Right Sides
+                    const ribGeo = new THREE.BoxGeometry(0.06, 2.3, 0.12);
+                    for (let z = -2.6; z <= 2.6; z += 0.48) {
+                        const ribL = new THREE.Mesh(ribGeo, mat);
+                        ribL.position.set(-1.21, 1.25, z);
+                        cGroup.add(ribL);
+
+                        const ribR = new THREE.Mesh(ribGeo, mat);
+                        ribR.position.set(1.21, 1.25, z);
+                        cGroup.add(ribR);
+                    }
+
+                    // Rear Door Locking Rods (Steel Pipes)
+                    const rodGeo = new THREE.CylinderGeometry(0.03, 0.03, 2.2, 6);
+                    const rod1 = new THREE.Mesh(rodGeo, rustMat);
+                    rod1.position.set(-0.4, 1.25, 3.0);
+                    cGroup.add(rod1);
+
+                    const rod2 = new THREE.Mesh(rodGeo, rustMat);
+                    rod2.position.set(0.4, 1.25, 3.0);
+                    cGroup.add(rod2);
+
+                    return cGroup;
+                };
+
+                // Helper to create detailed Main Battle Tank / APC wreck
+                const createDetailedTank = (isTank) => {
+                    const tGroup = new THREE.Group();
+
+                    // Lower Hull Base
+                    const lowerHull = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.7, 5.6), darkArmorMat);
+                    lowerHull.position.y = 0.55;
+                    tGroup.add(lowerHull);
+
+                    // Sloped Upper Glacis Armor Plate
+                    const upperHull = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.65, 4.8), darkArmorMat);
+                    upperHull.position.set(0, 1.15, -0.2);
+                    upperHull.rotation.x = -0.08;
+                    tGroup.add(upperHull);
+
+                    // Left & Right Track Assembly (Continuous Rubber Treads + 6 Road Wheels)
+                    const wheelGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.35, 10);
+                    wheelGeo.rotateZ(Math.PI / 2);
+                    
+                    const trackGeo = new THREE.BoxGeometry(0.65, 0.8, 5.8);
+                    const trackL = new THREE.Mesh(trackGeo, treadMat);
+                    trackL.position.set(-1.7, 0.45, 0);
+                    tGroup.add(trackL);
+
+                    const trackR = new THREE.Mesh(trackGeo, treadMat);
+                    trackR.position.set(1.7, 0.45, 0);
+                    tGroup.add(trackR);
+
+                    for (let z = -2.2; z <= 2.2; z += 0.88) {
+                        const wL = new THREE.Mesh(wheelGeo, wheelMat);
+                        wL.position.set(-1.72, 0.45, z);
+                        tGroup.add(wL);
+
+                        const wR = new THREE.Mesh(wheelGeo, wheelMat);
+                        wR.position.set(1.72, 0.45, z);
+                        tGroup.add(wR);
+                    }
+
+                    // Side Armor Skirt Panels
+                    const skirtGeo = new THREE.BoxGeometry(0.12, 0.55, 5.4);
+                    const skirtL = new THREE.Mesh(skirtGeo, darkArmorMat);
+                    skirtL.position.set(-2.05, 0.65, 0);
+                    tGroup.add(skirtL);
+
+                    const skirtR = new THREE.Mesh(skirtGeo, darkArmorMat);
+                    skirtR.position.set(2.05, 0.65, 0);
+                    tGroup.add(skirtR);
+
+                    if (isTank) {
+                        // Angled Armored Turret
+                        const turret = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.6, 0.85, 8), darkArmorMat);
+                        turret.position.set(0, 1.7, -0.3);
+                        turret.rotation.y = 0.45;
+                        tGroup.add(turret);
+
+                        // Commander's Hatch Cupola
+                        const cupola = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.25, 8), rustMat);
+                        cupola.position.set(-0.5, 2.2, -0.4);
+                        tGroup.add(cupola);
+
+                        // 120mm Heavy Cannon with Bore Evacuator & Muzzle Brake
+                        const gunGroup = new THREE.Group();
+                        gunGroup.position.set(0.2, 1.65, 1.1);
+                        gunGroup.rotation.x = 0.12; // tilted down damaged
+                        gunGroup.rotation.y = 0.38;
+
+                        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 3.6, 8), rustMat);
+                        barrel.rotation.x = Math.PI / 2;
+                        barrel.position.z = 1.8;
+                        gunGroup.add(barrel);
+
+                        const boreEvac = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.6, 8), darkArmorMat);
+                        boreEvac.rotation.x = Math.PI / 2;
+                        boreEvac.position.z = 2.1;
+                        gunGroup.add(boreEvac);
+
+                        const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.25, 0.4), darkArmorMat);
+                        muzzle.position.z = 3.6;
+                        gunGroup.add(muzzle);
+
+                        tGroup.add(gunGroup);
+                    } else {
+                        // Armored Troop Transport Cabin Box
+                        const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.8, 3.4), darkArmorMat);
+                        cabin.position.set(0, 1.65, -0.5);
+                        tGroup.add(cabin);
+
+                        const hatch = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.18, 8), rustMat);
+                        hatch.position.set(0, 2.1, -0.5);
+                        tGroup.add(hatch);
+                    }
+
+                    return tGroup;
+                };
 
                 // --- 1. Czech Hedgehogs (Panzersperren) Clusters ---
-                const hedgehogPositions = [
+                const hedgehogClusters = [
                     [-38, 42], [-41, 45], [-35, 48],
                     [42, 38], [45, 41], [40, 44],
                     [-48, -32], [-45, -36], [-51, -34],
                     [38, -46], [42, -43], [36, -49]
                 ];
 
-                for (let pos of hedgehogPositions) {
+                for (let pos of hedgehogClusters) {
                     const hGroup = new THREE.Group();
-                    hGroup.position.set(pos[0], 0.65, pos[1]);
+                    hGroup.position.set(pos[0], 0.7, pos[1]);
 
                     const b1 = new THREE.Mesh(beamGeo, rustMat);
-                    b1.rotation.set(0.6, 0.6, 0);
+                    b1.rotation.set(0.65, 0.65, 0);
                     hGroup.add(b1);
 
                     const b2 = new THREE.Mesh(beamGeo, rustMat);
-                    b2.rotation.set(-0.6, 0.6, 0);
+                    b2.rotation.set(-0.65, 0.65, 0);
                     hGroup.add(b2);
 
                     const b3 = new THREE.Mesh(beamGeo, rustMat);
-                    b3.rotation.set(0, 0, 1.1);
+                    b3.rotation.set(0, 0, 1.15);
                     hGroup.add(b3);
+
+                    // Central Gusset Plate
+                    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), darkArmorMat);
+                    hGroup.add(plate);
 
                     hGroup.rotation.y = Math.random() * Math.PI;
                     hGroup.matrixAutoUpdate = false;
                     hGroup.updateMatrix();
                     this.scene.add(hGroup);
+
+                    // Register collision boundary (radius 1.4m)
+                    this.environmentObstacles.push({ x: pos[0], z: pos[1], radius: 1.4 });
                 }
 
                 // --- 2. Destroyed Tank & APC Combat Wrecks ---
                 const wreckConfigs = [
-                    { x: -58, z: 38, rot: 0.45, isTank: true },
-                    { x: 62, z: -35, rot: 2.1, isTank: true },
-                    { x: -46, z: -58, rot: -1.2, isTank: false },
-                    { x: 54, z: 52, rot: 3.6, isTank: false }
+                    { x: -56, z: 36, rot: 0.45, isTank: true },
+                    { x: 60, z: -34, rot: 2.1, isTank: true },
+                    { x: -44, z: -56, rot: -1.2, isTank: false },
+                    { x: 52, z: 50, rot: 3.6, isTank: false }
                 ];
 
                 for (let cfg of wreckConfigs) {
-                    const wreckGroup = new THREE.Group();
-                    wreckGroup.position.set(cfg.x, 0, cfg.z);
-                    wreckGroup.rotation.y = cfg.rot;
+                    const wreck = createDetailedTank(cfg.isTank);
+                    wreck.position.set(cfg.x, 0, cfg.z);
+                    wreck.rotation.y = cfg.rot;
+                    wreck.matrixAutoUpdate = false;
+                    wreck.updateMatrix();
+                    this.scene.add(wreck);
 
-                    // Main Armored Hull
-                    const hull = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.1, 5.4), charredMetalMat);
-                    hull.position.y = 0.75;
-                    hull.castShadow = false;
-                    wreckGroup.add(hull);
-
-                    // Left & Right Track Assemblies
-                    const trackL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.85, 5.6), rustMat);
-                    trackL.position.set(-1.6, 0.5, 0);
-                    wreckGroup.add(trackL);
-
-                    const trackR = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.85, 5.6), rustMat);
-                    trackR.position.set(1.6, 0.5, 0);
-                    wreckGroup.add(trackR);
-
-                    if (cfg.isTank) {
-                        // Turret (damaged / rotated offset)
-                        const turret = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.45, 0.75, 8), charredMetalMat);
-                        turret.position.set(0, 1.55, -0.2);
-                        turret.rotation.y = 0.5;
-                        wreckGroup.add(turret);
-
-                        // Broken Cannon Barrel
-                        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 3.2, 8), rustMat);
-                        cannon.rotation.x = Math.PI / 2 + 0.15;
-                        cannon.position.set(0.3, 1.5, 1.8);
-                        wreckGroup.add(cannon);
-                    } else {
-                        // APC Cabin Roof & Hatch
-                        const roof = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.7, 3.2), charredMetalMat);
-                        roof.position.set(0, 1.5, -0.5);
-                        wreckGroup.add(roof);
-                    }
-
-                    wreckGroup.matrixAutoUpdate = false;
-                    wreckGroup.updateMatrix();
-                    this.scene.add(wreckGroup);
+                    // Register collision boundary (radius 3.8m)
+                    this.environmentObstacles.push({ x: cfg.x, z: cfg.z, radius: 3.8 });
                 }
 
                 // --- 3. Stacked Military Cargo Containers ---
                 const containerClusters = [
-                    { x: -64, z: 12, rot: 0.2, mats: [containerOlive, containerRust] },
-                    { x: 62, z: 18, rot: -0.4, mats: [containerNavy, containerOlive] },
-                    { x: -28, z: 66, rot: 1.4, mats: [containerRust, containerNavy] },
-                    { x: 30, z: -64, rot: 2.8, mats: [containerOlive, containerRust] }
+                    { x: -62, z: 12, rot: 0.2, mats: [containerOlive, containerRust] },
+                    { x: 60, z: 18, rot: -0.4, mats: [containerNavy, containerOlive] },
+                    { x: -28, z: 64, rot: 1.4, mats: [containerRust, containerNavy] },
+                    { x: 30, z: -62, rot: 2.8, mats: [containerOlive, containerRust] }
                 ];
 
                 for (let cc of containerClusters) {
-                    const cGroup = new THREE.Group();
-                    cGroup.position.set(cc.x, 0, cc.z);
-                    cGroup.rotation.y = cc.rot;
+                    const hubGroup = new THREE.Group();
+                    hubGroup.position.set(cc.x, 0, cc.z);
+                    hubGroup.rotation.y = cc.rot;
 
                     // Ground container 1
-                    const c1 = new THREE.Mesh(containerGeo, cc.mats[0]);
-                    c1.position.set(0, 1.25, 0);
-                    cGroup.add(c1);
+                    const c1 = createDetailedContainer(cc.mats[0]);
+                    c1.position.set(0, 0, 0);
+                    hubGroup.add(c1);
 
                     // Ground container 2 (parallel adjacent)
-                    const c2 = new THREE.Mesh(containerGeo, cc.mats[1]);
-                    c2.position.set(2.8, 1.25, 0.5);
-                    cGroup.add(c2);
+                    const c2 = createDetailedContainer(cc.mats[1]);
+                    c2.position.set(2.7, 0, 0.4);
+                    hubGroup.add(c2);
 
                     // Stacked top container (skewed slightly)
-                    const c3 = new THREE.Mesh(containerGeo, cc.mats[0]);
-                    c3.position.set(1.4, 3.75, 0.2);
+                    const c3 = createDetailedContainer(cc.mats[0]);
+                    c3.position.set(1.35, 2.5, 0.2);
                     c3.rotation.y = 0.12;
-                    cGroup.add(c3);
+                    hubGroup.add(c3);
 
-                    cGroup.matrixAutoUpdate = false;
-                    cGroup.updateMatrix();
-                    this.scene.add(cGroup);
+                    hubGroup.matrixAutoUpdate = false;
+                    hubGroup.updateMatrix();
+                    this.scene.add(hubGroup);
+
+                    // Register collision boundary (radius 4.2m)
+                    this.environmentObstacles.push({ x: cc.x, z: cc.z, radius: 4.2 });
                 }
 
                 // --- 4. Concrete Roadblock Jersey Barriers ---
                 const barrierPositions = [
-                    { x: -55, z: 20, rot: 0.1 }, { x: -55, z: 22.8, rot: 0.2 },
-                    { x: 55, z: 24, rot: -0.3 }, { x: 55, z: 26.8, rot: -0.2 },
-                    { x: -20, z: 60, rot: 1.5 }, { x: -22.8, z: 60, rot: 1.6 },
-                    { x: 22, z: -58, rot: 1.3 }, { x: 24.8, z: -58, rot: 1.4 }
+                    { x: -52, z: 18, rot: 0.1 }, { x: -52, z: 20.6, rot: 0.2 },
+                    { x: 52, z: 22, rot: -0.3 }, { x: 52, z: 24.6, rot: -0.2 },
+                    { x: -18, z: 58, rot: 1.5 }, { x: -20.6, z: 58, rot: 1.6 },
+                    { x: 20, z: -56, rot: 1.3 }, { x: 22.6, z: -56, rot: 1.4 }
                 ];
 
                 for (let bp of barrierPositions) {
-                    const bar = new THREE.Mesh(barrierGeo, concreteMat);
-                    bar.position.set(bp.x, 0.42, bp.z);
-                    bar.rotation.y = bp.rot;
-                    bar.matrixAutoUpdate = false;
-                    bar.updateMatrix();
-                    this.scene.add(bar);
+                    const bGroup = new THREE.Group();
+                    bGroup.position.set(bp.x, 0, bp.z);
+                    bGroup.rotation.y = bp.rot;
+
+                    // Trapezoidal concrete barrier block
+                    const baseBar = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 0.8), concreteMat);
+                    baseBar.position.y = 0.225;
+                    bGroup.add(baseBar);
+
+                    const topBar = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 0.4), concreteMat);
+                    topBar.position.y = 0.65;
+                    bGroup.add(topBar);
+
+                    // Lifting Loops on Top
+                    const hookGeo = new THREE.TorusGeometry(0.08, 0.02, 6, 8, Math.PI);
+                    const h1 = new THREE.Mesh(hookGeo, rustMat);
+                    h1.position.set(-0.6, 0.88, 0);
+                    bGroup.add(h1);
+
+                    const h2 = new THREE.Mesh(hookGeo, rustMat);
+                    h2.position.set(0.6, 0.88, 0);
+                    bGroup.add(h2);
+
+                    bGroup.matrixAutoUpdate = false;
+                    bGroup.updateMatrix();
+                    this.scene.add(bGroup);
+
+                    // Register collision boundary (radius 1.6m)
+                    this.environmentObstacles.push({ x: bp.x, z: bp.z, radius: 1.6 });
                 }
 
                 // --- 5. Industrial Oil & Fuel Drums ---
                 const drumClusters = [
-                    [-60, 24], [58, 28], [-24, 62], [26, -60], [-42, -45], [44, 46]
+                    [-58, 22], [56, 26], [-22, 60], [24, -58], [-40, -42], [42, 44]
                 ];
 
                 for (let dc of drumClusters) {
                     const dGroup = new THREE.Group();
                     dGroup.position.set(dc[0], 0, dc[1]);
 
-                    // Standing barrel 1
-                    const d1 = new THREE.Mesh(barrelGeo, barrelRedMat);
-                    d1.position.set(0, 0.52, 0);
+                    // Standing barrel 1 (Red)
+                    const d1 = new THREE.Mesh(barrelBodyGeo, barrelRedMat);
+                    d1.position.set(0, 0.55, 0);
                     dGroup.add(d1);
+                    const r1a = new THREE.Mesh(barrelRimGeo, darkArmorMat);
+                    r1a.rotation.x = Math.PI / 2; r1a.position.set(0, 0.8, 0); dGroup.add(r1a);
+                    const r1b = new THREE.Mesh(barrelRimGeo, darkArmorMat);
+                    r1b.rotation.x = Math.PI / 2; r1b.position.set(0, 0.3, 0); dGroup.add(r1b);
 
-                    // Standing barrel 2
-                    const d2 = new THREE.Mesh(barrelGeo, barrelDarkMat);
-                    d2.position.set(0.65, 0.52, 0.2);
+                    // Standing barrel 2 (Dark Steel)
+                    const d2 = new THREE.Mesh(barrelBodyGeo, barrelDarkMat);
+                    d2.position.set(0.65, 0.55, 0.2);
                     dGroup.add(d2);
 
-                    // Knocked over barrel 3
-                    const d3 = new THREE.Mesh(barrelGeo, barrelRedMat);
-                    d3.rotation.x = Math.PI / 2;
-                    d3.rotation.z = 0.5;
-                    d3.position.set(-0.4, 0.36, 0.6);
+                    // Standing barrel 3 (Yellow Hazard)
+                    const d3 = new THREE.Mesh(barrelBodyGeo, barrelYellowMat);
+                    d3.position.set(-0.55, 0.55, 0.35);
                     dGroup.add(d3);
+
+                    // Knocked over barrel 4 (Red)
+                    const d4 = new THREE.Mesh(barrelBodyGeo, barrelRedMat);
+                    d4.rotation.x = Math.PI / 2;
+                    d4.rotation.z = 0.5;
+                    d4.position.set(0.1, 0.38, 0.8);
+                    dGroup.add(d4);
 
                     dGroup.matrixAutoUpdate = false;
                     dGroup.updateMatrix();
                     this.scene.add(dGroup);
+
+                    // Register collision boundary (radius 1.6m)
+                    this.environmentObstacles.push({ x: dc[0], z: dc[1], radius: 1.6 });
                 }
 
-                // --- 6. Tall Communication / Radio Towers with Red Flashing Beacons ---
+                // --- 6. Sandbag Fortification Bunkers ---
+                const sandbagPositions = [
+                    { x: -30, z: 28, rot: 0.6 },
+                    { x: 32, z: -25, rot: 2.2 }
+                ];
+
+                for (let sp of sandbagPositions) {
+                    const sbGroup = new THREE.Group();
+                    sbGroup.position.set(sp.x, 0, sp.z);
+                    sbGroup.rotation.y = sp.rot;
+
+                    // Layer 1 Sandbags (Crescent curve)
+                    for (let a = -1.0; a <= 1.0; a += 0.35) {
+                        const sb1 = new THREE.Mesh(sandbagGeo, sandbagMat);
+                        sb1.position.set(Math.sin(a) * 2.2, 0.14, Math.cos(a) * 1.5);
+                        sb1.rotation.y = a;
+                        sbGroup.add(sb1);
+
+                        const sb2 = new THREE.Mesh(sandbagGeo, sandbagMat);
+                        sb2.position.set(Math.sin(a) * 2.2, 0.40, Math.cos(a) * 1.5);
+                        sb2.rotation.y = a + 0.1;
+                        sbGroup.add(sb2);
+
+                        const sb3 = new THREE.Mesh(sandbagGeo, sandbagMat);
+                        sb3.position.set(Math.sin(a) * 2.2, 0.66, Math.cos(a) * 1.5);
+                        sb3.rotation.y = a - 0.1;
+                        sbGroup.add(sb3);
+                    }
+
+                    sbGroup.matrixAutoUpdate = false;
+                    sbGroup.updateMatrix();
+                    this.scene.add(sbGroup);
+
+                    // Register collision boundary (radius 2.2m)
+                    this.environmentObstacles.push({ x: sp.x, z: sp.z, radius: 2.2 });
+                }
+
+                // --- 7. Tall Communication / Radio Towers with Red Flashing Beacons ---
                 const towerPositions = [
                     [-95, -85], [95, -90], [-90, 95], [100, 90]
                 ];
@@ -6661,7 +6849,7 @@
                     tGroup.add(mast);
 
                     // Upper Satellite Dish
-                    const dish = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 0.2, 0.5, 12, 1, true), charredMetalMat);
+                    const dish = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 0.2, 0.5, 12, 1, true), darkArmorMat);
                     dish.rotation.x = Math.PI / 3;
                     dish.position.set(0, 28, 0);
                     tGroup.add(dish);
@@ -6675,9 +6863,12 @@
                     tGroup.matrixAutoUpdate = false;
                     tGroup.updateMatrix();
                     this.scene.add(tGroup);
+
+                    // Register collision boundary (radius 2.5m)
+                    this.environmentObstacles.push({ x: tp[0], z: tp[1], radius: 2.5 });
                 }
 
-                // --- 7. Distant Industrial Silos & Factory Silhouettes (Far Horizon) ---
+                // --- 8. Distant Industrial Silos & Factory Silhouettes (Far Horizon) ---
                 const siloClusters = [
                     [-180, -160], [190, -170], [-175, 185], [185, 175]
                 ];
@@ -6706,7 +6897,7 @@
                     sGroup.add(d2);
 
                     // Tall Chimney Smokestack
-                    const chim = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.5, 42, 8), charredMetalMat);
+                    const chim = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.5, 42, 8), darkArmorMat);
                     chim.position.set(-11, 21, -6);
                     sGroup.add(chim);
 
