@@ -6377,7 +6377,7 @@
                 // Extends far past fog distance to guarantee ZERO hard edge at the horizon
                 // ==========================================
                 const outerGroundGeo = new THREE.PlaneGeometry(900, 900);
-                const outerMat = new THREE.MeshLambertMaterial({ color: 0x060911 });
+                const outerMat = new THREE.MeshLambertMaterial({ color: 0x050811 });
                 const outerGround = new THREE.Mesh(outerGroundGeo, outerMat);
                 outerGround.rotation.x = -Math.PI / 2;
                 outerGround.position.y = -0.05;
@@ -6387,9 +6387,9 @@
                 this.environmentGroup.add(outerGround);
 
                 // ==========================================
-                // 2. ULTRA-DETAILED 2K TACTICAL BATTLEFIELD (240x240m)
-                // High-density procedural canvas with concrete expansion joints,
-                // vehicle skid tracks, blast craters, oil slicks & military stencils
+                // 2. ULTRA-DETAILED 2K WASTELAND TERRAIN (240x240m)
+                // Organic post-apocalyptic dark volcanic soil, fissures, ash patches,
+                // and soft realistic charred impact burns (NO airport runways, NO grid lines)
                 // ==========================================
                 const groundGeo = new THREE.PlaneGeometry(240, 240);
                 const canvas = document.createElement('canvas');
@@ -6400,251 +6400,141 @@
                 const centerX = 1024;
                 const centerY = 1024;
 
-                // --- A. Base Dark Wasteland Foundation ---
-                ctx.fillStyle = '#060911';
+                // --- A. Deep Volcanic & Ash Wasteland Soil ---
+                ctx.fillStyle = '#050811';
                 ctx.fillRect(0, 0, 2048, 2048);
 
-                // Rocky aggregate & noise specks
-                for (let i = 0; i < 3500; i++) {
+                // Multi-layered organic stone gravel & fine soil noise
+                for (let i = 0; i < 7000; i++) {
                     const rx = (Math.random() * 2048) | 0;
                     const ry = (Math.random() * 2048) | 0;
-                    const rw = (Math.random() * 3.5 + 1) | 0;
-                    ctx.fillStyle = Math.random() > 0.45 ? '#0f172a' : '#1e293b';
-                    ctx.fillRect(rx, ry, rw, rw);
+                    const rw = Math.random() * 3.5 + 0.8;
+                    const shade = Math.random();
+                    ctx.fillStyle = shade > 0.65 ? '#111928' : (shade > 0.35 ? '#0c1320' : '#020409');
+                    ctx.beginPath();
+                    ctx.arc(rx, ry, rw, 0, Math.PI * 2);
+                    ctx.fill();
                 }
 
-                // Fissures & Earth Cracks in Outer Wasteland
-                ctx.strokeStyle = '#02050b';
-                ctx.lineWidth = 2.2;
-                for (let i = 0; i < 28; i++) {
+                // Natural organic dark dirt, ash, and soil variation patches
+                for (let i = 0; i < 55; i++) {
+                    const px = Math.random() * 2048;
+                    const py = Math.random() * 2048;
+                    const pr = 45 + Math.random() * 140;
+                    const pGrad = ctx.createRadialGradient(px, py, pr * 0.1, px, py, pr);
+                    pGrad.addColorStop(0, 'rgba(16, 24, 38, 0.50)');
+                    pGrad.addColorStop(0.55, 'rgba(10, 15, 26, 0.28)');
+                    pGrad.addColorStop(1, 'rgba(5, 8, 17, 0)');
+                    ctx.fillStyle = pGrad;
+                    ctx.beginPath();
+                    ctx.arc(px, py, pr, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // --- B. Natural Jagged Earth Fissures & Ground Cracks ---
+                ctx.strokeStyle = '#020408';
+                for (let i = 0; i < 50; i++) {
                     let fx = Math.random() * 2048;
                     let fy = Math.random() * 2048;
-                    if (Math.hypot(fx - centerX, fy - centerY) < 450) continue;
+                    const distFromC = Math.hypot(fx - centerX, fy - centerY);
+                    if (distFromC < 140) continue; // Keep base footprint clear
+                    
+                    ctx.lineWidth = Math.random() * 2.2 + 1.0;
                     ctx.beginPath();
                     ctx.moveTo(fx, fy);
-                    for (let s = 0; s < 6; s++) {
-                        fx += (Math.random() - 0.5) * 45;
-                        fy += (Math.random() - 0.5) * 45;
+                    const steps = Math.floor(Math.random() * 6 + 4);
+                    for (let s = 0; s < steps; s++) {
+                        fx += (Math.random() - 0.5) * 55;
+                        fy += (Math.random() - 0.5) * 55;
                         ctx.lineTo(fx, fy);
                     }
                     ctx.stroke();
                 }
 
-                // --- B. Heavy Tactical Tarmac Radial Blend ---
-                const tarmacGrad = ctx.createRadialGradient(centerX, centerY, 120, centerX, centerY, 880);
-                tarmacGrad.addColorStop(0, 'rgba(22, 30, 48, 0.98)');
-                tarmacGrad.addColorStop(0.35, 'rgba(15, 23, 42, 0.95)');
-                tarmacGrad.addColorStop(0.65, 'rgba(11, 16, 28, 0.88)');
-                tarmacGrad.addColorStop(0.85, 'rgba(8, 12, 22, 0.50)');
-                tarmacGrad.addColorStop(1.0, 'rgba(6, 9, 17, 0)');
-
-                ctx.fillStyle = tarmacGrad;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, 880, 0, Math.PI * 2);
-                ctx.fill();
-
-                // --- C. Concrete Slab Seams & Expansion Joints (Modular Grid) ---
-                ctx.strokeStyle = 'rgba(30, 41, 59, 0.55)';
-                ctx.lineWidth = 1.8;
-                for (let x = centerX - 680; x <= centerX + 680; x += 85) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, centerY - 680);
-                    ctx.lineTo(x, centerY + 680);
-                    ctx.stroke();
-                }
-                for (let y = centerY - 680; y <= centerY + 680; y += 85) {
-                    ctx.beginPath();
-                    ctx.moveTo(centerX - 680, y);
-                    ctx.lineTo(centerX + 680, y);
-                    ctx.stroke();
-                }
-
-                // --- D. Tactical Access Roads & Runway Markings ---
-                // North-South and East-West access runways
-                ctx.fillStyle = 'rgba(9, 14, 26, 0.6)';
-                ctx.fillRect(centerX - 42, centerY - 800, 84, 1600);
-                ctx.fillRect(centerX - 800, centerY - 42, 1600, 84);
-
-                // Dashed yellow runway centerlines
-                ctx.strokeStyle = 'rgba(234, 179, 8, 0.65)';
-                ctx.lineWidth = 4.0;
-                ctx.setLineDash([26, 20]);
-                ctx.beginPath(); ctx.moveTo(centerX, centerY - 780); ctx.lineTo(centerX, centerY - 140); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(centerX, centerY + 140); ctx.lineTo(centerX, centerY + 780); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(centerX - 780, centerY); ctx.lineTo(centerX - 140, centerY); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(centerX + 140, centerY); ctx.lineTo(centerX + 780, centerY); ctx.stroke();
-                ctx.setLineDash([]);
-
-                // White runway boundary lines
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-                ctx.lineWidth = 2.5;
-                ctx.beginPath(); ctx.moveTo(centerX - 38, centerY - 760); ctx.lineTo(centerX - 38, centerY - 135); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(centerX + 38, centerY - 760); ctx.lineTo(centerX + 38, centerY - 135); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(centerX - 38, centerY + 135); ctx.lineTo(centerX - 38, centerY + 760); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(centerX + 38, centerY + 135); ctx.lineTo(centerX + 38, centerY + 760); ctx.stroke();
-
-                // --- E. Tracked Vehicle & Rubber Skid Marks ---
-                ctx.strokeStyle = 'rgba(2, 5, 12, 0.45)';
-                ctx.lineWidth = 6.0;
-                ctx.setLineDash([8, 6]);
-                const treadPaths = [
-                    [centerX - 240, centerY - 380, centerX + 180, centerY + 320],
-                    [centerX - 228, centerY - 380, centerX + 192, centerY + 320],
-                    [centerX + 320, centerY - 260, centerX - 260, centerY + 280],
-                    [centerX + 332, centerY - 260, centerX - 248, centerY + 280]
-                ];
-                for (let tp of treadPaths) {
-                    ctx.beginPath();
-                    ctx.moveTo(tp[0], tp[1]);
-                    ctx.bezierCurveTo(centerX + 40, centerY - 80, centerX - 40, centerY + 80, tp[2], tp[3]);
-                    ctx.stroke();
-                }
-                ctx.setLineDash([]);
-
-                // --- F. Scorched Blast Decals & Explosions Marks ---
+                // --- C. Soft Organic Scorched Impact Craters (Charred Ground) ---
                 const blastPositions = [
-                    [620, 700, 95], [1440, 660, 110], [760, 1400, 115], [1360, 1420, 90],
-                    [380, 1020, 140], [1700, 960, 130], [1020, 440, 120], [960, 1640, 110],
-                    [480, 420, 85], [1600, 1580, 105], [320, 1580, 95], [1680, 390, 90],
-                    [840, 880, 65], [1220, 1160, 70]
+                    [620, 700, 110], [1440, 660, 125], [760, 1400, 130], [1360, 1420, 100],
+                    [380, 1020, 150], [1700, 960, 140], [1020, 440, 130], [960, 1640, 120],
+                    [480, 420, 95], [1600, 1580, 115], [320, 1580, 105], [1680, 390, 100],
+                    [840, 880, 80], [1220, 1160, 85]
                 ];
                 for (let b of blastPositions) {
                     const [bx, by, br] = b;
-                    const bGrad = ctx.createRadialGradient(bx, by, br * 0.1, bx, by, br);
-                    bGrad.addColorStop(0, 'rgba(2, 4, 8, 0.95)');
-                    bGrad.addColorStop(0.45, 'rgba(15, 23, 42, 0.65)');
-                    bGrad.addColorStop(0.8, 'rgba(15, 23, 42, 0.25)');
-                    bGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+                    const bGrad = ctx.createRadialGradient(bx, by, br * 0.08, bx, by, br);
+                    bGrad.addColorStop(0, 'rgba(1, 2, 5, 0.95)');
+                    bGrad.addColorStop(0.35, 'rgba(7, 11, 20, 0.72)');
+                    bGrad.addColorStop(0.70, 'rgba(11, 17, 28, 0.32)');
+                    bGrad.addColorStop(1, 'rgba(5, 8, 17, 0)');
                     ctx.fillStyle = bGrad;
                     ctx.beginPath();
                     ctx.arc(bx, by, br, 0, Math.PI * 2);
                     ctx.fill();
-
-                    // Starburst fracture cracks around blast
-                    ctx.strokeStyle = 'rgba(2, 4, 8, 0.7)';
-                    ctx.lineWidth = 1.5;
-                    for (let a = 0; a < Math.PI * 2; a += 0.8) {
-                        ctx.beginPath();
-                        ctx.moveTo(bx + Math.cos(a) * (br * 0.3), by + Math.sin(a) * (br * 0.3));
-                        ctx.lineTo(bx + Math.cos(a) * (br * 1.15), by + Math.sin(a) * (br * 1.15));
-                        ctx.stroke();
-                    }
                 }
 
-                // Oil Spills & Hydraulic Fluid Stains
-                for (let i = 0; i < 24; i++) {
-                    const ang = (i / 24) * Math.PI * 2 + (Math.random() * 0.3);
-                    const dist = 160 + (i * 27) % 520;
-                    const ox = centerX + Math.cos(ang) * dist;
-                    const oy = centerY + Math.sin(ang) * dist;
-                    const or = 18 + (i % 5) * 8;
+                // --- D. Natural Fluid & Mud Stains ---
+                for (let i = 0; i < 20; i++) {
+                    const ox = Math.random() * 2048;
+                    const oy = Math.random() * 2048;
+                    const distFromC = Math.hypot(ox - centerX, oy - centerY);
+                    if (distFromC < 130) continue;
+
+                    const or = 20 + Math.random() * 45;
                     const oGrad = ctx.createRadialGradient(ox, oy, 2, ox, oy, or);
-                    oGrad.addColorStop(0, 'rgba(1, 2, 5, 0.92)');
-                    oGrad.addColorStop(0.65, 'rgba(8, 14, 24, 0.45)');
-                    oGrad.addColorStop(1, 'rgba(8, 14, 24, 0)');
+                    oGrad.addColorStop(0, 'rgba(2, 4, 8, 0.88)');
+                    oGrad.addColorStop(0.60, 'rgba(7, 12, 22, 0.40)');
+                    oGrad.addColorStop(1, 'rgba(5, 8, 17, 0)');
                     ctx.fillStyle = oGrad;
                     ctx.beginPath();
                     ctx.arc(ox, oy, or, 0, Math.PI * 2);
                     ctx.fill();
                 }
 
-                // --- G. CENTRAL HQ APRON & HAZARD PERIMETER ---
-                // Octagonal/Circular Concrete Backplate
-                ctx.fillStyle = '#0c1527';
+                // --- E. Central Outpost Foundation Pad (Embedded into Wasteland) ---
+                // Dark weathered outpost foundation plate
+                const padGrad = ctx.createRadialGradient(centerX, centerY, 35, centerX, centerY, 132);
+                padGrad.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+                padGrad.addColorStop(0.65, 'rgba(11, 17, 30, 0.85)');
+                padGrad.addColorStop(0.88, 'rgba(8, 12, 22, 0.40)');
+                padGrad.addColorStop(1, 'rgba(5, 8, 17, 0)');
+                ctx.fillStyle = padGrad;
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, 132, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Diagonal Yellow/Black Hazard Stripes Perimeter Ring (Frames 8.5m base foundation)
+                // Subtle circular warning rim tightly around 8.5m base foundation
                 ctx.save();
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 115, 0, Math.PI * 2);
-                ctx.arc(centerX, centerY, 80, 0, Math.PI * 2, true);
+                ctx.arc(centerX, centerY, 110, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, 84, 0, Math.PI * 2, true);
                 ctx.closePath();
                 ctx.clip();
 
-                ctx.fillStyle = '#090d16';
-                ctx.fillRect(centerX - 130, centerY - 130, 260, 260);
-                ctx.fillStyle = '#eab308';
-                for (let s = -260; s < 260; s += 20) {
+                ctx.fillStyle = '#080c14';
+                ctx.fillRect(centerX - 120, centerY - 120, 240, 240);
+                ctx.fillStyle = '#d97706';
+                for (let s = -240; s < 240; s += 22) {
                     ctx.beginPath();
-                    ctx.moveTo(centerX + s, centerY - 140);
-                    ctx.lineTo(centerX + s + 10, centerY - 140);
-                    ctx.lineTo(centerX + s - 130, centerY + 140);
-                    ctx.lineTo(centerX + s - 140, centerY + 140);
+                    ctx.moveTo(centerX + s, centerY - 130);
+                    ctx.lineTo(centerX + s + 10, centerY - 130);
+                    ctx.lineTo(centerX + s - 120, centerY + 130);
+                    ctx.lineTo(centerX + s - 130, centerY + 130);
                     ctx.closePath();
                     ctx.fill();
                 }
                 ctx.restore();
 
-                // Illuminated Guidance Rings
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 3.5;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, 78, 0, Math.PI * 2);
-                ctx.stroke();
-
-                ctx.strokeStyle = '#0284c7';
+                // Weathered glowing border ring
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 117, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, 82, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // Cardinal Landing Chevrons around HQ
-                const chevronOffsets = [
-                    [centerX, centerY - 105, 0],
-                    [centerX + 105, centerY, Math.PI / 2],
-                    [centerX, centerY + 105, Math.PI],
-                    [centerX - 105, centerY, -Math.PI / 2]
-                ];
-                ctx.fillStyle = '#38bdf8';
-                for (let co of chevronOffsets) {
-                    ctx.save();
-                    ctx.translate(co[0], co[1]);
-                    ctx.rotate(co[2]);
-                    ctx.beginPath();
-                    ctx.moveTo(0, -6);
-                    ctx.lineTo(8, 4);
-                    ctx.lineTo(4, 4);
-                    ctx.lineTo(0, 0);
-                    ctx.lineTo(-4, 4);
-                    ctx.lineTo(-8, 4);
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.restore();
-                }
-
-                // --- H. Concentric Tactical Defense Distance Rings ---
-                // 25m, 50m, 75m radii (213px, 427px, 640px)
-                const defenseRings = [
-                    { r: 213, label: '25M ENGAGEMENT RING' },
-                    { r: 427, label: '50M DEFENSE PERIMETER' },
-                    { r: 640, label: '75M OUTER COMBAT ZONE' }
-                ];
-                ctx.strokeStyle = 'rgba(56, 189, 248, 0.28)';
-                ctx.lineWidth = 2.0;
-                ctx.setLineDash([14, 16]);
-                for (let d of defenseRings) {
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, d.r, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-                ctx.setLineDash([]);
-
-                // --- I. Stenciled Military Labels & Sector Codes ---
-                ctx.font = 'bold 16px monospace';
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
-                ctx.textAlign = 'center';
-                ctx.fillText('[ SECTOR-01 // COMMAND HQ ]', centerX, centerY - 142);
-                ctx.fillText('[ SECTOR-02 // WEST FLANK ]', centerX - 260, centerY - 10);
-                ctx.fillText('[ SECTOR-03 // EAST FLANK ]', centerX + 260, centerY - 10);
-                ctx.fillText('[ SECTOR-04 // SOUTH ACCESS ]', centerX, centerY + 152);
-
-                ctx.font = '12px monospace';
-                ctx.fillStyle = 'rgba(148, 163, 184, 0.55)';
-                ctx.fillText('RADAR 25M', centerX + 218, centerY - 8);
-                ctx.fillText('PERIMETER 50M', centerX + 432, centerY - 8);
-                ctx.fillText('OUTER 75M', centerX + 645, centerY - 8);
+                ctx.strokeStyle = 'rgba(2, 132, 199, 0.35)';
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 112, 0, Math.PI * 2);
+                ctx.stroke();
 
                 const texture = new THREE.CanvasTexture(canvas);
                 texture.wrapS = THREE.ClampToEdgeWrapping;
