@@ -1395,21 +1395,13 @@
                 this.syncHUD();
                 this.saveGameSession();
 
-                // Chained building: If player has enough funds for another structure of the same type, keep placement active
-                if (this.money >= cost) {
-                    if (typeof showPurchaseToast === 'function') {
-                        showPurchaseToast(`✅ ${spec?.name || 'Struktur'} gebaut! Weiterbauen oder ESC zum Beenden.`);
-                    }
-                    if (this.pointerWorldPos) {
-                        this.updateGhostPosition(this.pointerWorldPos.x, this.pointerWorldPos.z);
-                    }
-                    this.isPaused = true;
-                } else {
-                    if (typeof showPurchaseToast === 'function') {
-                        showPurchaseToast(`✅ ${spec?.name || 'Struktur'} gebaut!`);
-                    }
-                    this.cancelPlacement();
+                if (typeof showPurchaseToast === 'function') {
+                    showPurchaseToast(`✅ ${spec?.name || 'Struktur'} erfolgreich gebaut!`);
                 }
+
+                // Prevent 300ms delayed synthetic mobile click from re-triggering placement
+                this.ignoreNextSelectionUntil = Date.now() + 500;
+                this.cancelPlacement();
             }
 
             cancelPlacement() {
