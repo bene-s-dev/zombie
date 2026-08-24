@@ -524,53 +524,52 @@
 
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between select-none">
-            <!-- Top HUD Bar: Balanced 3-Section Layout (Compact Left Health, Centered Wave, Unified Right Actions) -->
-            <header class="w-full relative flex items-start justify-between p-1.5 sm:p-2.5 md:p-3 safe-area-padding-x safe-area-padding-top gap-1 pointer-events-none">
-                <!-- Left Dock: Ultra-Compact 2-Row Health Status Widget -->
-                <div id="hud-wave-container" class="flex-shrink-0 bg-slate-950/90 border border-slate-800/90 px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded-xl backdrop-blur-md shadow-lg flex flex-col space-y-1 pointer-events-auto drop-shadow-md">
+            <!-- Top HUD Bar: Clean, Unbreakable 2-Dock Architecture (Zero-Overlap Guaranteed on All Screens) -->
+            <header class="w-full flex items-start justify-between p-1.5 sm:p-2.5 md:p-3 safe-area-padding-x safe-area-padding-top gap-2 pointer-events-none">
+                
+                <!-- Left Dock: Compact Military Telemetry Card (Player HP, Base HP & Wave/Time) -->
+                <div id="hud-wave-container" class="flex-shrink-0 bg-slate-950/90 border border-slate-800/90 p-1.5 sm:p-2 rounded-xl backdrop-blur-md shadow-xl flex flex-col space-y-1 sm:space-y-1.5 pointer-events-auto max-w-[170px] sm:max-w-[220px]">
                     <!-- Row 1: Player HP -->
                     <div class="flex items-center space-x-1 sm:space-x-1.5 text-[8.5px] sm:text-xs font-bold leading-none">
                         <i class="fa-solid fa-user-shield text-emerald-400 w-3 text-center text-[9px] sm:text-xs"></i>
-                        <div class="w-10 sm:w-16 md:w-20 h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative flex-shrink-0">
+                        <div class="flex-1 min-w-[36px] sm:min-w-[50px] max-w-[60px] sm:max-w-[80px] h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative flex-shrink-0">
                             <div id="hud-player-hp-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 100%;"></div>
                             <div id="hud-player-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
                         </div>
-                        <span id="hud-player-hp-text" class="text-emerald-400 font-mono text-[8px] sm:text-[10.5px] whitespace-nowrap min-w-[42px]">200/200</span>
-                        <div id="hud-player-lives-hearts" class="flex items-center space-x-0.5 text-[6.5px] sm:text-[8.5px] text-red-500"></div>
+                        <span id="hud-player-hp-text" class="text-emerald-400 font-mono text-[8px] sm:text-[10px] whitespace-nowrap">200/200</span>
+                        <div id="hud-player-lives-hearts" class="flex items-center space-x-0.5 text-[6.5px] sm:text-[8px] text-red-500"></div>
                     </div>
 
                     <!-- Row 2: Base HP -->
                     <div class="flex items-center space-x-1 sm:space-x-1.5 text-[8.5px] sm:text-xs font-bold leading-none">
                         <i class="fa-solid fa-building-shield text-sky-400 w-3 text-center text-[9px] sm:text-xs"></i>
-                        <div class="w-10 sm:w-16 md:w-20 h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative flex-shrink-0">
+                        <div class="flex-1 min-w-[36px] sm:min-w-[50px] max-w-[60px] sm:max-w-[80px] h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden relative flex-shrink-0">
                             <div id="hud-base-hp-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 100%;"></div>
                             <div id="hud-base-shield-bar" class="absolute top-0 left-0 h-full bg-cyan-300 opacity-80 transition-all duration-300" style="width: 0%;"></div>
                         </div>
-                        <span id="hud-base-hp-text" class="text-sky-400 font-mono text-[8px] sm:text-[10.5px] whitespace-nowrap min-w-[42px]">2500/2500</span>
-                        <div id="hud-base-lives-hearts" class="flex items-center space-x-0.5 text-[6.5px] sm:text-[8.5px] text-sky-400"></div>
+                        <span id="hud-base-hp-text" class="text-sky-400 font-mono text-[8px] sm:text-[10px] whitespace-nowrap">2500/2500</span>
+                        <div id="hud-base-lives-hearts" class="flex items-center space-x-0.5 text-[6.5px] sm:text-[8px] text-sky-400"></div>
                     </div>
-                </div>
 
-                <!-- Center Dock: Wave, Zombies & Timer Pill -->
-                <div class="absolute left-1/2 -translate-x-1/2 top-1.5 sm:top-2.5 pointer-events-none z-10 flex flex-col items-center">
-                    <div class="bg-slate-950/90 border border-slate-800/90 px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl backdrop-blur-md shadow-lg flex items-center space-x-1.5 sm:space-x-2 text-[8px] sm:text-xs font-mono drop-shadow">
-                        <div id="hud-wave-title-wrap" class="flex items-center justify-center flex-shrink-0">
-                            <div id="hud-wave-title" class="font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1 whitespace-nowrap text-[8px] sm:text-xs">
-                                <i class="fa-solid fa-skull text-[7.5px] sm:text-[9px]"></i>
+                    <!-- Row 3: Wave, Zombies Left & Timer (Inside the Card, Divider on top) -->
+                    <div class="pt-1 border-t border-slate-800/80 flex items-center justify-between space-x-1 text-[7.5px] sm:text-[9.5px] font-mono leading-none">
+                        <div id="hud-wave-title-wrap" class="flex items-center">
+                            <div id="hud-wave-title" class="font-bold text-red-400 uppercase tracking-wider flex items-center space-x-0.5 whitespace-nowrap">
+                                <i class="fa-solid fa-skull text-[7px] sm:text-[8px]"></i>
                                 <span>WELLE 1</span>
                             </div>
                         </div>
-                        <div class="h-2.5 sm:h-3 w-px bg-slate-700/70"></div>
-                        <div id="hud-zombies-left" class="font-teko text-[11px] sm:text-sm md:text-base font-bold text-white leading-none whitespace-nowrap">0 UNTOTE</div>
-                        <div class="h-2.5 sm:h-3 w-px bg-slate-700/70"></div>
-                        <div class="flex items-center space-x-1 text-slate-300 whitespace-nowrap">
-                            <i class="fa-solid fa-clock text-slate-400 text-[7.5px] sm:text-[9px]"></i>
-                            <span id="hud-timer" class="font-mono text-[8px] sm:text-xs">00:00</span>
+                        <div class="h-2 w-px bg-slate-700/60"></div>
+                        <div id="hud-zombies-left" class="font-teko text-[10px] sm:text-xs font-bold text-white leading-none whitespace-nowrap">0 UNTOTE</div>
+                        <div class="h-2 w-px bg-slate-700/60"></div>
+                        <div class="flex items-center space-x-0.5 text-slate-300 whitespace-nowrap">
+                            <i class="fa-solid fa-clock text-slate-400 text-[6.5px] sm:text-[8px]"></i>
+                            <span id="hud-timer" class="font-mono">00:00</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Dock: Single-Row Actions & Controls (All Equal Height) -->
+                <!-- Right Dock: Single-Row Actions Bar (Uniform Height, No Tall Towers, Fully Responsive) -->
                 <div class="flex-shrink-0 flex items-center space-x-1 sm:space-x-1.5 pointer-events-auto ml-auto">
                     <!-- Tactical Skills -->
                     <div id="hud-tactical-skills" class="flex items-center space-x-0.5 sm:space-x-1">
@@ -628,7 +627,7 @@
 
             <!-- Bottom HUD: Center Weapon Stats Pill (Leaves sides fully clear for touch controls) -->
             <footer class="w-full flex justify-center items-end p-1 sm:p-2 safe-area-padding-x safe-area-padding-bottom pointer-events-none">
-                <div id="hud-weapon-pill" class="bg-slate-950/90 border border-slate-800 px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-1.5 sm:space-x-2.5 text-[8px] sm:text-xs max-w-[85vw] sm:max-w-[50vw] flex-shrink min-w-0">
+                <div id="hud-weapon-pill" class="bg-slate-950/90 border border-slate-800 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full backdrop-blur-md shadow-lg pointer-events-auto flex items-center space-x-1.5 sm:space-x-2 text-[8px] sm:text-xs max-w-[85vw] sm:max-w-[50vw] flex-shrink min-w-0">
                     <i class="fa-solid fa-gun text-amber-400 text-[8.5px] sm:text-xs flex-shrink-0"></i>
                     <span id="hud-weapon-name" class="font-bold text-amber-400 whitespace-nowrap truncate text-[8px] sm:text-xs">Pistole (Lvl 1)</span>
                     <div class="h-2.5 w-px bg-slate-700 flex-shrink-0"></div>
