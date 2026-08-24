@@ -994,22 +994,29 @@ updateTacticalExtrasHUD();
         function triggerFullscreen() {
             try {
                 const el = document.documentElement;
-                if (el.requestFullscreen) {
-                    el.requestFullscreen().catch(() => {});
-                } else if (el.webkitRequestFullscreen) {
-                    el.webkitRequestFullscreen().catch(() => {});
-                } else if (el.msRequestFullscreen) {
-                    el.msRequestFullscreen().catch(() => {});
+                const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+                if (!isFs) {
+                    if (el.requestFullscreen) {
+                        el.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+                    } else if (el.webkitRequestFullscreen) {
+                        el.webkitRequestFullscreen().catch(() => {});
+                    } else if (el.webkitEnterFullscreen) {
+                        el.webkitEnterFullscreen().catch(() => {});
+                    } else if (el.mozRequestFullScreen) {
+                        el.mozRequestFullScreen().catch(() => {});
+                    } else if (el.msRequestFullscreen) {
+                        el.msRequestFullscreen().catch(() => {});
+                    }
                 }
                 window.scrollTo(0, 0);
+                setTimeout(() => window.scrollTo(0, 0), 80);
             } catch(e) {}
         }
 
         async function loadAndStartGame(sessionToRestore = null) {
+            triggerFullscreen();
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) loadingScreen.classList.remove('hidden');
-
-            triggerFullscreen();
 
             const startTime = performance.now();
             const totalDurationMs = 2200;
@@ -1082,6 +1089,10 @@ updateTacticalExtrasHUD();
                 updateTacticalExtrasHUD();
 
                 if (loadingScreen) loadingScreen.classList.add('hidden');
+
+                // Ensure fullscreen & optimal viewport recalculation
+                triggerFullscreen();
+                window.dispatchEvent(new Event('resize'));
             }
         }
 
@@ -1098,12 +1109,14 @@ updateTacticalExtrasHUD();
         window.addEventListener('pointerdown', unlockAudioContext, { passive: true });
 
         function startNewGame() {
+            triggerFullscreen();
             Storage.clearSession();
             updateMainMenuResumeButton();
             loadAndStartGame(null);
         }
 
         function resumeGame() {
+            triggerFullscreen();
             const session = Storage.loadSession();
             if (!session) {
                 startNewGame();
@@ -1113,10 +1126,12 @@ updateTacticalExtrasHUD();
         }
 
         function startGame() {
+            triggerFullscreen();
             startNewGame();
         }
 
         function restartGame() {
+            triggerFullscreen();
             const hsEntry = document.getElementById('highscore-entry');
             if (hsEntry && !hsEntry.classList.contains('hidden') && window.lastRunStats && typeof submitHighscore === 'function') {
                 submitHighscore();

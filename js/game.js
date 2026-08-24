@@ -1971,10 +1971,6 @@
                             this.flashlightFill.visible = false;
                             this.flashlightFill.intensity = 0;
                         }
-                        if (this.flashlightBeam) {
-                            this.flashlightBeam.visible = false;
-                            this.flashlightBeam.material.opacity = 0;
-                        }
                     } else {
                         const nightIntensity = 1.0 - (dayFactor / 0.40);
                         this.flashlight.visible = true;
@@ -1983,10 +1979,6 @@
                         if (this.flashlightFill) {
                             this.flashlightFill.visible = true;
                             this.flashlightFill.intensity = 5.5 * nightIntensity;
-                        }
-                        if (this.flashlightBeam) {
-                            this.flashlightBeam.visible = true;
-                            this.flashlightBeam.material.opacity = 0.16 * nightIntensity;
                         }
                     }
                 }
@@ -6544,22 +6536,6 @@
                 this.flashlightFill = new THREE.PointLight(0xfff8e7, 0, 22, 1.0);
                 this.flashlightFill.position.set(0.38, 1.5, 4.0);
                 this.playerGroup.add(this.flashlightFill);
-
-                // 3. Volumetrischer Lichtstrahl / Dunstkegel (Sichtbarer weißer Flutlichtstrahl)
-                const beamGeo = new THREE.CylinderGeometry(0.3, 14.0, 36.0, 16, 1, true);
-                beamGeo.rotateX(Math.PI / 2);
-                beamGeo.translate(0, 0, 18.0);
-                const beamMat = new THREE.MeshBasicMaterial({
-                    color: 0xfffae8,
-                    transparent: true,
-                    opacity: 0,
-                    blending: THREE.AdditiveBlending,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                });
-                this.flashlightBeam = new THREE.Mesh(beamGeo, beamMat);
-                this.flashlightBeam.position.set(0.38, 1.45, 0.8);
-                this.playerGroup.add(this.flashlightBeam);
 
                 this.playerGroup.position.set(12, 0, 0);
                 this.scene.add(this.playerGroup);
