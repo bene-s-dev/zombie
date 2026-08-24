@@ -5562,34 +5562,26 @@
                     }
                 }
 
-                // Render Player Hearts (3 Lives)
+                // Render Player Lives (1 Heart with Number inside)
                 const heartsContainer = document.getElementById('hud-player-lives-hearts');
                 if (heartsContainer) {
-                    let heartsHtml = '';
                     const lives = this.playerLives !== undefined ? this.playerLives : 3;
-                    for (let i = 0; i < 3; i++) {
-                        if (i < lives) {
-                            heartsHtml += '<i class="fa-solid fa-heart text-red-500"></i>';
-                        } else {
-                            heartsHtml += '<i class="fa-solid fa-heart text-slate-700 opacity-40"></i>';
-                        }
-                    }
-                    heartsContainer.innerHTML = heartsHtml;
+                    heartsContainer.innerHTML = `
+                        <div class="relative flex items-center justify-center text-red-500 leading-none">
+                            <i class="fa-solid fa-heart text-xs sm:text-sm"></i>
+                            <span class="absolute inset-0 flex items-center justify-center text-[7px] sm:text-[8.5px] font-mono font-black text-white drop-shadow">${lives}</span>
+                        </div>`;
                 }
 
-                // Render Base Hearts/Shields (3 Lives)
+                // Render Base Lives (1 Shield/Heart with Number inside)
                 const baseHeartsContainer = document.getElementById('hud-base-lives-hearts');
                 if (baseHeartsContainer) {
-                    let baseHeartsHtml = '';
                     const bLives = this.baseLives !== undefined ? this.baseLives : 3;
-                    for (let i = 0; i < 3; i++) {
-                        if (i < bLives) {
-                            baseHeartsHtml += '<i class="fa-solid fa-heart text-sky-400"></i>';
-                        } else {
-                            baseHeartsHtml += '<i class="fa-solid fa-heart text-slate-700 opacity-40"></i>';
-                        }
-                    }
-                    baseHeartsContainer.innerHTML = baseHeartsHtml;
+                    baseHeartsContainer.innerHTML = `
+                        <div class="relative flex items-center justify-center text-sky-400 leading-none">
+                            <i class="fa-solid fa-heart text-xs sm:text-sm"></i>
+                            <span class="absolute inset-0 flex items-center justify-center text-[7px] sm:text-[8.5px] font-mono font-black text-white drop-shadow">${bLives}</span>
+                        </div>`;
                 }
 
                 document.getElementById('hud-money').innerText = `$ ${this.money}`;
