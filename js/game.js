@@ -688,10 +688,10 @@
 
                 this.zombiesLeftToSpawn--;
 
-                // Spawn strictly at the outer perimeter / edges of the 160x160 map (never inside)
+                // Spawn at the outer perimeter of the active combat area
                 const side = Math.floor(Math.random() * 4); // 0: North, 1: South, 2: West, 3: East
-                const edgeDistance = 74 + Math.random() * 4; // 74 to 78m
-                const edgeOffset = (Math.random() - 0.5) * 150; // -75 to +75m along the perimeter
+                const edgeDistance = 48 + Math.random() * 6; // 48 to 54m (immediate visibility & action)
+                const edgeOffset = (Math.random() - 0.5) * 96; // -48 to +48m along the perimeter
                 let x, z;
                 if (side === 0) {
                     x = edgeOffset;
@@ -804,6 +804,9 @@
                 if (type !== 'normal') {
                     this.showTacticalIntel(type);
                 }
+
+                const zombieGroup = new THREE.Group();
+                zombieGroup.position.set(x, 0, z);
 
                 if (!this._zombieMats) this._zombieMats = {};
                 if (!this._zombieMats[type]) {
@@ -6290,20 +6293,20 @@
             }
 
             buildClassicEnvironment() {
-                const groundGeo = new THREE.PlaneGeometry(160, 160);
+                const groundGeo = new THREE.PlaneGeometry(220, 220);
                 const canvas = document.createElement('canvas');
-                canvas.width = 512;
-                canvas.height = 512;
+                canvas.width = 1024;
+                canvas.height = 1024;
                 const ctx = canvas.getContext('2d');
                 
                 // Dark military tactical terrain background
                 ctx.fillStyle = '#070b14';
-                ctx.fillRect(0, 0, 512, 512);
+                ctx.fillRect(0, 0, 1024, 1024);
 
                 // Subtle grid tile background
                 ctx.fillStyle = '#0d1527';
-                for (let gx = 0; gx < 512; gx += 64) {
-                    for (let gy = 0; gy < 512; gy += 64) {
+                for (let gx = 0; gx < 1024; gx += 64) {
+                    for (let gy = 0; gy < 1024; gy += 64) {
                         ctx.fillRect(gx + 1, gy + 1, 62, 62);
                     }
                 }
@@ -6311,23 +6314,23 @@
                 // Primary Grid Lines
                 ctx.strokeStyle = '#1e293b';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(0, 0, 512, 512);
+                ctx.strokeRect(0, 0, 1024, 1024);
 
-                for (let x = 64; x < 512; x += 64) {
+                for (let x = 64; x < 1024; x += 64) {
                     ctx.beginPath();
-                    ctx.moveTo(x, 0); ctx.lineTo(x, 512);
+                    ctx.moveTo(x, 0); ctx.lineTo(x, 1024);
                     ctx.stroke();
                 }
-                for (let y = 64; y < 512; y += 64) {
+                for (let y = 64; y < 1024; y += 64) {
                     ctx.beginPath();
-                    ctx.moveTo(0, y); ctx.lineTo(512, y);
+                    ctx.moveTo(0, y); ctx.lineTo(1024, y);
                     ctx.stroke();
                 }
 
                 // Tech Accent Corner Dots
                 ctx.fillStyle = '#38bdf8';
-                for (let x = 64; x < 512; x += 64) {
-                    for (let y = 64; y < 512; y += 64) {
+                for (let x = 64; x < 1024; x += 64) {
+                    for (let y = 64; y < 1024; y += 64) {
                         ctx.fillRect(x - 2, y - 2, 4, 4);
                     }
                 }
@@ -6335,10 +6338,13 @@
                 const texture = new THREE.CanvasTexture(canvas);
                 texture.wrapS = THREE.RepeatWrapping;
                 texture.wrapT = THREE.RepeatWrapping;
-                texture.repeat.set(16, 16);
+                texture.repeat.set(22, 22);
                 texture.generateMipmaps = true;
                 texture.minFilter = THREE.LinearMipmapLinearFilter;
                 texture.magFilter = THREE.LinearFilter;
+                if (this.renderer && this.renderer.capabilities) {
+                    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+                }
 
                 const groundMat = new THREE.MeshLambertMaterial({ map: texture });
                 const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -6352,33 +6358,33 @@
 
             buildTacticalEnvironment() {
                 // ==========================================
-                // FAST HIGH-PERFORMANCE GROUND PLANE (750x750m)
-                // Instant procedural generation (<2ms) + smooth horizon fog fade
+                // RAZOR-SHARP HIGH-RES TACTICAL GROUND (220x220m)
+                // 2048x2048 procedural canvas with crisp vector geometry & seamless fog fade
                 // ==========================================
-                const groundGeo = new THREE.PlaneGeometry(750, 750);
+                const groundGeo = new THREE.PlaneGeometry(220, 220);
                 const canvas = document.createElement('canvas');
-                canvas.width = 1024;
-                canvas.height = 1024;
+                canvas.width = 2048;
+                canvas.height = 2048;
                 const ctx = canvas.getContext('2d');
+
+                const centerX = 1024;
+                const centerY = 1024;
 
                 // 1. Base Outer Wasteland Dark Soil
                 ctx.fillStyle = '#060911';
-                ctx.fillRect(0, 0, 1024, 1024);
+                ctx.fillRect(0, 0, 2048, 2048);
 
-                // Fast noise specks (rectangles instead of arcs for 100x speed)
+                // Rugged noise specks
                 ctx.fillStyle = '#0f172a';
-                for (let i = 0; i < 600; i++) {
-                    const rx = (Math.random() * 1024) | 0;
-                    const ry = (Math.random() * 1024) | 0;
-                    const rw = (Math.random() * 3 + 1) | 0;
+                for (let i = 0; i < 1200; i++) {
+                    const rx = (Math.random() * 2048) | 0;
+                    const ry = (Math.random() * 2048) | 0;
+                    const rw = (Math.random() * 4 + 1) | 0;
                     ctx.fillRect(rx, ry, rw, rw);
                 }
 
-                // 2. Smooth Radial Organic Transition: Wasteland -> Tactical Tarmac
-                const centerX = 512;
-                const centerY = 512;
-
-                const tarmacGrad = ctx.createRadialGradient(centerX, centerY, 70, centerX, centerY, 440);
+                // 2. Smooth Radial Transition: Wasteland -> Tactical Tarmac
+                const tarmacGrad = ctx.createRadialGradient(centerX, centerY, 120, centerX, centerY, 820);
                 tarmacGrad.addColorStop(0, 'rgba(17, 24, 39, 0.98)');
                 tarmacGrad.addColorStop(0.55, 'rgba(15, 23, 42, 0.94)');
                 tarmacGrad.addColorStop(0.80, 'rgba(11, 16, 26, 0.70)');
@@ -6386,13 +6392,13 @@
 
                 ctx.fillStyle = tarmacGrad;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 440, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, 820, 0, Math.PI * 2);
                 ctx.fill();
 
                 // Scorched Blast Decals & Explosions Marks on Ground
                 const blastPositions = [
-                    [320, 360, 48], [710, 340, 55], [390, 690, 58], [675, 700, 45],
-                    [210, 525, 70], [840, 490, 65], [525, 240, 60], [490, 810, 55]
+                    [650, 720, 95], [1420, 680, 110], [780, 1380, 115], [1350, 1400, 90],
+                    [420, 1050, 140], [1680, 980, 130], [1050, 480, 120], [980, 1620, 110]
                 ];
                 for (let b of blastPositions) {
                     const [bx, by, br] = b;
@@ -6407,30 +6413,31 @@
                 }
 
                 // ----------------------------------------------------
-                // 3. CENTRAL HQ APRON & HAZARD PERIMETER
+                // 3. CENTRAL HQ APRON & HAZARD PERIMETER (Precisely fitted to 8.5m base)
                 // ----------------------------------------------------
+                // Concrete Apron Backplate
                 ctx.fillStyle = '#0f172a';
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 98, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, 130, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Diagonal Yellow/Black Hazard Stripes Perimeter Ring
+                // Diagonal Yellow/Black Hazard Stripes Perimeter Ring (Frames 8.5m base foundation)
                 ctx.save();
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 95, 0, Math.PI * 2);
-                ctx.arc(centerX, centerY, 74, 0, Math.PI * 2, true);
+                ctx.arc(centerX, centerY, 114, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, 82, 0, Math.PI * 2, true);
                 ctx.closePath();
                 ctx.clip();
 
                 ctx.fillStyle = '#090d16';
-                ctx.fillRect(centerX - 100, centerY - 100, 200, 200);
+                ctx.fillRect(centerX - 130, centerY - 130, 260, 260);
                 ctx.fillStyle = '#eab308';
-                for (let s = -200; s < 200; s += 16) {
+                for (let s = -260; s < 260; s += 20) {
                     ctx.beginPath();
-                    ctx.moveTo(centerX + s, centerY - 110);
-                    ctx.lineTo(centerX + s + 8, centerY - 110);
-                    ctx.lineTo(centerX + s - 92, centerY + 110);
-                    ctx.lineTo(centerX + s - 100, centerY + 110);
+                    ctx.moveTo(centerX + s, centerY - 140);
+                    ctx.lineTo(centerX + s + 10, centerY - 140);
+                    ctx.lineTo(centerX + s - 130, centerY + 140);
+                    ctx.lineTo(centerX + s - 140, centerY + 140);
                     ctx.closePath();
                     ctx.fill();
                 }
@@ -6438,22 +6445,22 @@
 
                 // Inner Tactical Guidance Rings
                 ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 2.5;
+                ctx.lineWidth = 3.5;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 72, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, 80, 0, Math.PI * 2);
                 ctx.stroke();
 
                 ctx.strokeStyle = '#0284c7';
-                ctx.lineWidth = 1.8;
+                ctx.lineWidth = 2.5;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 108, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, 116, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // Concentric Defense Distance Markers
-                const defenseRadii = [192, 320, 425];
-                ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([8, 10]);
+                // Concentric Defense Distance Markers (25m, 50m, 75m radii)
+                const defenseRadii = [233, 465, 698];
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+                ctx.lineWidth = 2.0;
+                ctx.setLineDash([12, 14]);
                 for (let r of defenseRadii) {
                     ctx.beginPath();
                     ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
@@ -6462,13 +6469,13 @@
                 ctx.setLineDash([]);
 
                 // Stenciled Military Markings
-                ctx.font = 'bold 13px monospace';
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
+                ctx.font = 'bold 18px monospace';
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
                 ctx.textAlign = 'center';
-                ctx.fillText('[ SECTOR-01 // COMMAND HQ ]', centerX, centerY - 118);
-                ctx.fillText('[ SECTOR-02 // WEST ]', centerX - 180, centerY - 10);
-                ctx.fillText('[ SECTOR-03 // EAST ]', centerX + 180, centerY - 10);
-                ctx.fillText('[ SECTOR-04 // SOUTH ]', centerX, centerY + 128);
+                ctx.fillText('[ SECTOR-01 // COMMAND HQ ]', centerX, centerY - 138);
+                ctx.fillText('[ SECTOR-02 // WEST ]', centerX - 240, centerY - 8);
+                ctx.fillText('[ SECTOR-03 // EAST ]', centerX + 240, centerY - 8);
+                ctx.fillText('[ SECTOR-04 // SOUTH ]', centerX, centerY + 148);
 
                 const texture = new THREE.CanvasTexture(canvas);
                 texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -6476,6 +6483,9 @@
                 texture.generateMipmaps = true;
                 texture.minFilter = THREE.LinearMipmapLinearFilter;
                 texture.magFilter = THREE.LinearFilter;
+                if (this.renderer && this.renderer.capabilities) {
+                    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+                }
 
                 const groundMat = new THREE.MeshLambertMaterial({ map: texture });
                 const ground = new THREE.Mesh(groundGeo, groundMat);
