@@ -5020,6 +5020,10 @@
                                 }
                             }
 
+                            const dbx = nextX - this.baseGroup.position.x;
+                            const dbz = nextZ - this.baseGroup.position.z;
+                            const blockedByBase = (dbx * dbx + dbz * dbz) < 27.04;
+
                             if (!blockedByWall && !blockedByBase && !blockedByObstacle) {
                                 this.playerGroup.position.x = nextX;
                                 this.playerGroup.position.z = nextZ;
