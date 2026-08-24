@@ -113,6 +113,8 @@
                 this.particlePool = [];
                 this.beaconLights = [];
                 this.environmentObstacles = [];
+                this.environmentTheme = (typeof Storage !== 'undefined' && Storage.data && Storage.data.environmentTheme) ? Storage.data.environmentTheme : 'tactical';
+                this.environmentGroup = null;
                 this._frameCount = 0;
                 this._shadowNeedsUpdate = true;
 
