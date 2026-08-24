@@ -5562,25 +5562,25 @@
                     }
                 }
 
-                // Render Player Lives (1 Heart with Number inside)
+                // Render Player Lives (1 Heart with Number optically centered)
                 const heartsContainer = document.getElementById('hud-player-lives-hearts');
                 if (heartsContainer) {
                     const lives = this.playerLives !== undefined ? this.playerLives : 3;
                     heartsContainer.innerHTML = `
-                        <div class="relative flex items-center justify-center text-red-500 leading-none">
-                            <i class="fa-solid fa-heart text-xs sm:text-sm"></i>
-                            <span class="absolute inset-0 flex items-center justify-center text-[7px] sm:text-[8.5px] font-mono font-black text-white drop-shadow">${lives}</span>
+                        <div class="relative w-4 h-4 sm:w-4.5 sm:h-4.5 flex items-center justify-center text-red-500 flex-shrink-0">
+                            <i class="fa-solid fa-heart text-[13px] sm:text-[15px]"></i>
+                            <span class="absolute inset-0 flex items-center justify-center text-[7.5px] sm:text-[9px] font-mono font-black text-white drop-shadow-sm -translate-y-[0.75px] leading-none">${lives}</span>
                         </div>`;
                 }
 
-                // Render Base Lives (1 Shield/Heart with Number inside)
+                // Render Base Lives (1 Heart with Number optically centered)
                 const baseHeartsContainer = document.getElementById('hud-base-lives-hearts');
                 if (baseHeartsContainer) {
                     const bLives = this.baseLives !== undefined ? this.baseLives : 3;
                     baseHeartsContainer.innerHTML = `
-                        <div class="relative flex items-center justify-center text-sky-400 leading-none">
-                            <i class="fa-solid fa-heart text-xs sm:text-sm"></i>
-                            <span class="absolute inset-0 flex items-center justify-center text-[7px] sm:text-[8.5px] font-mono font-black text-white drop-shadow">${bLives}</span>
+                        <div class="relative w-4 h-4 sm:w-4.5 sm:h-4.5 flex items-center justify-center text-sky-400 flex-shrink-0">
+                            <i class="fa-solid fa-heart text-[13px] sm:text-[15px]"></i>
+                            <span class="absolute inset-0 flex items-center justify-center text-[7.5px] sm:text-[9px] font-mono font-black text-white drop-shadow-sm -translate-y-[0.75px] leading-none">${bLives}</span>
                         </div>`;
                 }
 
