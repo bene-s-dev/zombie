@@ -10,12 +10,23 @@ function generateRandomPlayerName() {
     return `${prefix}-${num}`;
 }
 
+const DEFAULT_COMMUNITY_HIGHSCORES = [
+    { name: 'ZOMBIEBERGER', wave: 28, kills: 3367, time: 1759, difficulty: 'medium' },
+    { name: 'OPPI 3', wave: 28, kills: 2574, time: 1193, difficulty: 'medium' },
+    { name: 'OPPI 2', wave: 27, kills: 2276, time: 1048, difficulty: 'medium' },
+    { name: 'OPPI', wave: 25, kills: 2466, time: 1125, difficulty: 'medium' },
+    { name: 'HERETODIE', wave: 21, kills: 1744, time: 1021, difficulty: 'medium' },
+    { name: 'HERETODIE', wave: 19, kills: 1216, time: 943, difficulty: 'medium' },
+    { name: 'HERETODIE', wave: 14, kills: 798, time: 672, difficulty: 'medium' },
+    { name: 'VIPER-07', wave: 12, kills: 620, time: 540, difficulty: 'medium' }
+];
+
 function ensureDefaultHighscores() {
     if (!Storage.data || !Storage.data.highscores) {
         Storage.load();
     }
-    if (!Storage.data.highscores || !Array.isArray(Storage.data.highscores)) {
-        Storage.data.highscores = [];
+    if (!Storage.data.highscores || !Array.isArray(Storage.data.highscores) || Storage.data.highscores.length === 0) {
+        Storage.data.highscores = [...DEFAULT_COMMUNITY_HIGHSCORES];
         Storage.save();
     }
     if (Storage.data.customPlayerName === undefined) {
