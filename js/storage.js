@@ -12,6 +12,7 @@ const Storage = {
         extraAc130Enabled: true,
         extraAirstrikeEnabled: true,
         extraNukeEnabled: true,
+        environmentTheme: 'tactical',
         highscores: [],
         lastPlayerName: '',
         customPlayerName: ''
@@ -26,6 +27,7 @@ const Storage = {
             if (this.data.extraAc130Enabled === undefined) this.data.extraAc130Enabled = true;
             if (this.data.extraAirstrikeEnabled === undefined) this.data.extraAirstrikeEnabled = true;
             if (this.data.extraNukeEnabled === undefined) this.data.extraNukeEnabled = true;
+            if (!this.data.environmentTheme) this.data.environmentTheme = 'tactical';
             if (!this.data.highscores) this.data.highscores = [];
             if (this.data.customPlayerName === undefined) {
                 this.data.customPlayerName = (this.data.lastPlayerName && this.data.lastPlayerName !== 'SPIELER') ? this.data.lastPlayerName : '';
