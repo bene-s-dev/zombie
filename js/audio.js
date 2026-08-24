@@ -262,6 +262,10 @@ class SoundEngine {
 
     playExplosion() {
         if (!Storage.data.sfxEnabled) return;
+        const nowMs = performance.now();
+        if (nowMs - (this._lastExplosionSound || 0) < 60) return;
+        this._lastExplosionSound = nowMs;
+
         this.init();
         try {
             if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
@@ -327,6 +331,10 @@ class SoundEngine {
 
     playHeavyBomb() {
         if (!Storage.data.sfxEnabled) return;
+        const nowMs = performance.now();
+        if (nowMs - (this._lastHeavyBombSound || 0) < 120) return;
+        this._lastHeavyBombSound = nowMs;
+
         this.init();
         try {
             if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
@@ -516,6 +524,10 @@ class SoundEngine {
 
     playCoin() {
         if (!Storage.data.sfxEnabled) return;
+        const nowMs = performance.now();
+        if (nowMs - (this._lastCoinSound || 0) < 65) return;
+        this._lastCoinSound = nowMs;
+
         this.init();
         try {
             if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();

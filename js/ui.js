@@ -1134,6 +1134,42 @@ updateTacticalExtrasHUD();
             updateMainMenuResumeButton();
         }
 
+        // Universal Fast Multi-touch Pointer Trigger for all interactive buttons and HUD elements
+        (function setupFastMultitouchButtons() {
+            let lastTriggerTime = 0;
+            let lastTriggerTarget = null;
+
+            const handleFastTrigger = (e) => {
+                const btn = e.target.closest('button, [role="button"], .shop-tab-btn, .shop-buy-btn, [data-fast-touch]');
+                if (!btn) return;
+
+                // Only handle mobile/touch interactions
+                if (e.type === 'touchstart' || (e.pointerType && e.pointerType !== 'mouse')) {
+                    const now = performance.now();
+                    if (lastTriggerTarget === btn && (now - lastTriggerTime) < 200) {
+                        if (e.cancelable) e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                    lastTriggerTime = now;
+                    lastTriggerTarget = btn;
+
+                    if (e.cancelable) e.preventDefault();
+                    e.stopPropagation();
+
+                    // Direct trigger without waiting for touchend / single-touch synthesis
+                    if (typeof btn.onclick === 'function') {
+                        btn.onclick(e);
+                    } else {
+                        btn.click();
+                    }
+                }
+            };
+
+            document.addEventListener('pointerdown', handleFastTrigger, { passive: false, capture: true });
+            document.addEventListener('touchstart', handleFastTrigger, { passive: false, capture: true });
+        })();
+
         // Auto-save session on page unload/hide (e.g. reload, close tab, switch apps)
         window.addEventListener('beforeunload', () => {
             if (gameInstance && gameInstance.isRunning && !gameInstance.isGameOver) {
