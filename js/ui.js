@@ -725,6 +725,7 @@ updateTacticalExtrasHUD();
                 document.getElementById('pause-toggle-sfx').checked = Storage.data.sfxEnabled;
                 syncExtrasUI();
                 updateTouchSwapUI();
+                updateEnvironmentThemeUI();
                 modal.classList.remove('hidden');
                 setTimeout(() => { initCameraPreview(); }, 50);
             } else {
@@ -734,6 +735,32 @@ updateTacticalExtrasHUD();
                 }
             }
             updateMusicDucking();
+        }
+
+        function toggleEnvironmentTheme() {
+            const current = Storage.data.environmentTheme || 'tactical';
+            const next = current === 'tactical' ? 'classic' : 'tactical';
+            Storage.data.environmentTheme = next;
+            Storage.save();
+            updateEnvironmentThemeUI();
+            if (gameInstance && typeof gameInstance.setEnvironmentTheme === 'function') {
+                gameInstance.setEnvironmentTheme(next);
+            }
+            if (typeof showPurchaseToast === 'function') {
+                showPurchaseToast(next === 'tactical' ? '🎨 Taktischer Look aktiviert!' : '🎨 Classic Clean Look aktiviert!');
+            }
+        }
+
+        function updateEnvironmentThemeUI() {
+            const theme = Storage.data.environmentTheme || 'tactical';
+            const statusText = document.getElementById('pause-theme-status-text');
+            const btnText = document.getElementById('pause-theme-btn-text');
+            if (statusText) {
+                statusText.innerText = (theme === 'tactical') ? "Taktisch (Neu & Detailliert)" : "Classic Clean (Retro-Gitter)";
+            }
+            if (btnText) {
+                btnText.innerText = (theme === 'tactical') ? "CLEANER LOOK" : "NEUER LOOK";
+            }
         }
 
         function surrenderGame() {
