@@ -1007,6 +1007,61 @@ updateTacticalExtrasHUD();
             } else {
                 btn.classList.add('hidden');
             }
+            updateMenuAudioUI();
+        }
+
+        function switchMenuTab(tab) {
+            const playCol = document.getElementById('menu-play-col');
+            const hsCol = document.getElementById('menu-hs-col');
+            const tabPlayBtn = document.getElementById('menu-tab-play');
+            const tabHsBtn = document.getElementById('menu-tab-hs');
+            
+            if (!playCol || !hsCol) return;
+            
+            if (tab === 'play') {
+                playCol.classList.remove('hidden');
+                hsCol.classList.add('hidden');
+                hsCol.classList.remove('flex');
+                if (tabPlayBtn) {
+                    tabPlayBtn.className = "flex-1 py-2 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-lg flex items-center justify-center space-x-1.5";
+                }
+                if (tabHsBtn) {
+                    tabHsBtn.className = "flex-1 py-2 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition text-slate-400 hover:text-white bg-slate-900/60 flex items-center justify-center space-x-1.5";
+                }
+            } else {
+                playCol.classList.add('hidden');
+                hsCol.classList.remove('hidden');
+                hsCol.classList.add('flex');
+                if (tabPlayBtn) {
+                    tabPlayBtn.className = "flex-1 py-2 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition text-slate-400 hover:text-white bg-slate-900/60 flex items-center justify-center space-x-1.5";
+                }
+                if (tabHsBtn) {
+                    tabHsBtn.className = "flex-1 py-2 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg flex items-center justify-center space-x-1.5";
+                }
+                if (typeof fetchOnlineHighscores === 'function') {
+                    fetchOnlineHighscores();
+                }
+            }
+        }
+
+        function toggleMenuAudio() {
+            const isMuted = !Storage.data.musicEnabled && !Storage.data.sfxEnabled;
+            const next = isMuted;
+            toggleAudio('music', next);
+            toggleAudio('sfx', next);
+            updateMenuAudioUI();
+            if (typeof showPurchaseToast === 'function') {
+                showPurchaseToast(next ? "🔊 Ton aktiviert" : "🔇 Ton stummgeschaltet");
+            }
+        }
+
+        function updateMenuAudioUI() {
+            const btn = document.getElementById('menu-audio-btn');
+            if (!btn) return;
+            const isMuted = !Storage.data.musicEnabled && !Storage.data.sfxEnabled;
+            btn.innerHTML = isMuted 
+                ? `<i class="fa-solid fa-volume-xmark text-rose-400 text-sm"></i><span class="hidden sm:inline text-rose-400 font-mono text-[10px] font-bold">STUMM</span>`
+                : `<i class="fa-solid fa-volume-high text-emerald-400 text-sm"></i><span class="hidden sm:inline text-emerald-400 font-mono text-[10px] font-bold">AUDIO</span>`;
         }
 
         function updateLoadingUI(percent, text) {

@@ -40,6 +40,12 @@ function setPlayerName(name) {
     });
 }
 
+function randomizeMenuPlayerName() {
+    const newName = generateRandomPlayerName();
+    setPlayerName(newName);
+    if (typeof audio !== 'undefined' && audio.playCoin) audio.playCoin();
+}
+
 function isRunBetter(a, b) {
     if (!b) return true;
     if (!a) return false;
