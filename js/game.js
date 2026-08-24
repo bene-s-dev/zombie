@@ -1886,16 +1886,32 @@
                     }
                 }
 
-                // 1. FLASHLIGHT (TASCHENLAMPE):
-                // Tagsüber AUS (wenn dayFactor > 0.40). Nachts / Dunkelheit AN mit hochintensivem taktischen LED-Lichtkegel.
+                // 1. FLASHLIGHT (TASCHENLAMPE - RICHTIGER HOCHLEISTUNGS-FLUTER):
                 if (this.flashlight) {
                     if (dayFactor > 0.40) {
                         this.flashlight.visible = false;
                         this.flashlight.intensity = 0;
+                        if (this.flashlightFill) {
+                            this.flashlightFill.visible = false;
+                            this.flashlightFill.intensity = 0;
+                        }
+                        if (this.flashlightBeam) {
+                            this.flashlightBeam.visible = false;
+                            this.flashlightBeam.material.opacity = 0;
+                        }
                     } else {
-                        this.flashlight.visible = true;
                         const nightIntensity = 1.0 - (dayFactor / 0.40);
-                        this.flashlight.intensity = 6.5 * nightIntensity;
+                        this.flashlight.visible = true;
+                        this.flashlight.intensity = 24.0 * nightIntensity;
+
+                        if (this.flashlightFill) {
+                            this.flashlightFill.visible = true;
+                            this.flashlightFill.intensity = 5.5 * nightIntensity;
+                        }
+                        if (this.flashlightBeam) {
+                            this.flashlightBeam.visible = true;
+                            this.flashlightBeam.material.opacity = 0.16 * nightIntensity;
+                        }
                     }
                 }
 
@@ -5146,23 +5162,23 @@
                             }
                         }
 
-                        // Taktische Taschenlampe des Spielers: Starker Blend- und Verlangsamungseffekt nachts
+                        // Taktischer Hochleistungs-Fluter des Spielers: Starker Blend- und Verlangsamungseffekt nachts
                         if (this.flashlight && this.flashlight.visible && this.flashlight.intensity > 1.0) {
                             const pDx = z.position.x - playerPos.x;
                             const pDz = z.position.z - playerPos.z;
                             const distToP = Math.sqrt(pDx * pDx + pDz * pDz);
-                            const flashRange = 40.0;
+                            const flashRange = 55.0; // Enorme Reichweite des Fluters
 
                             if (distToP > 0.5 && distToP <= flashRange) {
                                 const pRot = this.playerGroup.rotation.y;
                                 const facingX = Math.sin(pRot);
                                 const facingZ = Math.cos(pRot);
                                 const dot = (pDx * facingX + pDz * facingZ) / distToP;
-                                const coneThreshold = Math.cos(this.flashlight.angle || (Math.PI / 4.2));
+                                const coneThreshold = Math.cos(this.flashlight.angle || (Math.PI / 3.4));
 
                                 if (dot >= coneThreshold) {
-                                    // Zombie wird direkt vom Scheinwerferkegel geblendet und stark verlangsamt!
-                                    zombieSpeedMult *= 0.45;
+                                    // Zombie gerät in den massiven Flutlichtkegel: Extrem geblendet und um 65% verlangsamt!
+                                    zombieSpeedMult *= 0.35;
                                 }
                             }
                         }
@@ -6261,11 +6277,33 @@
                 this.gunMesh = gunGroup;
                 this.playerGroup.add(gunGroup);
 
-                this.flashlight = new THREE.SpotLight(0xfffbe8, 6.0, 45, Math.PI / 4.2, 0.45, 1.2);
-                this.flashlight.position.set(0.38, 1.45, 1.0);
-                this.flashlight.target.position.set(0.38, 1.45, 20);
+                // 1. Massive Tactical Xenon / LED High-Power Spotlight (Richtiger Fluter)
+                this.flashlight = new THREE.SpotLight(0xfffaed, 24.0, 70, Math.PI / 3.4, 0.35, 0.85);
+                this.flashlight.position.set(0.38, 1.45, 0.8);
+                this.flashlight.target.position.set(0.38, 1.45, 25);
                 this.playerGroup.add(this.flashlight);
                 this.playerGroup.add(this.flashlight.target);
+
+                // 2. Wide Forward Floodlight Fill PointLight
+                this.flashlightFill = new THREE.PointLight(0xfff8e7, 0, 22, 1.0);
+                this.flashlightFill.position.set(0.38, 1.5, 4.0);
+                this.playerGroup.add(this.flashlightFill);
+
+                // 3. Volumetrischer Lichtstrahl / Dunstkegel (Sichtbarer weißer Flutlichtstrahl)
+                const beamGeo = new THREE.CylinderGeometry(0.3, 14.0, 36.0, 16, 1, true);
+                beamGeo.rotateX(Math.PI / 2);
+                beamGeo.translate(0, 0, 18.0);
+                const beamMat = new THREE.MeshBasicMaterial({
+                    color: 0xfffae8,
+                    transparent: true,
+                    opacity: 0,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                this.flashlightBeam = new THREE.Mesh(beamGeo, beamMat);
+                this.flashlightBeam.position.set(0.38, 1.45, 0.8);
+                this.playerGroup.add(this.flashlightBeam);
 
                 this.playerGroup.position.set(12, 0, 0);
                 this.scene.add(this.playerGroup);
