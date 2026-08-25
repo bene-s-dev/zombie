@@ -278,14 +278,18 @@
                     </div>
 
                     <!-- Big Touch Fire Button (for mobile devices) -->
-                    <button id="ac130-btn-fire-touch" 
-                            onmousedown="gameInstance && gameInstance.startAc130Firing()" 
-                            onmouseup="gameInstance && gameInstance.stopAc130Firing()" 
-                            onmouseleave="gameInstance && gameInstance.stopAc130Firing()"
-                            ontouchstart="gameInstance && gameInstance.startAc130Firing(); event.stopPropagation();" 
-                            ontouchend="gameInstance && gameInstance.stopAc130Firing(); event.stopPropagation();" 
-                            ontouchcancel="gameInstance && gameInstance.stopAc130Firing(); event.stopPropagation();" 
-                            class="bg-gradient-to-tr from-red-700 via-red-600 to-amber-600 active:from-red-800 active:to-red-700 text-white font-black px-5 py-3 sm:px-7 sm:py-4 rounded-2xl shadow-2xl text-xs sm:text-sm font-mono active:scale-95 border-2 border-red-300 flex items-center justify-center space-x-1.5 min-w-[105px] sm:min-w-[140px] min-h-[50px] sm:min-h-[64px] tracking-wider select-none">
+                    <button type="button"
+                            id="ac130-btn-fire-touch" 
+                            data-no-fast-touch="true"
+                            onclick="if(gameInstance) gameInstance.fireAc130Current();"
+                            onpointerdown="if(gameInstance) gameInstance.startAc130Firing();"
+                            onpointerup="if(gameInstance) gameInstance.stopAc130Firing();"
+                            onpointercancel="if(gameInstance) gameInstance.stopAc130Firing();"
+                            onpointerleave="if(gameInstance) gameInstance.stopAc130Firing();"
+                            ontouchstart="if(gameInstance) gameInstance.startAc130Firing();" 
+                            ontouchend="if(gameInstance) gameInstance.stopAc130Firing();" 
+                            ontouchcancel="if(gameInstance) gameInstance.stopAc130Firing();" 
+                            class="bg-gradient-to-tr from-red-700 via-red-600 to-amber-600 active:from-red-800 active:to-red-700 text-white font-black px-5 py-3 sm:px-7 sm:py-4 rounded-2xl shadow-2xl text-xs sm:text-sm font-mono active:scale-95 border-2 border-red-300 flex items-center justify-center space-x-1.5 min-w-[110px] sm:min-w-[140px] min-h-[52px] sm:min-h-[64px] tracking-wider select-none cursor-pointer">
                         <i class="fa-solid fa-crosshairs text-base sm:text-xl animate-pulse"></i>
                         <span class="font-bold tracking-widest text-sm sm:text-base">FEUER</span>
                     </button>
@@ -623,23 +627,30 @@
                         </div>
                     </div>
 
-                    <!-- Clock / Timer: Links außen unter Leben (ohne Hintergrund) -->
-                    <div class="flex items-center space-x-1 text-[8.5px] sm:text-xs font-mono text-slate-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                        <i class="fa-solid fa-clock text-slate-400 text-[8px] sm:text-[9.5px]"></i>
-                        <span id="hud-timer" class="font-mono text-[8.5px] sm:text-xs">00:00</span>
+                    <!-- Clock / Timer + Mobile Wave/Zombie indicator -->
+                    <div class="flex items-center space-x-2 text-[8.5px] sm:text-xs font-mono text-slate-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                        <div class="flex items-center space-x-1">
+                            <i class="fa-solid fa-clock text-slate-400 text-[8px] sm:text-[9.5px]"></i>
+                            <span id="hud-timer" class="font-mono text-[8.5px] sm:text-xs">00:00</span>
+                        </div>
+                        <div class="sm:hidden flex items-center space-x-1 text-[8.5px] font-bold">
+                            <span id="hud-wave-title-mob" class="text-red-400">WELLE 1</span>
+                            <span class="text-slate-500">•</span>
+                            <span id="hud-zombies-left-mob" class="text-white">0 UNTOTE</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Center Dock: Middle HUD (Fixed layout slots, tabular numbers, NO background, absolutely ZERO jumping) -->
-                <div class="absolute left-1/2 -translate-x-1/2 top-1 sm:top-2 pointer-events-none z-10 flex items-center justify-center w-52 sm:w-64 text-[9px] sm:text-xs md:text-sm font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                    <div id="hud-wave-title-wrap" class="w-26 sm:w-32 flex items-center justify-end pr-2 overflow-hidden flex-shrink-0 text-right">
+                <!-- Center Dock: Middle HUD (Visible on larger screens where there is ample width) -->
+                <div class="hidden sm:flex absolute left-1/2 -translate-x-1/2 top-1 sm:top-2 pointer-events-none z-10 items-center justify-center text-xs md:text-sm font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                    <div id="hud-wave-title-wrap" class="w-24 sm:w-28 md:w-32 flex items-center justify-end pr-2 overflow-hidden flex-shrink-0 text-right">
                         <div id="hud-wave-title" class="font-bold text-red-400 uppercase tracking-wider flex items-center justify-end space-x-1 whitespace-nowrap truncate drop-shadow">
                             <i class="fa-solid fa-skull text-[8px] sm:text-xs"></i>
                             <span>WELLE 1</span>
                         </div>
                     </div>
                     <div class="h-3 w-px bg-slate-500/60 flex-shrink-0"></div>
-                    <div class="w-26 sm:w-32 flex items-center justify-start pl-2 overflow-hidden flex-shrink-0 text-left">
+                    <div class="w-24 sm:w-28 md:w-32 flex items-center justify-start pl-2 overflow-hidden flex-shrink-0 text-left">
                         <div id="hud-zombies-left" class="font-teko text-xs sm:text-base md:text-lg font-bold text-white leading-none whitespace-nowrap drop-shadow tabular-nums">0 UNTOTE</div>
                     </div>
                 </div>

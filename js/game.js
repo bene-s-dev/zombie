@@ -56,6 +56,7 @@
                 this.isAc130Active = false;
                 this.ac130MissionTimer = 0;
                 this.ac130OrbitAngle = 0;
+                this.ac130Last25mm = 0;
                 this.ac130Last40mm = 0;
                 this.ac130Last105mm = 0;
                 this.ac130AimPos = new THREE.Vector3(0, 0, 0);
@@ -497,10 +498,11 @@
                     }
                     if (this.isPaused || this.isGameOver) return;
 
-                    // Virtual Joystick Aim Movement during AC-130 mode
+                    // Virtual Joystick or Direct Touch Aim Movement during AC-130 mode
                     if (this.isAc130Active) {
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
+                            if (isUiTarget(e, touch)) continue;
                             if (this.touchJoystick.active && touch.identifier === this.touchJoystick.touchId) {
                                 const dx = touch.clientX - this.touchJoystick.startX;
                                 const dy = touch.clientY - this.touchJoystick.startY;
@@ -517,6 +519,9 @@
 
                                 this.touchJoystick.vectorX = (knobX / maxRadius);
                                 this.touchJoystick.vectorY = (knobY / maxRadius);
+                            } else {
+                                this.ac130ScreenAim.x = touch.clientX;
+                                this.ac130ScreenAim.y = touch.clientY;
                             }
                         }
                         if (e.cancelable) e.preventDefault();
@@ -5909,12 +5914,16 @@
                     this._cacheWave = this.currentWave;
                     const el = document.getElementById('hud-wave-title');
                     if (el) el.innerHTML = `<i class="fa-solid fa-skull mr-1"></i> WELLE ${this.currentWave}`;
+                    const elMob = document.getElementById('hud-wave-title-mob');
+                    if (elMob) elMob.innerText = `WELLE ${this.currentWave}`;
                 }
                 const zLeft = this.zombies.length + this.zombiesLeftToSpawn;
                 if (this._cacheZombiesLeft !== zLeft) {
                     this._cacheZombiesLeft = zLeft;
                     const el = document.getElementById('hud-zombies-left');
                     if (el) el.innerText = `${zLeft} UNTOTE`;
+                    const elMob = document.getElementById('hud-zombies-left-mob');
+                    if (elMob) elMob.innerText = `${zLeft} UNTOTE`;
                 }
 
                 // 7. Timer

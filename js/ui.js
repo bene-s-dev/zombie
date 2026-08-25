@@ -1245,6 +1245,11 @@ updateTacticalExtrasHUD();
                 const btn = e.target.closest('button, [role="button"], .shop-tab-btn, .shop-buy-btn, [data-fast-touch]');
                 if (!btn) return;
 
+                // Do not intercept or debounce AC-130 fire touch button or other continuous hold buttons
+                if (btn.id === 'ac130-btn-fire-touch' || btn.getAttribute('data-no-fast-touch') === 'true') {
+                    return;
+                }
+
                 // Only handle mobile/touch interactions
                 if (e.type === 'touchstart' || (e.pointerType && e.pointerType !== 'mouse')) {
                     const now = performance.now();
