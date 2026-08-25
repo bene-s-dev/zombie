@@ -212,6 +212,11 @@ updateTacticalExtrasHUD();
             gameInstance.triggerEarlyWave();
         }
 
+        function toggleGameSpeed() {
+            if (!gameInstance) return;
+            gameInstance.toggleGameSpeed();
+        }
+
         function switchShopTab(tabId) {
             activeShopTab = tabId;
             const inactiveClass = "shop-tab-btn px-1.5 py-2 sm:px-3 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[40px] transition";

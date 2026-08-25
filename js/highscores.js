@@ -133,16 +133,43 @@ async function fetchOnlineHighscores() {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 4000);
-        const res = await fetch(ONLINE_API_URL, { signal: controller.signal });
+        const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=name,wave,kills,time,difficulty,date,created_at&order=wave.desc,kills.desc,time.desc&limit=30`;
+        const res = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        });
         clearTimeout(timeoutId);
 
         if (res.ok) {
-            const json = await res.json();
-            const rawList = json && json.data && Array.isArray(json.data.highscores) ? json.data.highscores : (Array.isArray(json) ? json : []);
+            const rawList = await res.json();
             
-            // Merge online scores with existing local scores (Top 30)
+            // If online table is empty, seed it with default highscores
+            if (Array.isArray(rawList) && rawList.length === 0 && DEFAULT_COMMUNITY_HIGHSCORES.length > 0) {
+                const seedEntries = DEFAULT_COMMUNITY_HIGHSCORES.map(item => ({
+                    name: item.name,
+                    wave: item.wave,
+                    kills: item.kills,
+                    time: item.time,
+                    difficulty: item.difficulty || 'medium',
+                    date: '22.08.'
+                }));
+                fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(seedEntries)
+                }).catch(() => {});
+            }
+
             const localScores = Storage.data.highscores || [];
-            const merged = deduplicateAndSortScores([...rawList, ...localScores]);
+            const merged = deduplicateAndSortScores([...(Array.isArray(rawList) ? rawList : []), ...localScores]);
 
             Storage.data.highscores = merged;
             if (merged.length > 0) {
@@ -150,25 +177,13 @@ async function fetchOnlineHighscores() {
             }
             Storage.save();
 
-            // Background sync if cleaned/merged list differs from raw server list
-            if (JSON.stringify(merged) !== JSON.stringify(rawList)) {
-                fetch(ONLINE_API_URL, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: "Zombie Game Highscores",
-                        data: { highscores: merged }
-                    })
-                }).catch(() => {});
-            }
-
             if (statusDot) statusDot.className = "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
             if (statusText) statusText.innerText = "ONLINE";
         } else {
             throw new Error("HTTP " + res.status);
         }
     } catch (e) {
-        console.warn("Using local highscores:", e);
+        console.warn("Using local highscores (Supabase):", e);
         if (statusDot) statusDot.className = "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-500 mr-1.5";
         if (statusText) statusText.innerText = "LOKAL";
     } finally {
@@ -257,6 +272,8 @@ function checkHighscoreQualification(wave, kills, sec) {
     return isRunBetter(currentRun, last);
 }
 
+let lastSubmittedRunRecord = null;
+
 async function submitHighscore(customName, hideUI = true) {
     const entryEl = document.getElementById('highscore-entry');
     const nameInput = document.getElementById('hs-player-name');
@@ -290,18 +307,48 @@ async function submitHighscore(customName, hideUI = true) {
             entryEl.classList.add('hidden');
         }
         
+        const runTime = Number(stats.time) || 0;
+        const runWave = Number(stats.wave) || 1;
+        const runKills = Number(stats.kills) || 0;
+        const runDiff = stats.difficulty || Storage.data.difficulty || 'medium';
+
+        // Check if this run was already submitted earlier (e.g. initial auto-submit on Game Over)
+        const isUpdate = !!(lastSubmittedRunRecord &&
+            lastSubmittedRunRecord.time === runTime &&
+            lastSubmittedRunRecord.wave === runWave &&
+            lastSubmittedRunRecord.kills === runKills);
+        
+        const prevSubmittedName = isUpdate ? lastSubmittedRunRecord.name : null;
+
         const newEntry = {
             name: name,
-            time: Number(stats.time) || 0,
-            wave: Number(stats.wave) || 1,
-            kills: Number(stats.kills) || 0,
-            difficulty: stats.difficulty || Storage.data.difficulty || 'medium',
+            time: runTime,
+            wave: runWave,
+            kills: runKills,
+            difficulty: runDiff,
             date: new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
         };
         
         // Optimistic local update & instant UI render
         let localScores = Storage.data.highscores || [];
-        localScores = deduplicateAndSortScores([...localScores, newEntry]);
+        if (isUpdate && prevSubmittedName) {
+            // Replace previous name in local scores for this exact run
+            const existingIdx = localScores.findIndex(e =>
+                e.name === prevSubmittedName &&
+                e.time === runTime &&
+                e.wave === runWave &&
+                e.kills === runKills
+            );
+            if (existingIdx !== -1) {
+                localScores[existingIdx] = newEntry;
+            } else {
+                localScores.push(newEntry);
+            }
+        } else {
+            localScores.push(newEntry);
+        }
+
+        localScores = deduplicateAndSortScores(localScores);
         Storage.data.highscores = localScores;
         if (localScores.length > 0) {
             Storage.data.highScoreSeconds = Math.max(Storage.data.highScoreSeconds || 0, localScores[0].time);
@@ -315,41 +362,66 @@ async function submitHighscore(customName, hideUI = true) {
         if (statusText) statusText.innerText = "SENDEN...";
 
         try {
-            let latestOnline = [];
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3500);
-                const fetchRes = await fetch(ONLINE_API_URL, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                if (fetchRes.ok) {
-                    const json = await fetchRes.json();
-                    const raw = json && json.data && Array.isArray(json.data.highscores) ? json.data.highscores : (Array.isArray(json) ? json : []);
-                    latestOnline = raw;
-                }
-            } catch (e) {
-                console.warn("Could not fetch latest before sync, using local merged list:", e);
-            }
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
             
-            const merged = deduplicateAndSortScores([...latestOnline, ...localScores, newEntry]);
-            Storage.data.highscores = merged;
-            if (merged.length > 0) {
-                Storage.data.highScoreSeconds = Math.max(Storage.data.highScoreSeconds || 0, merged[0].time);
-            }
-            Storage.save();
-            updateHighscoreUI();
+            if (isUpdate && lastSubmittedRunRecord && lastSubmittedRunRecord.id) {
+                // Update existing record in Supabase by ID
+                const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${lastSubmittedRunRecord.id}`, {
+                    method: 'PATCH',
+                    signal: controller.signal,
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ name: name })
+                });
+                clearTimeout(timeoutId);
 
-            await fetch(ONLINE_API_URL, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: "Zombie Game Highscores",
-                    data: { highscores: merged }
-                })
-            });
-            if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
-            if (statusText) statusText.innerText = "ONLINE";
+                if (updateRes.ok) {
+                    lastSubmittedRunRecord.name = name;
+                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
+                    if (statusText) statusText.innerText = "ONLINE";
+                    fetchOnlineHighscores();
+                } else {
+                    throw new Error("HTTP " + updateRes.status);
+                }
+            } else {
+                // Insert new record in Supabase and capture assigned ID
+                const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(newEntry)
+                });
+                clearTimeout(timeoutId);
+
+                if (insertRes.ok) {
+                    const createdRows = await insertRes.json();
+                    const createdId = Array.isArray(createdRows) && createdRows.length > 0 ? createdRows[0].id : null;
+                    lastSubmittedRunRecord = {
+                        id: createdId,
+                        name: name,
+                        time: runTime,
+                        wave: runWave,
+                        kills: runKills
+                    };
+                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
+                    if (statusText) statusText.innerText = "ONLINE";
+                    fetchOnlineHighscores();
+                } else {
+                    throw new Error("HTTP " + insertRes.status);
+                }
+            }
         } catch (e) {
-            console.warn("Online sync error:", e);
+            console.warn("Online Supabase sync error:", e);
             if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-slate-500 mr-1.5";
             if (statusText) statusText.innerText = "LOKAL";
         }
@@ -359,24 +431,11 @@ async function submitHighscore(customName, hideUI = true) {
 }
 
 async function clearHighscores() {
-    if (confirm("Möchtest du wirklich alle Highscores zurücksetzen?")) {
+    if (confirm("Möchtest du wirklich alle lokalen Highscores zurücksetzen?")) {
         Storage.data.highscores = [];
         Storage.data.highScoreSeconds = 0;
         Storage.save();
         updateHighscoreUI();
-
-        try {
-            await fetch(ONLINE_API_URL, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: "Zombie Game Highscores",
-                    data: { highscores: [] }
-                })
-            });
-        } catch (e) {
-            console.warn("Could not clear online scores:", e);
-        }
     }
 }
 

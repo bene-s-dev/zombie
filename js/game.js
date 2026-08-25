@@ -215,6 +215,9 @@
                             this.triggerNuke();
                         }
                     }
+                    if (e.code === 'KeyT') {
+                        this.toggleGameSpeed();
+                    }
                     if (e.code === 'KeyR' && this.isPlacementMode) {
                         rotatePlacement();
                     }
@@ -2368,7 +2371,8 @@
 
             tryShoot() {
                 const now = performance.now();
-                if (now < this.lastFired + this.currentWeapon.firerate) return;
+                const spdMult = Math.max(1, this.gameSpeed || 1);
+                if (now < this.lastFired + (this.currentWeapon.firerate / spdMult)) return;
                 this.lastFired = now;
 
                 if (this.muzzleFlashMesh) {
@@ -5930,12 +5934,27 @@
                     const activeCount = this.activeSimultaneousWaves || 1;
                     if (activeCount >= 5) {
                         earlyWaveBadge.innerText = '5/5 MAX';
-                        earlyWaveBadge.className = 'font-mono text-[9px] font-bold text-red-400';
+                        earlyWaveBadge.className = 'font-mono text-[5px] sm:text-[6.5px] font-bold text-red-400 ml-0.5 leading-none';
                         earlyWaveBtn.classList.add('opacity-60', 'cursor-not-allowed');
                     } else {
                         earlyWaveBadge.innerText = `${activeCount}/5`;
-                        earlyWaveBadge.className = 'font-mono text-[9px] font-bold text-amber-300';
+                        earlyWaveBadge.className = 'font-mono text-[5px] sm:text-[6.5px] font-bold text-amber-300 ml-0.5 leading-none';
                         earlyWaveBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+                    }
+                }
+
+                // 9. Game Speed Badge & Button
+                const speedBadge = document.getElementById('game-speed-badge');
+                const speedBtn = document.getElementById('game-speed-btn');
+                if (speedBadge) {
+                    const spd = this.gameSpeed || 1;
+                    speedBadge.innerText = `${spd}x`;
+                    if (speedBtn) {
+                        if (spd === 2) {
+                            speedBtn.className = "bg-amber-500/20 hover:bg-amber-500/30 active:bg-amber-500/40 text-amber-300 rounded border border-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)] backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-3.5 sm:h-4 md:h-4.5 w-6 sm:w-7 md:w-8 px-0.5 cursor-pointer flex-shrink-0";
+                        } else {
+                            speedBtn.className = "bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded border border-amber-500/60 shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-3.5 sm:h-4 md:h-4.5 w-6 sm:w-7 md:w-8 px-0.5 cursor-pointer flex-shrink-0";
+                        }
                     }
                 }
             }
@@ -6125,6 +6144,26 @@
 
                 this.updateSpawnInterval();
                 this.syncHUD();
+            }
+
+            toggleGameSpeed() {
+                if (!this.isRunning || this.isGameOver) return;
+                this.gameSpeed = (this.gameSpeed === 2) ? 1 : 2;
+                this.updateGameSpeedTimer();
+                this.syncHUD();
+                audio.playPistol();
+                if (typeof showWarningToast === 'function') {
+                    showWarningToast(this.gameSpeed === 2 ? '⚡ TEMPO 2X AKTIVIERT' : '⏱️ NORMALES TEMPO (1X)');
+                }
+            }
+
+            updateGameSpeedTimer() {
+                if (this.secondTimer) clearInterval(this.secondTimer);
+                if (this.turretTimer) clearInterval(this.turretTimer);
+                const speedMult = Math.max(1, this.gameSpeed || 1);
+                this.secondTimer = setInterval(() => this.onSecondTick(), Math.round(1000 / speedMult));
+                this.turretTimer = setInterval(() => this.updateTurrets(), Math.round(400 / speedMult));
+                this.updateSpawnInterval();
             }
 
             destroy() {
@@ -7154,7 +7193,8 @@
             updateSpawnInterval() {
                 if (this.spawnTimer) clearInterval(this.spawnTimer);
                 const waveMultiplier = Math.max(1, this.activeSimultaneousWaves || 1);
-                const baseInterval = Math.max(260, Math.round((850 - (this.currentWave - 1) * 35) / Math.sqrt(waveMultiplier)));
+                const speedMult = Math.max(1, this.gameSpeed || 1);
+                const baseInterval = Math.max(130, Math.round((850 - (this.currentWave - 1) * 35) / (Math.sqrt(waveMultiplier) * speedMult)));
                 this.spawnTimer = setInterval(() => {
                     this.spawnZombie();
                     if (this.zombies.length === 0 && this.zombiesLeftToSpawn > 0) {

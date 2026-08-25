@@ -1,4 +1,6 @@
-const ONLINE_API_URL = 'https://api.restful-api.dev/objects/ff8081819ff5b110019ffbe8f30513b0';
+const SUPABASE_URL = 'https://jyoxxkngxxfmiskfxndp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5b3h4a25neHhmbWlza2Z4bmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5Mjg4NTQsImV4cCI6MjEwMTUwNDg1NH0.g6iDSYtD9rCU8SMKdpqg8OTIK8VYueYbbXvQe2ouwXg';
+const SUPABASE_TABLE = 'zombie_highscores';
 
 const WEAPONS = {
     pistol: { id: 'pistol', name: 'Pistole', cost: 0, level: 1, maxLevel: Infinity, damage: 38, firerate: 200, speed: 52, spread: 0.03, count: 1, isExplosive: false, color: 0xfacc15 },
