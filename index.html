@@ -684,23 +684,20 @@
                         <i class="fa-solid fa-store text-[10px] sm:text-xs"></i>
                     </button>
 
-                    <!-- Wave & Speed Controls Column -->
-                    <div class="flex flex-col items-center justify-center space-y-0.5 flex-shrink-0">
-                        <!-- Early Wave Button -->
-                        <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded border border-amber-500/60 shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-3.5 sm:h-4 md:h-4.5 w-6 sm:w-7 md:w-8 px-0.5 cursor-pointer flex-shrink-0" title="Nächste Welle sofort starten">
-                            <div class="flex items-center space-x-0.5 leading-none">
-                                <i class="fa-solid fa-plus text-[5px] sm:text-[6px] text-amber-400 font-bold"></i>
-                                <i class="fa-solid fa-skull text-[5px] sm:text-[6px] text-red-400"></i>
-                            </div>
-                            <span id="early-wave-badge" class="font-mono text-[5px] sm:text-[6.5px] font-bold text-amber-300 ml-0.5 leading-none">1/5</span>
-                        </button>
+                    <!-- Early Wave Button -->
+                    <button id="early-wave-btn" onclick="triggerEarlyWave()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-md sm:rounded-lg border border-amber-500/60 shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 md:h-8 px-1.5 sm:px-2 cursor-pointer flex-shrink-0" title="Nächste Welle sofort starten">
+                        <div class="flex items-center space-x-0.5 leading-none">
+                            <i class="fa-solid fa-plus text-[7.5px] sm:text-[9.5px] text-amber-400 font-bold"></i>
+                            <i class="fa-solid fa-skull text-[7.5px] sm:text-[9.5px] text-red-400"></i>
+                        </div>
+                        <span id="early-wave-badge" class="font-mono text-[8.5px] sm:text-[10.5px] md:text-xs font-bold text-amber-300 leading-none">1/5</span>
+                    </button>
 
-                        <!-- Speed Button (1x / 2x) -->
-                        <button id="game-speed-btn" onclick="toggleGameSpeed()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded border border-amber-500/60 shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-3.5 sm:h-4 md:h-4.5 w-6 sm:w-7 md:w-8 px-0.5 cursor-pointer flex-shrink-0" title="Spieltempo 2x beschleunigen [T]">
-                            <i class="fa-solid fa-forward text-[5px] sm:text-[6px] text-amber-400 mr-0.5"></i>
-                            <span id="game-speed-badge" class="font-mono text-[5.5px] sm:text-[7px] font-bold text-amber-300 leading-none">1x</span>
-                        </button>
-                    </div>
+                    <!-- Speed Button (1x / 2x) -->
+                    <button id="game-speed-btn" onclick="toggleGameSpeed()" style="touch-action: manipulation;" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-md sm:rounded-lg border border-amber-500/60 shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 md:h-8 px-1.5 sm:px-2 cursor-pointer flex-shrink-0" title="Spieltempo 2x beschleunigen [T]">
+                        <i class="fa-solid fa-forward text-[7.5px] sm:text-[9.5px] text-amber-400"></i>
+                        <span id="game-speed-badge" class="font-mono text-[8.5px] sm:text-[10.5px] md:text-xs font-bold text-amber-300 leading-none">1x</span>
+                    </button>
 
                     <!-- Pause Button -->
                     <button id="hud-pause-btn" onclick="togglePauseModal()" style="touch-action: manipulation;" class="bg-slate-950/90 hover:bg-slate-800 active:bg-slate-950 text-amber-300 hover:text-white border border-amber-400/80 rounded-md sm:rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 cursor-pointer flex-shrink-0" title="Pause [ESC]">

@@ -5934,11 +5934,11 @@
                     const activeCount = this.activeSimultaneousWaves || 1;
                     if (activeCount >= 5) {
                         earlyWaveBadge.innerText = '5/5 MAX';
-                        earlyWaveBadge.className = 'font-mono text-[5px] sm:text-[6.5px] font-bold text-red-400 ml-0.5 leading-none';
+                        earlyWaveBadge.className = 'font-mono text-[8.5px] sm:text-[10.5px] md:text-xs font-bold text-red-400 leading-none';
                         earlyWaveBtn.classList.add('opacity-60', 'cursor-not-allowed');
                     } else {
                         earlyWaveBadge.innerText = `${activeCount}/5`;
-                        earlyWaveBadge.className = 'font-mono text-[5px] sm:text-[6.5px] font-bold text-amber-300 ml-0.5 leading-none';
+                        earlyWaveBadge.className = 'font-mono text-[8.5px] sm:text-[10.5px] md:text-xs font-bold text-amber-300 leading-none';
                         earlyWaveBtn.classList.remove('opacity-60', 'cursor-not-allowed');
                     }
                 }
@@ -5951,9 +5951,9 @@
                     speedBadge.innerText = `${spd}x`;
                     if (speedBtn) {
                         if (spd === 2) {
-                            speedBtn.className = "bg-amber-500/20 hover:bg-amber-500/30 active:bg-amber-500/40 text-amber-300 rounded border border-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)] backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-3.5 sm:h-4 md:h-4.5 w-6 sm:w-7 md:w-8 px-0.5 cursor-pointer flex-shrink-0";
+                            speedBtn.className = "bg-amber-500/20 hover:bg-amber-500/30 active:bg-amber-500/40 text-amber-300 rounded-md sm:rounded-lg border border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)] backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 md:h-8 px-1.5 sm:px-2 cursor-pointer flex-shrink-0";
                         } else {
-                            speedBtn.className = "bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded border border-amber-500/60 shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-3.5 sm:h-4 md:h-4.5 w-6 sm:w-7 md:w-8 px-0.5 cursor-pointer flex-shrink-0";
+                            speedBtn.className = "bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 text-amber-400 rounded-md sm:rounded-lg border border-amber-500/60 shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center space-x-1 h-6 sm:h-7 md:h-8 px-1.5 sm:px-2 cursor-pointer flex-shrink-0";
                         }
                     }
                 }
