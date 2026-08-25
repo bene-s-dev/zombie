@@ -690,8 +690,10 @@
 
                 // Spawn at the outer perimeter of the active combat area
                 const side = Math.floor(Math.random() * 4); // 0: North, 1: South, 2: West, 3: East
-                const edgeDistance = 48 + Math.random() * 6; // 48 to 54m (immediate visibility & action)
-                const edgeOffset = (Math.random() - 0.5) * 96; // -48 to +48m along the perimeter
+                // If only 1-2 zombies left to spawn in this wave, spawn closer (26-32m) so the player isn't waiting forever
+                const isLastSpawns = this.zombiesLeftToSpawn <= 2;
+                const edgeDistance = (isLastSpawns ? 26 : 48) + Math.random() * 6; // 48 to 54m (26-32m for last zombies)
+                const edgeOffset = (Math.random() - 0.5) * (isLastSpawns ? 52 : 96); // -48 to +48m along the perimeter
                 let x, z;
                 if (side === 0) {
                     x = edgeOffset;
@@ -2357,6 +2359,9 @@
 
                 if (this.zombiesLeftToSpawn <= 0 && this.zombies.length === 0 && !this.isWaveTransitioning) {
                     this.nextWave();
+                } else if (this.zombiesLeftToSpawn > 0 && this.zombies.length <= 1) {
+                    // Flush immediate spawn if screen is almost empty so player never waits in silence
+                    this.spawnZombie();
                 }
                 this.syncHUD();
             }
@@ -5296,11 +5301,28 @@
                         const dxP = z.position.x - playerPos.x;
                         const dzP = z.position.z - playerPos.z;
                         const distToPlayerSq = dxP * dxP + dzP * dzP;
-                        const target = distToPlayerSq < 324 ? playerPos : basePos; // 18^2 = 324
+
+                        // When 1-3 zombies remain in the entire wave (no more left to spawn):
+                        const isWaveEndEnraged = (this.zombiesLeftToSpawn === 0 && this.zombies.length <= 3);
+
+                        // In wave end enraged mode, target closest entity (player or base) with higher aggression
+                        let target;
+                        if (isWaveEndEnraged) {
+                            const dxB = z.position.x - basePos.x;
+                            const dzB = z.position.z - basePos.z;
+                            const distToBaseSq = dxB * dxB + dzB * dzB;
+                            target = distToPlayerSq < distToBaseSq ? playerPos : basePos;
+                        } else {
+                            target = distToPlayerSq < 324 ? playerPos : basePos; // 18^2 = 324
+                        }
 
                         const directAngle = Math.atan2(target.x - z.position.x, target.z - z.position.z);
                         
                         let zombieSpeedMult = this.nightSpeedMult || 1.0;
+                        if (isWaveEndEnraged) {
+                            // Enrage sprint boost so the last zombie rushes to action in seconds
+                            zombieSpeedMult *= (this.zombies.length === 1 ? 2.4 : 1.8);
+                        }
                         if (activeLightMasts && activeLightMasts.length > 0 && zombieSpeedMult > 1.0) {
                             for (let mi = 0; mi < activeLightMasts.length; mi++) {
                                 const lm = activeLightMasts[mi];
@@ -5446,9 +5468,31 @@
                                             const distSq = ox * ox + oz * oz;
                                             if (distSq < minDist * minDist && distSq > 0.001) {
                                                 const d = Math.sqrt(distSq);
-                                                z.position.x = obs.x + (ox / d) * minDist;
-                                                z.position.z = obs.z + (oz / d) * minDist;
+                                                const pushX = ox / d;
+                                                const pushZ = oz / d;
+                                                // Tangential sliding vector to prevent head-on jamming against obstacle centers
+                                                const tanX = -pushZ;
+                                                const tanZ = pushX;
+                                                const dirX = Math.sin(directAngle);
+                                                const dirZ = Math.cos(directAngle);
+                                                const sign = (dirX * tanX + dirZ * tanZ) >= 0 ? 1 : -1;
+                                                z.position.x = obs.x + pushX * minDist + tanX * sign * (stepSize * 0.6);
+                                                z.position.z = obs.z + pushZ * minDist + tanZ * sign * (stepSize * 0.6);
                                             }
+                                        }
+                                    }
+                                }
+
+                                // Lone zombie watchdog: if 1 zombie remains for > 4s and is far away (>32m), pull it closer
+                                if (isWaveEndEnraged && this.zombies.length === 1) {
+                                    z.userData.loneZombieTimer = (z.userData.loneZombieTimer || 0) + dt;
+                                    if (z.userData.loneZombieTimer > 4.0) {
+                                        const distCenter = Math.hypot(z.position.x, z.position.z);
+                                        if (distCenter > 32) {
+                                            const scaleDown = 22 / distCenter;
+                                            z.position.x *= scaleDown;
+                                            z.position.z *= scaleDown;
+                                            z.userData.loneZombieTimer = 0;
                                         }
                                     }
                                 }
@@ -5884,12 +5928,12 @@
                 const earlyWaveBtn = document.getElementById('early-wave-btn');
                 if (earlyWaveBadge && earlyWaveBtn) {
                     const activeCount = this.activeSimultaneousWaves || 1;
-                    if (activeCount >= 3) {
-                        earlyWaveBadge.innerText = '3/3 MAX';
+                    if (activeCount >= 5) {
+                        earlyWaveBadge.innerText = '5/5 MAX';
                         earlyWaveBadge.className = 'font-mono text-[9px] font-bold text-red-400';
                         earlyWaveBtn.classList.add('opacity-60', 'cursor-not-allowed');
                     } else {
-                        earlyWaveBadge.innerText = `${activeCount}/3`;
+                        earlyWaveBadge.innerText = `${activeCount}/5`;
                         earlyWaveBadge.className = 'font-mono text-[9px] font-bold text-amber-300';
                         earlyWaveBtn.classList.remove('opacity-60', 'cursor-not-allowed');
                     }
@@ -6058,9 +6102,9 @@
             triggerEarlyWave() {
                 if (!this.isRunning || this.isPaused || this.isGameOver) return;
                 const activeCount = this.activeSimultaneousWaves || 1;
-                if (activeCount >= 3) {
+                if (activeCount >= 5) {
                     if (typeof showWarningToast === 'function') {
-                        showWarningToast('❌ Max. 3 Wellen gleichzeitig!');
+                        showWarningToast('❌ Max. 5 Wellen gleichzeitig!');
                     }
                     return;
                 }
@@ -7109,7 +7153,13 @@
 
             updateSpawnInterval() {
                 if (this.spawnTimer) clearInterval(this.spawnTimer);
-                const baseInterval = Math.max(420, 850 - (this.currentWave - 1) * 35);
-                this.spawnTimer = setInterval(() => this.spawnZombie(), baseInterval);
+                const waveMultiplier = Math.max(1, this.activeSimultaneousWaves || 1);
+                const baseInterval = Math.max(260, Math.round((850 - (this.currentWave - 1) * 35) / Math.sqrt(waveMultiplier)));
+                this.spawnTimer = setInterval(() => {
+                    this.spawnZombie();
+                    if (this.zombies.length === 0 && this.zombiesLeftToSpawn > 0) {
+                        this.spawnZombie();
+                    }
+                }, baseInterval);
             }
         }
