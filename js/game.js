@@ -132,7 +132,6 @@
                 this.updateCameraSettings();
                 this.buildEnvironment();
                 this.createBaseCore();
-                this.createStockMarketBuilding();
                 this.initStockMarket();
                 this.createPlayer();
                 this.createDogMesh();
@@ -209,10 +208,11 @@
                         }
                     }
                     if (e.code === 'KeyF') {
-                        if (typeof isStockMarketOpen !== 'undefined' && isStockMarketOpen) {
-                            closeStockMarketModal();
+                        if (typeof isShopOpen !== 'undefined' && isShopOpen && typeof activeShopTab !== 'undefined' && activeShopTab === 'stocks') {
+                            toggleShop(false);
                         } else {
-                            openStockMarketModal();
+                            toggleShop(true);
+                            if (typeof switchShopTab === 'function') switchShopTab('stocks');
                         }
                     }
                     if (e.code === 'KeyE') {
@@ -239,11 +239,9 @@
                         const inspectModal = document.getElementById('inspect-modal');
                         if (inspectModal && !inspectModal.classList.contains('hidden')) {
                             closeInspectModal();
-                        } else if (typeof isStockMarketOpen !== 'undefined' && isStockMarketOpen) {
-                            closeStockMarketModal();
                         } else if (this.isPlacementMode) {
                             cancelPlacement();
-                        } else if (isShopOpen) {
+                        } else if (typeof isShopOpen !== 'undefined' && isShopOpen) {
                             toggleShop(false);
                         } else {
                             togglePauseModal();
@@ -348,22 +346,17 @@
                     const clickableObjects = [];
                     this.turrets.forEach(t => t.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
                     this.walls.forEach(w => w.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
-                    if (this.stockMarketBuilding) {
-                        this.stockMarketBuilding.traverse(child => { if (child.isMesh) clickableObjects.push(child); });
-                    }
 
                     const intersects = this.raycaster.intersectObjects(clickableObjects, true);
                     if (intersects.length > 0) {
                         let topObj = intersects[0].object;
                         let depth = 0;
                         while (topObj && topObj.parent && topObj.parent !== this.scene && depth++ < 15) {
-                            if (topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall || topObj.userData.isStockMarket)) break;
+                            if (topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) break;
                             topObj = topObj.parent;
                         }
                         if (topObj && topObj.userData) {
-                            if (topObj.userData.isStockMarket) {
-                                if (typeof openStockMarketModal === 'function') openStockMarketModal();
-                            } else if (topObj.userData.isTurret || topObj.userData.isWall) {
+                            if (topObj.userData.isTurret || topObj.userData.isWall) {
                                 this.inspectStructure(topObj);
                             }
                         }
@@ -374,7 +367,7 @@
                 window.addEventListener('click', (e) => handleSelection(e.clientX, e.clientY, e));
 
                 const isUiTarget = (e, touch) => {
-                    const interactiveSelector = 'button, input, select, textarea, label, a, #shop-modal, #stock-market-modal, #stock-market-prompt, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto, [onclick], [data-touch-action]';
+                    const interactiveSelector = 'button, input, select, textarea, label, a, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto, [onclick], [data-touch-action]';
                     
                     if (touch && typeof document.elementFromPoint === 'function') {
                         const el = document.elementFromPoint(touch.clientX, touch.clientY);

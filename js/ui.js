@@ -851,28 +851,12 @@ updateTacticalExtrasHUD();
 
         function openStockMarketModal() {
             if (!gameInstance || gameInstance.isGameOver) return;
-            isStockMarketOpen = true;
-            gameInstance.isPaused = true;
-            const modal = document.getElementById('stock-market-modal');
-            if (modal) {
-                modal.classList.remove('hidden');
-            }
-            if (typeof renderStockMarket === 'function') {
-                renderStockMarket();
-            }
-            updateMusicDucking();
+            toggleShop(true);
+            switchShopTab('stocks');
         }
 
         function closeStockMarketModal() {
-            isStockMarketOpen = false;
-            const modal = document.getElementById('stock-market-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-            if (gameInstance) {
-                gameInstance.isPaused = isShopOpen || isPauseModalOpen || gameInstance.isPlacementMode;
-            }
-            updateMusicDucking();
+            toggleShop(false);
         }
 
         function renderStockSparklineSVG(history, isUp) {
@@ -974,83 +958,96 @@ updateTacticalExtrasHUD();
                     const maxAffordable = Math.floor(gameInstance.money / currentPrice);
 
                     html += `
-                        <div class="bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-3 sm:p-4 transition flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
-                            <!-- Stock Info -->
-                            <div class="flex items-start space-x-3 flex-1 min-w-[200px]">
-                                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-center flex-shrink-0 text-xl sm:text-2xl shadow-inner">
-                                    <i class="fa-solid ${def.icon}"></i>
+                        <div class="bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-3 sm:p-4 transition flex flex-col gap-2.5 sm:gap-3 shadow-lg">
+                            <!-- Top Header: Logo, Company Name, Category, Badges, Sparkline & Price -->
+                            <div class="flex items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800/70">
+                                <!-- Left: Icon + Name + Category + Badges -->
+                                <div class="flex items-center space-x-3 min-w-0 flex-1">
+                                    <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-center flex-shrink-0 text-xl sm:text-2xl shadow-inner">
+                                        <i class="fa-solid ${def.icon}"></i>
+                                    </div>
+                                    <div class="flex flex-col min-w-0">
+                                        <div class="flex items-center flex-wrap gap-1.5">
+                                            <span class="font-teko text-xl sm:text-2xl font-bold text-white leading-none tracking-wide">${def.name}</span>
+                                            <span class="bg-slate-800 text-slate-300 font-mono text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-bold">${def.ticker}</span>
+                                            <span class="bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
+                                                <i class="fa-solid fa-coins text-[9px] text-amber-400"></i> ${divYieldPct}% Div/Welle
+                                            </span>
+                                        </div>
+                                        <span class="text-[10px] sm:text-xs text-emerald-400/90 font-mono font-medium mt-0.5">${def.category}</span>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col">
-                                    <div class="flex items-center flex-wrap gap-1.5">
-                                        <span class="font-teko text-xl sm:text-2xl font-bold text-white leading-none">${def.name}</span>
-                                        <span class="bg-slate-800 text-slate-300 font-mono text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-bold">${def.ticker}</span>
-                                        <span class="bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
-                                            <i class="fa-solid fa-coins text-[9px] text-amber-400"></i> ${divYieldPct}% Div/Welle
+
+                                <!-- Right: Sparkline Chart & Current Price -->
+                                <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                                    <div class="hidden sm:flex flex-col items-center">
+                                        <span class="text-[8px] sm:text-[9px] text-slate-500 font-mono uppercase tracking-wider mb-0.5">KURSVERLAUF</span>
+                                        ${sparklineHtml}
+                                    </div>
+                                    <div class="flex flex-col text-right min-w-[70px] sm:min-w-[80px]">
+                                        <span class="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase">KURS</span>
+                                        <span class="font-mono text-base sm:text-lg font-bold text-white">$${currentPrice.toLocaleString()}</span>
+                                        <span class="font-mono text-[10px] sm:text-xs font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'} flex items-center justify-end space-x-1">
+                                            <i class="fa-solid ${isUp ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'} text-[9px]"></i>
+                                            <span>${isUp ? '+' : ''}${changePct.toFixed(1)}%</span>
                                         </span>
                                     </div>
-                                    <span class="text-[10px] sm:text-xs text-emerald-400/90 font-mono font-medium mt-0.5">${def.category}</span>
-                                    <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 leading-snug">${def.desc}</p>
                                 </div>
                             </div>
 
-                            <!-- Price, Trend Chart & Value -->
-                            <div class="flex items-center justify-between md:justify-end gap-3 sm:gap-5 border-t md:border-t-0 border-slate-800/80 pt-2 md:pt-0">
-                                <!-- Sparkline Trend Chart -->
-                                <div class="hidden sm:flex flex-col items-center">
-                                    <span class="text-[9px] text-slate-500 font-mono uppercase tracking-wider mb-0.5">KURSVERLAUF</span>
-                                    ${sparklineHtml}
-                                </div>
+                            <!-- Bottom Row: Description + Depot Holding + Trading Buttons -->
+                            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-3">
+                                <!-- Description -->
+                                <p class="text-[10px] sm:text-xs text-slate-400 leading-snug flex-1">${def.desc}</p>
 
-                                <!-- Current Price -->
-                                <div class="flex flex-col text-left md:text-right min-w-[70px]">
-                                    <span class="text-[10px] text-slate-400 font-mono uppercase">KURS</span>
-                                    <span class="font-mono text-base sm:text-lg font-bold text-white">$${currentPrice.toLocaleString()}</span>
-                                    <span class="font-mono text-[10px] sm:text-xs font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'} flex items-center md:justify-end space-x-1">
-                                        <i class="fa-solid ${isUp ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'} text-[9px]"></i>
-                                        <span>${isUp ? '+' : ''}${changePct.toFixed(1)}%</span>
-                                    </span>
-                                </div>
-
-                                <!-- Owned Shares & Depot Value -->
-                                <div class="flex flex-col text-left md:text-right min-w-[100px] sm:min-w-[130px]">
-                                    <span class="text-[10px] text-slate-400 font-mono uppercase">IM DEPOT</span>
-                                    <span class="font-mono text-xs sm:text-sm font-bold ${shares > 0 ? 'text-emerald-300' : 'text-slate-500'}">${shares.toLocaleString()} Stück</span>
-                                    <span class="font-mono text-[10px] sm:text-xs text-slate-400">$${shareVal.toLocaleString()}</span>
-                                    ${shares > 0 && paid > 0 ? `
-                                        <span class="font-mono text-[9px] sm:text-[10px] font-bold ${holdingProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                                            Kurs: ${holdingProfit >= 0 ? '+' : ''}$${holdingProfit.toLocaleString()} (${holdingProfit >= 0 ? '+' : ''}${holdingProfitPct.toFixed(1)}%)
-                                        </span>
-                                        <span class="font-mono text-[9px] sm:text-[10px] text-amber-300 font-semibold flex items-center md:justify-end gap-1">
-                                            <i class="fa-solid fa-coins text-[8px]"></i> +$${estWaveDividend.toLocaleString()}/Welle ${stockEarnedDividends > 0 ? `(+$${stockEarnedDividends.toLocaleString()})` : ''}
-                                        </span>
-                                    ` : ''}
-                                </div>
-
-                                <!-- Buy / Sell Actions -->
-                                <div class="flex flex-col sm:flex-row gap-1.5">
-                                    <!-- Buy Actions -->
-                                    <div class="flex items-center space-x-1">
-                                        <button type="button" onclick="buyStock('${id}', 1)" ${gameInstance.money < currentPrice ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
-                                            +1
-                                        </button>
-                                        <button type="button" onclick="buyStock('${id}', 10)" ${gameInstance.money < currentPrice * 10 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
-                                            +10
-                                        </button>
-                                        <button type="button" onclick="buyStock('${id}', 'max')" ${maxAffordable < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-800 hover:bg-emerald-700 active:bg-emerald-900 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
-                                            MAX
-                                        </button>
+                                <!-- Depot Details & Action Buttons -->
+                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between lg:justify-end gap-2 sm:gap-3 flex-shrink-0">
+                                    <!-- Depot Stats Box -->
+                                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-2.5 py-1.5 flex flex-col justify-center min-w-[130px]">
+                                        <div class="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
+                                            <span class="text-slate-400 font-mono uppercase text-[9px]">IM DEPOT:</span>
+                                            <span class="font-mono font-bold ${shares > 0 ? 'text-emerald-300' : 'text-slate-500'}">${shares.toLocaleString()} Stk. ${shares > 0 ? `($${shareVal.toLocaleString()})` : ''}</span>
+                                        </div>
+                                        ${shares > 0 && paid > 0 ? `
+                                            <div class="flex items-center justify-between gap-2 mt-0.5 text-[9px] font-mono">
+                                                <span class="text-slate-400">Profit:</span>
+                                                <span class="font-bold ${holdingProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                                                    ${holdingProfit >= 0 ? '+' : ''}$${holdingProfit.toLocaleString()} (${holdingProfit >= 0 ? '+' : ''}${holdingProfitPct.toFixed(1)}%)
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-2 mt-0.5 text-[9px] font-mono text-amber-300">
+                                                <span class="text-amber-400/80 flex items-center gap-1"><i class="fa-solid fa-coins text-[8px]"></i> Div.:</span>
+                                                <span class="font-semibold">+$${estWaveDividend.toLocaleString()}/Welle ${stockEarnedDividends > 0 ? `(+$${stockEarnedDividends.toLocaleString()})` : ''}</span>
+                                            </div>
+                                        ` : ''}
                                     </div>
-                                    <!-- Sell Actions -->
-                                    <div class="flex items-center space-x-1">
-                                        <button type="button" onclick="sellStock('${id}', 1)" ${shares < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-700 hover:bg-rose-600 active:bg-rose-800 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
-                                            -1
-                                        </button>
-                                        <button type="button" onclick="sellStock('${id}', 10)" ${shares < 10 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-800 hover:bg-rose-700 active:bg-rose-900 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
-                                            -10
-                                        </button>
-                                        <button type="button" onclick="sellStock('${id}', 'all')" ${shares < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-900 hover:bg-rose-800 active:bg-rose-950 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
-                                            ALLE
-                                        </button>
+
+                                    <!-- Trading Buttons -->
+                                    <div class="flex items-center justify-end gap-1.5 flex-shrink-0">
+                                        <!-- Buy Actions -->
+                                        <div class="flex items-center space-x-1">
+                                            <button type="button" onclick="buyStock('${id}', 1)" ${gameInstance.money < currentPrice ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                                +1
+                                            </button>
+                                            <button type="button" onclick="buyStock('${id}', 10)" ${gameInstance.money < currentPrice * 10 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                                +10
+                                            </button>
+                                            <button type="button" onclick="buyStock('${id}', 'max')" ${maxAffordable < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-800 hover:bg-emerald-700 active:bg-emerald-900 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                                MAX
+                                            </button>
+                                        </div>
+                                        <!-- Sell Actions -->
+                                        <div class="flex items-center space-x-1">
+                                            <button type="button" onclick="sellStock('${id}', 1)" ${shares < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-700 hover:bg-rose-600 active:bg-rose-800 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                                -1
+                                            </button>
+                                            <button type="button" onclick="sellStock('${id}', 10)" ${shares < 10 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-800 hover:bg-rose-700 active:bg-rose-900 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                                -10
+                                            </button>
+                                            <button type="button" onclick="sellStock('${id}', 'all')" ${shares < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-900 hover:bg-rose-800 active:bg-rose-950 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                                ALLE
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

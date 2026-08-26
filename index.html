@@ -357,18 +357,6 @@
             </button>
         </div>
 
-        <!-- ================= STOCK MARKET PROXIMITY HUD PROMPT ================= -->
-        <div id="stock-market-prompt" onclick="openStockMarketModal()" class="hidden absolute bottom-24 sm:bottom-28 left-1/2 transform -translate-x-1/2 z-40 bg-slate-950/95 border-2 border-emerald-500 text-emerald-400 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.4)] backdrop-blur-md flex items-center space-x-2.5 sm:space-x-3 pointer-events-auto cursor-pointer hover:bg-slate-900 active:scale-95 transition select-none animate-bounce">
-            <div class="w-8 h-8 rounded-full bg-emerald-950/80 border border-emerald-400/60 flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-chart-line text-emerald-400 text-sm sm:text-base"></i>
-            </div>
-            <div class="flex flex-col text-left">
-                <span class="font-teko text-base sm:text-xl font-bold tracking-wider uppercase text-white leading-none">🧟 ZOMBIE-BÖRSE ÖFFNEN</span>
-                <span class="text-[9px] sm:text-xs text-emerald-300 font-mono font-semibold">[F] DRÜCKEN ODER TIPPEN</span>
-            </div>
-            <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-mono font-bold uppercase ml-1">TRADING</span>
-        </div>
-
         <!-- ================= BASE ATTACK ALARM HUD BANNER ================= -->
         <div id="hud-base-alarm" class="hidden absolute top-11 sm:top-14 left-1/2 transform -translate-x-1/2 z-40 bg-gradient-to-r from-rose-600 via-red-600 to-rose-600 border-2 border-red-300 text-white font-teko text-sm sm:text-lg md:text-xl px-3 sm:px-5 py-0.5 sm:py-1 rounded-full shadow-2xl flex items-center space-x-1.5 pointer-events-none tracking-wider uppercase">
             <i class="fa-solid fa-triangle-exclamation text-amber-300 text-sm sm:text-lg animate-pulse"></i>
@@ -975,83 +963,6 @@
                         <!-- Stock Items List inside Shop -->
                         <div class="space-y-2.5 sm:space-y-3" id="shop-stock-list"></div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= ZOMBIE STOCK EXCHANGE MODAL ================= -->
-        <div id="stock-market-modal" class="hidden absolute inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md safe-area-padding">
-            <div class="bg-slate-900 border border-emerald-900/60 w-full max-w-4xl rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] custom-scroll">
-                
-                <!-- Stock Market Header -->
-                <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3 sm:pb-4 sm:mb-4 flex-shrink-0">
-                    <div class="flex items-center space-x-2 sm:space-x-3">
-                        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-950/80 border border-emerald-500/50 flex items-center justify-center">
-                            <i class="fa-solid fa-chart-line text-emerald-400 text-lg sm:text-2xl"></i>
-                        </div>
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <h2 class="font-teko text-2xl sm:text-3xl font-bold text-white tracking-wider uppercase leading-none">ZOMBIE-BÖRSE</h2>
-                                <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] sm:text-xs px-2 py-0.5 rounded-full font-mono font-bold uppercase">WALL STREET DER UNTOTEN</span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-slate-400 font-mono">Live-Handel mit post-apokalyptischen Zombie-Konzernen</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-3 sm:space-x-4">
-                        <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full font-bold uppercase animate-pulse hidden sm:inline-block"><i class="fa-solid fa-pause mr-1"></i> Pausiert</span>
-                        <button onclick="closeStockMarketModal()" class="text-slate-400 hover:text-white p-1 text-xl sm:text-2xl cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                </div>
-
-                <!-- Breaking News Ticker -->
-                <div class="flex items-center bg-slate-950/80 border border-emerald-900/50 rounded-xl px-3 py-2 mb-3 text-xs flex-shrink-0 space-x-2 overflow-hidden shadow-inner">
-                    <div class="flex items-center space-x-1 text-emerald-400 font-bold font-mono whitespace-nowrap">
-                        <i class="fa-solid fa-newspaper text-amber-400 animate-pulse"></i>
-                        <span class="text-[10px] sm:text-xs uppercase tracking-wider text-amber-300">EILMELDUNG:</span>
-                    </div>
-                    <div id="stock-news-text" class="text-slate-300 font-mono text-[11px] sm:text-xs truncate italic">
-                        Markt eröffnet: Die Kurse reagieren auf die anhaltende Zombie-Invasion...
-                    </div>
-                </div>
-
-                <!-- Portfolio Summary Bar -->
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3 sm:mb-4 flex-shrink-0">
-                    <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex flex-col">
-                        <span class="text-[10px] text-slate-400 font-mono uppercase">BARVERMÖGEN</span>
-                        <span id="stock-cash-display" class="font-mono text-amber-400 font-bold text-sm sm:text-lg">$0</span>
-                    </div>
-                    <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex flex-col">
-                        <span class="text-[10px] text-slate-400 font-mono uppercase">DEPOT-GESAMTWERT</span>
-                        <span id="stock-portfolio-value" class="font-mono text-emerald-400 font-bold text-sm sm:text-lg">$0</span>
-                    </div>
-                    <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex flex-col">
-                        <span class="text-[10px] text-slate-400 font-mono uppercase">INVESTIERT</span>
-                        <span id="stock-invested-display" class="font-mono text-slate-200 font-bold text-sm sm:text-lg">$0</span>
-                    </div>
-                    <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex flex-col">
-                        <span class="text-[10px] text-slate-400 font-mono uppercase">KURS-PROFIT</span>
-                        <span id="stock-profit-display" class="font-mono text-emerald-400 font-bold text-sm sm:text-lg">+$0 (+0.0%)</span>
-                    </div>
-                    <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 col-span-2 sm:col-span-1 flex flex-col">
-                        <span class="text-[10px] text-amber-400 font-mono uppercase flex items-center gap-1"><i class="fa-solid fa-coins text-[9px]"></i> DIVIDENDEN TOTAL</span>
-                        <span id="stock-dividends-display" class="font-mono text-amber-300 font-bold text-sm sm:text-lg">+$0</span>
-                    </div>
-                </div>
-
-                <!-- Stock List Container -->
-                <div class="overflow-y-auto space-y-2.5 sm:space-y-3 pr-1 sm:pr-2 flex-1 custom-scroll" id="stock-market-list">
-                    <!-- Stock items dynamically rendered by ui.js -->
-                </div>
-
-                <!-- Footer Hint -->
-                <div class="pt-3 mt-2 border-t border-slate-800/80 flex justify-between items-center text-[10px] sm:text-xs text-slate-400 font-mono flex-shrink-0">
-                    <span class="flex items-center space-x-1 text-slate-300">
-                        <i class="fa-solid fa-hand-holding-dollar text-amber-400"></i>
-                        <span>Aktien zahlen jede Welle <strong class="text-amber-300">3.5% bis 15% Dividenden</strong> aus & Kurse reagieren dynamisch!</span>
-                    </span>
-                    <button onclick="closeStockMarketModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white font-bold rounded-lg transition cursor-pointer">
-                        Schließen [ESC]
-                    </button>
                 </div>
             </div>
         </div>
