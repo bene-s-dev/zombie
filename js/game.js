@@ -7089,13 +7089,14 @@
                 }
 
                 const group = new THREE.Group();
-                group.position.set(-16.5, 0, 11.5);
-                group.rotation.y = Math.PI / 5; // angled toward the base center
+                // Placed at the tactical outer edge of the map
+                group.position.set(-45.0, 0, 36.0);
+                group.rotation.y = Math.PI / 4; // Angled facing inward towards base center
                 group.userData = { isStockMarket: true };
 
                 // 1. Concrete / Steel Foundation Platform
                 const platMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.5 });
-                const platform = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.4, 4.8), platMat);
+                const platform = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.4, 5.4), platMat);
                 platform.position.y = 0.2;
                 platform.receiveShadow = true;
                 platform.castShadow = true;
@@ -7104,15 +7105,15 @@
 
                 // 2. Yellow hazard stripe border around the platform
                 const hazardMat = new THREE.MeshBasicMaterial({ color: 0xeab308 });
-                const hazardBorder = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.08, 5.0), hazardMat);
+                const hazardBorder = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.08, 5.6), hazardMat);
                 hazardBorder.position.y = 0.42;
                 hazardBorder.userData = { isStockMarket: true };
                 group.add(hazardBorder);
 
                 // 3. Main Trading Booth Bunker Walls
                 const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.7 });
-                const booth = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.6, 3.6), wallMat);
-                booth.position.y = 1.7;
+                const booth = new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.8, 4.0), wallMat);
+                booth.position.y = 1.8;
                 booth.castShadow = true;
                 booth.receiveShadow = true;
                 booth.userData = { isStockMarket: true };
@@ -7122,44 +7123,44 @@
                 const glassMat = new THREE.MeshPhongMaterial({
                     color: 0x064e3b,
                     emissive: 0x047857,
-                    emissiveIntensity: 0.4,
+                    emissiveIntensity: 0.5,
                     shininess: 90,
                     transparent: true,
                     opacity: 0.85
                 });
-                const frontWindow = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.3, 0.2), glassMat);
-                frontWindow.position.set(0, 1.8, 1.82);
+                const frontWindow = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.4, 0.2), glassMat);
+                frontWindow.position.set(0, 1.9, 2.02);
                 frontWindow.userData = { isStockMarket: true };
                 group.add(frontWindow);
 
                 // Window counter sill
                 const sillMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.8 });
-                const sill = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.2, 0.6), sillMat);
-                sill.position.set(0, 1.1, 1.95);
+                const sill = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.2, 0.6), sillMat);
+                sill.position.set(0, 1.2, 2.15);
                 sill.castShadow = true;
                 sill.userData = { isStockMarket: true };
                 group.add(sill);
 
                 // 5. Overhanging Angled Roof
                 const roofMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.85 });
-                const roof = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.4, 4.4), roofMat);
-                roof.position.set(0, 3.1, 0.2);
+                const roof = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.4, 4.8), roofMat);
+                roof.position.set(0, 3.3, 0.2);
                 roof.castShadow = true;
                 roof.userData = { isStockMarket: true };
                 group.add(roof);
 
                 // 6. Glowing Neon Sign "ZOMBIE-BÖRSE"
                 const signBackMat = new THREE.MeshStandardMaterial({ color: 0x052e16, roughness: 0.2, metalness: 0.9 });
-                const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.8, 0.3), signBackMat);
-                signBoard.position.set(0, 3.65, 0.3);
+                const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.9, 0.3), signBackMat);
+                signBoard.position.set(0, 3.85, 0.3);
                 signBoard.castShadow = true;
                 signBoard.userData = { isStockMarket: true };
                 group.add(signBoard);
 
                 // Neon Green Glowing Board Border
                 const neonBorderMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
-                const neonBorder = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.88, 0.1), neonBorderMat);
-                neonBorder.position.set(0, 3.65, 0.35);
+                const neonBorder = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.98, 0.1), neonBorderMat);
+                neonBorder.position.set(0, 3.85, 0.35);
                 neonBorder.userData = { isStockMarket: true };
                 group.add(neonBorder);
 
@@ -7167,16 +7168,16 @@
                 const dollarMat = new THREE.MeshPhongMaterial({
                     color: 0x34d399,
                     emissive: 0x10b981,
-                    emissiveIntensity: 0.8,
+                    emissiveIntensity: 0.9,
                     shininess: 100
                 });
-                const dollarIcon = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.1, 12, 24), dollarMat);
-                dollarIcon.position.set(0, 4.4, 0.3);
+                const dollarIcon = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.11, 12, 24), dollarMat);
+                dollarIcon.position.set(0, 4.7, 0.3);
                 dollarIcon.userData = { isStockMarket: true };
                 group.add(dollarIcon);
 
-                const dollarBar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 8), dollarMat);
-                dollarBar.position.set(0, 4.4, 0.3);
+                const dollarBar = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.05, 8), dollarMat);
+                dollarBar.position.set(0, 4.7, 0.3);
                 dollarBar.userData = { isStockMarket: true };
                 group.add(dollarBar);
 
@@ -7185,18 +7186,35 @@
                     color: 0x34d399,
                     wireframe: true,
                     transparent: true,
-                    opacity: 0.75
+                    opacity: 0.8
                 });
-                const holoMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), holoMat);
-                holoMesh.position.set(0, 5.4, 0.3);
+                const holoMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), holoMat);
+                holoMesh.position.set(0, 5.8, 0.3);
                 holoMesh.userData = { isStockMarket: true };
                 group.add(holoMesh);
                 this.stockMarketHoloChart = holoMesh;
 
-                // 8. Emerald Cyber Light Illuminating Booth
-                const marketLight = new THREE.PointLight(0x10b981, 1.8, 12);
-                marketLight.position.set(0, 3.2, 2.2);
+                // 8. Tall High-Visibility Map Beacon Mast
+                const mastMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 });
+                const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 5.5), mastMat);
+                mast.position.set(1.6, 5.8, -1.6);
+                mast.userData = { isStockMarket: true };
+                group.add(mast);
+
+                const beaconBulbMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+                const beaconBulb = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12), beaconBulbMat);
+                beaconBulb.position.set(1.6, 8.6, -1.6);
+                beaconBulb.userData = { isStockMarket: true };
+                group.add(beaconBulb);
+
+                // 9. Emerald Cyber Light Illuminating Booth & Perimeter
+                const marketLight = new THREE.PointLight(0x10b981, 2.5, 24);
+                marketLight.position.set(0, 4.0, 2.5);
                 group.add(marketLight);
+
+                const topBeaconLight = new THREE.PointLight(0x34d399, 2.0, 32);
+                topBeaconLight.position.set(1.6, 8.8, -1.6);
+                group.add(topBeaconLight);
 
                 this.stockMarketBuilding = group;
                 this.scene.add(this.stockMarketBuilding);
@@ -7229,37 +7247,43 @@
                     this.prevStockPrices[id] = this.stockPrices[id];
                 });
 
-                // Random price fluctuations
+                // Price fluctuations (Lucrative & Exciting Economy Model)
                 stockKeys.forEach(id => {
                     const def = STOCKS_DATA[id];
                     const curPrice = this.stockPrices[id] || def.basePrice;
                     const vol = def.volatility || 0.1;
                     
-                    // Brownian random factor
-                    const randomDelta = (Math.random() - 0.48) * vol * curPrice;
-                    let newPrice = Math.max(1, Math.round(curPrice + randomDelta));
-
-                    // Wave end boost / dip momentum
                     if (isWaveEnd) {
-                        const waveFactor = 1 + (Math.random() - 0.45) * 0.15;
-                        newPrice = Math.max(1, Math.round(newPrice * waveFactor));
+                        // Waves yield strong positive economic momentum (average +6% to +24% growth!)
+                        // This makes long-term investing competitive with / superior to Plündererbonus!
+                        const upwardBias = 0.05 + (Math.random() * vol * 1.5);
+                        const waveNoise = (Math.random() - 0.35) * vol;
+                        const factor = 1 + upwardBias + waveNoise;
+                        let newPrice = Math.max(1, Math.round(curPrice * factor));
+                        this.stockPrices[id] = newPrice;
+                    } else {
+                        // Periodic 15-second micro fluctuations (-3% to +5%)
+                        const microFactor = 1 + (Math.random() - 0.46) * vol * 0.5;
+                        let newPrice = Math.max(1, Math.round(curPrice * microFactor));
+                        this.stockPrices[id] = newPrice;
                     }
-
-                    this.stockPrices[id] = newPrice;
                 });
 
-                // Event-Driven Breaking News Trigger
-                if (isWaveEnd || Math.random() < 0.4) {
+                // High-Impact Breaking News Trigger (Rallies & Dips)
+                if (isWaveEnd || Math.random() < 0.45) {
                     const randomStockKey = stockKeys[Math.floor(Math.random() * stockKeys.length)];
                     const stockDef = STOCKS_DATA[randomStockKey];
                     if (stockDef && stockDef.news && stockDef.news.length > 0) {
                         const randomNews = stockDef.news[Math.floor(Math.random() * stockDef.news.length)];
                         this.latestStockNews = randomNews;
 
-                        // News impact: pump or dip
-                        const isGoodNews = !randomNews.toLowerCase().includes('skandal') && !randomNews.toLowerCase().includes('kritik') && !randomNews.toLowerCase().includes('leck') && !randomNews.toLowerCase().includes('crash') && !randomNews.toLowerCase().includes('chaos') && !randomNews.toLowerCase().includes('selbstzündung');
-                        const multiplier = isGoodNews ? (1.15 + Math.random() * 0.25) : (0.75 - Math.random() * 0.15);
-                        this.stockPrices[randomStockKey] = Math.max(1, Math.round(this.stockPrices[randomStockKey] * multiplier));
+                        // News impact: Massive Rally (+35% to +85%) or Dip (-15% to -25%)
+                        const lowerNews = randomNews.toLowerCase();
+                        const isGoodNews = !lowerNews.includes('skandal') && !lowerNews.includes('kritik') && !lowerNews.includes('leck') && !lowerNews.includes('crash') && !lowerNews.includes('chaos') && !lowerNews.includes('selbstzündung');
+                        
+                        const cur = this.stockPrices[randomStockKey];
+                        const multiplier = isGoodNews ? (1.35 + Math.random() * 0.50) : (0.78 - Math.random() * 0.12);
+                        this.stockPrices[randomStockKey] = Math.max(1, Math.round(cur * multiplier));
 
                         const newsEl = document.getElementById('stock-news-text');
                         if (newsEl) newsEl.innerText = randomNews;
