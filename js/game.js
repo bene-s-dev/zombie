@@ -7247,43 +7247,51 @@
                     this.prevStockPrices[id] = this.stockPrices[id];
                 });
 
-                // Price fluctuations (Lucrative & Exciting Economy Model)
+                // Balanced Economic Model: Comparable to Plündererbonus (+1% to +5% on average, sometimes better)
                 stockKeys.forEach(id => {
                     const def = STOCKS_DATA[id];
                     const curPrice = this.stockPrices[id] || def.basePrice;
-                    const vol = def.volatility || 0.1;
+                    const vol = def.volatility || 0.06;
                     
                     if (isWaveEnd) {
-                        // Waves yield strong positive economic momentum (average +6% to +24% growth!)
-                        // This makes long-term investing competitive with / superior to Plündererbonus!
-                        const upwardBias = 0.05 + (Math.random() * vol * 1.5);
-                        const waveNoise = (Math.random() - 0.35) * vol;
-                        const factor = 1 + upwardBias + waveNoise;
-                        let newPrice = Math.max(1, Math.round(curPrice * factor));
+                        // Baseline growth per wave: moderate +1.5% drift with slight stock-specific volatility
+                        // Yields ~ +1% to +6% per wave under normal conditions
+                        const trendDrift = 0.015;
+                        const randomFluctuation = (Math.random() - 0.46) * vol;
+                        const factor = 1 + trendDrift + randomFluctuation;
+                        let newPrice = Math.max(5, Math.round(curPrice * factor));
+                        
+                        // Soft damping towards mean to prevent runaway exponential inflation
+                        if (newPrice > def.basePrice * 4.5) {
+                            newPrice = Math.round(newPrice * 0.96);
+                        } else if (newPrice < def.basePrice * 0.35) {
+                            newPrice = Math.round(newPrice * 1.05);
+                        }
+
                         this.stockPrices[id] = newPrice;
                     } else {
-                        // Periodic 15-second micro fluctuations (-3% to +5%)
-                        const microFactor = 1 + (Math.random() - 0.46) * vol * 0.5;
-                        let newPrice = Math.max(1, Math.round(curPrice * microFactor));
+                        // Subtle 15-second ambient fluctuation (-1.5% to +1.5%)
+                        const microFactor = 1 + (Math.random() - 0.50) * vol * 0.25;
+                        let newPrice = Math.max(5, Math.round(curPrice * microFactor));
                         this.stockPrices[id] = newPrice;
                     }
                 });
 
-                // High-Impact Breaking News Trigger (Rallies & Dips)
-                if (isWaveEnd || Math.random() < 0.45) {
+                // Balanced Breaking News Trigger (~30% chance on wave end): Noticeable boost but not overpowered
+                if (isWaveEnd && Math.random() < 0.32) {
                     const randomStockKey = stockKeys[Math.floor(Math.random() * stockKeys.length)];
                     const stockDef = STOCKS_DATA[randomStockKey];
                     if (stockDef && stockDef.news && stockDef.news.length > 0) {
                         const randomNews = stockDef.news[Math.floor(Math.random() * stockDef.news.length)];
                         this.latestStockNews = randomNews;
 
-                        // News impact: Massive Rally (+35% to +85%) or Dip (-15% to -25%)
+                        // Moderate news impact: +12% to +24% for good news, -8% to -14% for bad news
                         const lowerNews = randomNews.toLowerCase();
                         const isGoodNews = !lowerNews.includes('skandal') && !lowerNews.includes('kritik') && !lowerNews.includes('leck') && !lowerNews.includes('crash') && !lowerNews.includes('chaos') && !lowerNews.includes('selbstzündung');
                         
                         const cur = this.stockPrices[randomStockKey];
-                        const multiplier = isGoodNews ? (1.35 + Math.random() * 0.50) : (0.78 - Math.random() * 0.12);
-                        this.stockPrices[randomStockKey] = Math.max(1, Math.round(cur * multiplier));
+                        const multiplier = isGoodNews ? (1.12 + Math.random() * 0.12) : (0.90 - Math.random() * 0.06);
+                        this.stockPrices[randomStockKey] = Math.max(5, Math.round(cur * multiplier));
 
                         const newsEl = document.getElementById('stock-news-text');
                         if (newsEl) newsEl.innerText = randomNews;
