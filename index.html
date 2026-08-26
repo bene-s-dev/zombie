@@ -894,7 +894,7 @@
                 </div>
 
                 <!-- Shop Navigation Tabs (Responsive Grid ohne horizontales Scrollen) -->
-                <div class="grid grid-cols-3 gap-1.5 sm:gap-2 border-b border-slate-800 pb-2.5 sm:pb-3 mb-2.5 sm:mb-4 w-full flex-shrink-0">
+                <div class="grid grid-cols-4 gap-1.5 sm:gap-2 border-b border-slate-800 pb-2.5 sm:pb-3 mb-2.5 sm:mb-4 w-full flex-shrink-0">
                     <button onclick="switchShopTab('weapons')" id="tab-btn-weapons" class="shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-red-600 text-white flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition shadow-lg shadow-red-950/40">
                         <i class="fa-solid fa-gun text-xs sm:text-sm"></i><span>Waffen</span>
                     </button>
@@ -903,6 +903,9 @@
                     </button>
                     <button onclick="switchShopTab('upgrades')" id="tab-btn-upgrades" class="shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition">
                         <i class="fa-solid fa-shield-halved text-xs sm:text-sm"></i><span>Upgrades</span>
+                    </button>
+                    <button onclick="switchShopTab('stocks')" id="tab-btn-stocks" class="shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition">
+                        <i class="fa-solid fa-chart-line text-emerald-400 text-xs sm:text-sm"></i><span>Börse</span>
                     </button>
                 </div>
 
@@ -935,6 +938,42 @@
                             </button>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-upgrades-container"></div>
+                    </div>
+
+                    <div id="shop-tab-stocks" class="shop-tab-content hidden space-y-3">
+                        <!-- News Ticker in Shop -->
+                        <div class="flex items-center bg-slate-950/80 border border-emerald-900/50 rounded-xl px-3 py-2 text-xs flex-shrink-0 space-x-2 overflow-hidden shadow-inner">
+                            <div class="flex items-center space-x-1 text-emerald-400 font-bold font-mono whitespace-nowrap">
+                                <i class="fa-solid fa-newspaper text-amber-400 animate-pulse"></i>
+                                <span class="text-[10px] sm:text-xs uppercase tracking-wider text-amber-300">EILMELDUNG:</span>
+                            </div>
+                            <div id="shop-stock-news-text" class="text-slate-300 font-mono text-[11px] sm:text-xs truncate italic">
+                                Markt eröffnet: Die Kurse reagieren auf die anhaltende Zombie-Invasion...
+                            </div>
+                        </div>
+
+                        <!-- Mini Portfolio Bar in Shop Tab -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div class="bg-slate-950/80 p-2 sm:p-2.5 rounded-xl border border-slate-800 flex flex-col">
+                                <span class="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase">DEPOTWERT</span>
+                                <span id="shop-stock-portfolio-val" class="font-mono text-emerald-400 font-bold text-xs sm:text-base">$0</span>
+                            </div>
+                            <div class="bg-slate-950/80 p-2 sm:p-2.5 rounded-xl border border-slate-800 flex flex-col">
+                                <span class="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase">INVESTIERT</span>
+                                <span id="shop-stock-invested" class="font-mono text-slate-200 font-bold text-xs sm:text-base">$0</span>
+                            </div>
+                            <div class="bg-slate-950/80 p-2 sm:p-2.5 rounded-xl border border-slate-800 flex flex-col">
+                                <span class="text-[9px] sm:text-[10px] text-slate-400 font-mono uppercase">KURS-PROFIT</span>
+                                <span id="shop-stock-profit" class="font-mono text-emerald-400 font-bold text-xs sm:text-base">+$0 (+0.0%)</span>
+                            </div>
+                            <div class="bg-slate-950/80 p-2 sm:p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 flex flex-col">
+                                <span class="text-[9px] sm:text-[10px] text-amber-400 font-mono uppercase flex items-center gap-1"><i class="fa-solid fa-coins text-[8px]"></i> DIVIDENDEN TOTAL</span>
+                                <span id="shop-stock-dividends" class="font-mono text-amber-300 font-bold text-xs sm:text-base">+$0</span>
+                            </div>
+                        </div>
+
+                        <!-- Stock Items List inside Shop -->
+                        <div class="space-y-2.5 sm:space-y-3" id="shop-stock-list"></div>
                     </div>
                 </div>
             </div>
@@ -976,7 +1015,7 @@
                 </div>
 
                 <!-- Portfolio Summary Bar -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 sm:mb-4 flex-shrink-0">
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3 sm:mb-4 flex-shrink-0">
                     <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex flex-col">
                         <span class="text-[10px] text-slate-400 font-mono uppercase">BARVERMÖGEN</span>
                         <span id="stock-cash-display" class="font-mono text-amber-400 font-bold text-sm sm:text-lg">$0</span>
@@ -986,12 +1025,16 @@
                         <span id="stock-portfolio-value" class="font-mono text-emerald-400 font-bold text-sm sm:text-lg">$0</span>
                     </div>
                     <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex flex-col">
-                        <span class="text-[10px] text-slate-400 font-mono uppercase">INVESTIERTES KAPITAL</span>
+                        <span class="text-[10px] text-slate-400 font-mono uppercase">INVESTIERT</span>
                         <span id="stock-invested-display" class="font-mono text-slate-200 font-bold text-sm sm:text-lg">$0</span>
                     </div>
                     <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex flex-col">
-                        <span class="text-[10px] text-slate-400 font-mono uppercase">GESAMT-PROFIT</span>
+                        <span class="text-[10px] text-slate-400 font-mono uppercase">KURS-PROFIT</span>
                         <span id="stock-profit-display" class="font-mono text-emerald-400 font-bold text-sm sm:text-lg">+$0 (+0.0%)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-amber-500/30 bg-amber-950/20 col-span-2 sm:col-span-1 flex flex-col">
+                        <span class="text-[10px] text-amber-400 font-mono uppercase flex items-center gap-1"><i class="fa-solid fa-coins text-[9px]"></i> DIVIDENDEN TOTAL</span>
+                        <span id="stock-dividends-display" class="font-mono text-amber-300 font-bold text-sm sm:text-lg">+$0</span>
                     </div>
                 </div>
 
@@ -1002,9 +1045,9 @@
 
                 <!-- Footer Hint -->
                 <div class="pt-3 mt-2 border-t border-slate-800/80 flex justify-between items-center text-[10px] sm:text-xs text-slate-400 font-mono flex-shrink-0">
-                    <span class="flex items-center space-x-1">
-                        <i class="fa-solid fa-chart-pie text-emerald-400"></i>
-                        <span>Kurse schwanken mit jeder Welle und bei Eilmeldungen!</span>
+                    <span class="flex items-center space-x-1 text-slate-300">
+                        <i class="fa-solid fa-hand-holding-dollar text-amber-400"></i>
+                        <span>Aktien zahlen jede Welle <strong class="text-amber-300">3.5% bis 15% Dividenden</strong> aus & Kurse reagieren dynamisch!</span>
                     </span>
                     <button onclick="closeStockMarketModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white font-bold rounded-lg transition cursor-pointer">
                         Schließen [ESC]

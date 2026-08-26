@@ -58,7 +58,7 @@ const UPGRADES = {
     // CATEGORY: PLAYER
     player_hp: { category: 'player', name: 'Kampfweste & Max HP', level: 0, maxLevel: Infinity, costBase: 180, desc: 'Erhöht maximale Spieler-Gesundheit um +35 HP' },
     player_speed: { category: 'player', name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 140, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
-    scavenger: { category: 'player', name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 1000, desc: 'Erhöht erbeutetes Geld pro Zombie um +1% multiplikativ pro Stufe (Kein Stufenlimit)' },
+    scavenger: { category: 'player', name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 1000, desc: 'Erhöht erbeutetes Geld pro Zombie um +10% multiplikativ pro Stufe (Kein Stufenlimit)' },
 
     // CATEGORY: HQ / BASE
     base_hp: { category: 'hq', name: 'Basis & Turm-Panzerung', level: 0, maxLevel: Infinity, costBase: 220, desc: 'Erhöht maximale Basis-HP um +600 HP und verstärkt Panzerung aller Türme um +15% pro Stufe' },
@@ -108,7 +108,8 @@ const STOCKS_DATA = {
         icon: 'fa-brain text-pink-400',
         basePrice: 120,
         volatility: 0.12,
-        desc: 'Marktführer für frische, unverbrauchte Gehirne. Immer hungrig auf exponentielles Wachstum!',
+        dividendYield: 0.045, // ~4.5% (3.5% - 6.5%)
+        desc: 'Marktführer für Gehirn-Farming. Hohe Kurssprünge bei solider Basis-Dividende (~4.5% / Welle).',
         news: [
             'BrainCorp meldet Rekordernte frischer Großhirne: Analysten im Freudentaumel!',
             'Gehirnmangel in Sektor 4 treibt Nachfrage nach Zerebral-Konzentrat an!',
@@ -123,7 +124,8 @@ const STOCKS_DATA = {
         icon: 'fa-drumstick-bite text-amber-500',
         basePrice: 45,
         volatility: 0.08,
-        desc: 'Garantiert 100% zähes Gammelfleisch. Die verlässliche Notration seit Tag 1.',
+        dividendYield: 0.110, // ~11.0% (9.5% - 13.5%)
+        desc: '100% zähes Gammelfleisch. Solider Basisversorger mit hoher Dividende (~11.0% / Welle).',
         news: [
             'Gammel & Söhne expandiert mit neuer Kadaver-Verarbeitungsanlage!',
             'Verkaufsschlager: Neue Knochenmark-Pastete bricht alle Umsatzrekorde!',
@@ -138,7 +140,8 @@ const STOCKS_DATA = {
         icon: 'fa-flask text-lime-400',
         basePrice: 85,
         volatility: 0.16,
-        desc: 'Ätzend prickelnder Erfrischungsgenuss aus 100% echtem Spucker-Säureextrakt.',
+        dividendYield: 0.060, // ~6.0% (4.5% - 8.0%)
+        desc: 'Ätzend prickelnder Erfrischungsgenuss aus 100% Spucker-Säure. Dividende: ~6.0% / Welle.',
         news: [
             'Spucker Cola Zero-Acid erobert den Untoten-Markt im Sturm!',
             'Säure-Pipeline leckgeschlagen: Spucker Cola verliert Millionen Liter Konzentrat!',
@@ -153,7 +156,8 @@ const STOCKS_DATA = {
         icon: 'fa-tv text-purple-400',
         basePrice: 210,
         volatility: 0.11,
-        desc: 'Endloses Streaming für die ewige Grabesruhe. 24/7 Blockbuster für Untote.',
+        dividendYield: 0.075, // ~7.5% (6.0% - 9.5%)
+        desc: 'Endloses Streaming für die ewige Grabesruhe. Ausgewogene Ausschüttung von ~7.5% / Welle.',
         news: [
             'NecroFlix-Erfolgsserie "The Walking Alive" bricht weltweite Streaming-Rekorde!',
             'Abo-Zahlen bei NecroFlix steigen rasant – wer stirbt, braucht Unterhaltung!',
@@ -168,7 +172,8 @@ const STOCKS_DATA = {
         icon: 'fa-bomb text-orange-500',
         basePrice: 320,
         volatility: 0.24,
-        desc: 'Explosive Renditen garantiert! Unser Napalm brennt garantiert noch im Jenseits.',
+        dividendYield: 0.035, // ~3.5% (2.5% - 5.5%)
+        desc: 'Explosive Renditechancen mit extremen Kursausschlägen. Basis-Dividende: ~3.5% / Welle.',
         news: [
             'Großauftrag: Kamikaze Inc. liefert 50.000 Sprengstoff-Westen an die Front!',
             'Unerwartete Selbstzündung im Zentrallager: BOOM-Aktie erleidet Kursknall!',
@@ -183,7 +188,8 @@ const STOCKS_DATA = {
         icon: 'fa-truck-fast text-emerald-400',
         basePrice: 65,
         volatility: 0.09,
-        desc: 'Lieferungen auf allen Vieren in Rekordzeit. Schneller als jeder Überlebende.',
+        dividendYield: 0.088, // ~8.8% (7.5% - 11.0%)
+        desc: 'Lieferungen auf allen Vieren in Rekordzeit. Stabile Dividenden-Rendite von ~8.8% / Welle.',
         news: [
             'Krabbler Express schließt Kooperation mit Schnell-Lieferdienst ab!',
             'Verkehrschaos auf Highway 66: Krabbler-Schwärme blockieren Lieferkette.',
@@ -198,7 +204,8 @@ const STOCKS_DATA = {
         icon: 'fa-skull-crossbones text-rose-500',
         basePrice: 500,
         volatility: 0.06,
-        desc: 'Krisensicheres Wachstumsgeschäft – unsere Kundschaft stirbt garantiert niemals aus.',
+        dividendYield: 0.135, // ~13.5% (11.5% - 15.5%)
+        desc: 'Krisensicherer Dividenden-Gigant! Defensiver Werterhalt mit Spitzen-Dividende von ~13.5% / Welle.',
         news: [
             'Rost & Sarg schüttet Rekord-Dividende an Anteilseigner aus!',
             'Überbelegung auf Friedhöfen eröffnet neue Geschäftsfelder im Luxus-Mausoleum-Sektor!',

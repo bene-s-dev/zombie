@@ -219,8 +219,10 @@ updateTacticalExtrasHUD();
 
         function switchShopTab(tabId) {
             activeShopTab = tabId;
-            const inactiveClass = "shop-tab-btn px-1.5 py-2 sm:px-3 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[40px] transition";
-            const activeClass = "shop-tab-btn px-1.5 py-2 sm:px-3 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-red-600 text-white flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[40px] transition shadow-lg shadow-red-950/40";
+            const inactiveClass = "shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition";
+            const activeClass = (tabId === 'stocks')
+                ? "shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-emerald-600 text-white flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition shadow-lg shadow-emerald-950/40"
+                : "shop-tab-btn px-1 sm:px-3 py-1.5 sm:py-2.5 rounded-xl font-bold text-[10px] sm:text-xs bg-red-600 text-white flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 text-center min-h-[38px] sm:min-h-[40px] transition shadow-lg shadow-red-950/40";
 
             document.querySelectorAll('.shop-tab-btn').forEach(btn => {
                 btn.className = inactiveClass;
@@ -233,11 +235,19 @@ updateTacticalExtrasHUD();
             const activeContent = document.getElementById(`shop-tab-${tabId}`);
             if (activeContent) activeContent.classList.remove('hidden');
 
-            renderShopCatalog();
+            if (tabId === 'stocks') {
+                renderStockMarket();
+            } else {
+                renderShopCatalog();
+            }
         }
 
         function renderShopCatalog() {
             if (!gameInstance) return;
+            if (activeShopTab === 'stocks') {
+                renderStockMarket();
+                return;
+            }
 
             const weaponsContainer = document.getElementById('shop-weapons-container');
             weaponsContainer.innerHTML = '';
@@ -357,8 +367,8 @@ updateTacticalExtrasHUD();
                             descText = `MAX-STUFE: K9-Alpha-Rudelführer (<b>${maxDmg} Dmg</b>, maximaler Sprungradius, Verlangsamung & Reißbiss).`;
                         }
                     } else if (key === 'scavenger') {
-                        const totalBonusPct = ((Math.pow(1.01, currentLvl) - 1) * 100).toFixed(1).replace(/\.0$/, '');
-                        descText = `Erhöht erbeutetes Geld pro Zombie um +1% multiplikativ pro Stufe (Aktueller Bonus: <b>+${totalBonusPct}%</b>, unbegrenzt)`;
+                        const totalBonusPct = ((Math.pow(1.10, currentLvl) - 1) * 100).toFixed(1).replace(/\.0$/, '');
+                        descText = `Erhöht erbeutetes Geld pro Zombie um +10% multiplikativ pro Stufe (Aktueller Bonus: <b>+${totalBonusPct}%</b>, unbegrenzt)`;
                     }
 
                     const card = document.createElement('div');
@@ -865,20 +875,71 @@ updateTacticalExtrasHUD();
             updateMusicDucking();
         }
 
+        function renderStockSparklineSVG(history, isUp) {
+            if (!history || !Array.isArray(history) || history.length < 2) return '';
+            const w = 100;
+            const h = 34;
+            const padX = 4;
+            const padY = 4;
+            const min = Math.min(...history);
+            const max = Math.max(...history);
+            const range = (max - min) || 1;
+
+            const points = history.map((val, idx) => {
+                const x = padX + (idx / (history.length - 1)) * (w - padX * 2);
+                const y = (h - padY) - ((val - min) / range) * (h - padY * 2);
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+            });
+
+            const polylinePoints = points.join(' ');
+            const lastPoint = points[points.length - 1].split(',');
+            const firstPoint = points[0].split(',');
+            const strokeColor = isUp ? '#34d399' : '#f87171';
+            const gradId = `grad_${Math.random().toString(36).substr(2, 6)}`;
+            const areaPoints = `${firstPoint[0]},${h - padY} ${polylinePoints} ${lastPoint[0]},${h - padY}`;
+
+            return `
+                <div class="relative flex items-center justify-center w-[90px] sm:w-[105px] h-[34px] bg-slate-900/80 rounded-xl px-1.5 border border-slate-800 shadow-inner">
+                    <svg viewBox="0 0 ${w} ${h}" class="w-full h-full overflow-visible">
+                        <defs>
+                            <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.38" />
+                                <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0" />
+                            </linearGradient>
+                        </defs>
+                        <polygon points="${areaPoints}" fill="url(#${gradId})" />
+                        <polyline points="${polylinePoints}" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="${lastPoint[0]}" cy="${lastPoint[1]}" r="2.8" fill="${strokeColor}" />
+                    </svg>
+                </div>
+            `;
+        }
+
         function renderStockMarket() {
             if (!gameInstance) return;
             const listContainer = document.getElementById('stock-market-list');
+            const shopListContainer = document.getElementById('shop-stock-list');
+
             const cashEl = document.getElementById('stock-cash-display');
             const portfolioValEl = document.getElementById('stock-portfolio-value');
             const investedEl = document.getElementById('stock-invested-display');
             const profitEl = document.getElementById('stock-profit-display');
+            const dividendsEl = document.getElementById('stock-dividends-display');
             const newsEl = document.getElementById('stock-news-text');
+
+            const shopPortfolioValEl = document.getElementById('shop-stock-portfolio-val');
+            const shopInvestedEl = document.getElementById('shop-stock-invested');
+            const shopProfitEl = document.getElementById('shop-stock-profit');
+            const shopDividendsEl = document.getElementById('shop-stock-dividends');
+            const shopNewsEl = document.getElementById('shop-stock-news-text');
 
             if (!gameInstance.stockPrices) gameInstance.initStockMarket();
             if (!gameInstance.stockPortfolio) gameInstance.stockPortfolio = {};
+            if (!gameInstance.stockPriceHistory) gameInstance.stockPriceHistory = {};
 
             if (cashEl) cashEl.innerText = `$${gameInstance.money.toLocaleString()}`;
             if (newsEl && gameInstance.latestStockNews) newsEl.innerText = gameInstance.latestStockNews;
+            if (shopNewsEl && gameInstance.latestStockNews) shopNewsEl.innerText = gameInstance.latestStockNews;
 
             let totalPortfolioVal = 0;
             let totalInvested = 0;
@@ -894,12 +955,18 @@ updateTacticalExtrasHUD();
                     const changePct = prevPrice > 0 ? ((currentPrice - prevPrice) / prevPrice) * 100 : 0;
                     const isUp = changePct >= 0;
 
+                    const history = gameInstance.stockPriceHistory[id] || [def.basePrice, currentPrice];
+                    const sparklineHtml = renderStockSparklineSVG(history, isUp);
+
                     const holding = gameInstance.stockPortfolio[id] || { shares: 0, totalPaid: 0 };
                     const shares = holding.shares || 0;
                     const shareVal = shares * currentPrice;
                     const paid = holding.totalPaid || 0;
                     const holdingProfit = shareVal - paid;
                     const holdingProfitPct = paid > 0 ? (holdingProfit / paid) * 100 : 0;
+                    const divYieldPct = ((def.dividendYield || 0.035) * 100).toFixed(1);
+                    const estWaveDividend = Math.round(shareVal * (def.dividendYield || 0.035));
+                    const stockEarnedDividends = holding.totalDividendsEarned || 0;
 
                     totalPortfolioVal += shareVal;
                     totalInvested += paid;
@@ -914,19 +981,28 @@ updateTacticalExtrasHUD();
                                     <i class="fa-solid ${def.icon}"></i>
                                 </div>
                                 <div class="flex flex-col">
-                                    <div class="flex items-center space-x-2">
+                                    <div class="flex items-center flex-wrap gap-1.5">
                                         <span class="font-teko text-xl sm:text-2xl font-bold text-white leading-none">${def.name}</span>
                                         <span class="bg-slate-800 text-slate-300 font-mono text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-bold">${def.ticker}</span>
+                                        <span class="bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
+                                            <i class="fa-solid fa-coins text-[9px] text-amber-400"></i> ${divYieldPct}% Div/Welle
+                                        </span>
                                     </div>
-                                    <span class="text-[10px] sm:text-xs text-emerald-400/90 font-mono font-medium">${def.category}</span>
+                                    <span class="text-[10px] sm:text-xs text-emerald-400/90 font-mono font-medium mt-0.5">${def.category}</span>
                                     <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 leading-snug">${def.desc}</p>
                                 </div>
                             </div>
 
-                            <!-- Price & Value -->
-                            <div class="flex items-center justify-between md:justify-end gap-3 sm:gap-6 border-t md:border-t-0 border-slate-800/80 pt-2 md:pt-0">
+                            <!-- Price, Trend Chart & Value -->
+                            <div class="flex items-center justify-between md:justify-end gap-3 sm:gap-5 border-t md:border-t-0 border-slate-800/80 pt-2 md:pt-0">
+                                <!-- Sparkline Trend Chart -->
+                                <div class="hidden sm:flex flex-col items-center">
+                                    <span class="text-[9px] text-slate-500 font-mono uppercase tracking-wider mb-0.5">KURSVERLAUF</span>
+                                    ${sparklineHtml}
+                                </div>
+
                                 <!-- Current Price -->
-                                <div class="flex flex-col text-left md:text-right">
+                                <div class="flex flex-col text-left md:text-right min-w-[70px]">
                                     <span class="text-[10px] text-slate-400 font-mono uppercase">KURS</span>
                                     <span class="font-mono text-base sm:text-lg font-bold text-white">$${currentPrice.toLocaleString()}</span>
                                     <span class="font-mono text-[10px] sm:text-xs font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'} flex items-center md:justify-end space-x-1">
@@ -936,13 +1012,16 @@ updateTacticalExtrasHUD();
                                 </div>
 
                                 <!-- Owned Shares & Depot Value -->
-                                <div class="flex flex-col text-left md:text-right min-w-[90px] sm:min-w-[110px]">
+                                <div class="flex flex-col text-left md:text-right min-w-[100px] sm:min-w-[130px]">
                                     <span class="text-[10px] text-slate-400 font-mono uppercase">IM DEPOT</span>
                                     <span class="font-mono text-xs sm:text-sm font-bold ${shares > 0 ? 'text-emerald-300' : 'text-slate-500'}">${shares.toLocaleString()} Stück</span>
                                     <span class="font-mono text-[10px] sm:text-xs text-slate-400">$${shareVal.toLocaleString()}</span>
                                     ${shares > 0 && paid > 0 ? `
                                         <span class="font-mono text-[9px] sm:text-[10px] font-bold ${holdingProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                                            ${holdingProfit >= 0 ? '+' : ''}$${holdingProfit.toLocaleString()} (${holdingProfit >= 0 ? '+' : ''}${holdingProfitPct.toFixed(1)}%)
+                                            Kurs: ${holdingProfit >= 0 ? '+' : ''}$${holdingProfit.toLocaleString()} (${holdingProfit >= 0 ? '+' : ''}${holdingProfitPct.toFixed(1)}%)
+                                        </span>
+                                        <span class="font-mono text-[9px] sm:text-[10px] text-amber-300 font-semibold flex items-center md:justify-end gap-1">
+                                            <i class="fa-solid fa-coins text-[8px]"></i> +$${estWaveDividend.toLocaleString()}/Welle ${stockEarnedDividends > 0 ? `(+$${stockEarnedDividends.toLocaleString()})` : ''}
                                         </span>
                                     ` : ''}
                                 </div>
@@ -981,15 +1060,31 @@ updateTacticalExtrasHUD();
             }
 
             if (listContainer) listContainer.innerHTML = html;
+            if (shopListContainer) shopListContainer.innerHTML = html;
 
             if (portfolioValEl) portfolioValEl.innerText = `$${totalPortfolioVal.toLocaleString()}`;
+            if (shopPortfolioValEl) shopPortfolioValEl.innerText = `$${totalPortfolioVal.toLocaleString()}`;
+
             if (investedEl) investedEl.innerText = `$${totalInvested.toLocaleString()}`;
+            if (shopInvestedEl) shopInvestedEl.innerText = `$${totalInvested.toLocaleString()}`;
+
+            const totalDivs = gameInstance.totalDividendsEarned || 0;
+            if (dividendsEl) dividendsEl.innerText = `+$${totalDivs.toLocaleString()}`;
+            if (shopDividendsEl) shopDividendsEl.innerText = `+$${totalDivs.toLocaleString()}`;
 
             const totalProfit = totalPortfolioVal - totalInvested;
             const totalProfitPct = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+            const profitText = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toLocaleString()} (${totalProfit >= 0 ? '+' : ''}${totalProfitPct.toFixed(1)}%)`;
+            const profitClass = `font-mono text-sm sm:text-lg font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+            const shopProfitClass = `font-mono text-xs sm:text-base font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
             if (profitEl) {
-                profitEl.innerText = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toLocaleString()} (${totalProfit >= 0 ? '+' : ''}${totalProfitPct.toFixed(1)}%)`;
-                profitEl.className = `font-mono text-sm sm:text-lg font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+                profitEl.innerText = profitText;
+                profitEl.className = profitClass;
+            }
+            if (shopProfitEl) {
+                shopProfitEl.innerText = profitText;
+                shopProfitEl.className = shopProfitClass;
             }
         }
 
@@ -1141,7 +1236,7 @@ updateTacticalExtrasHUD();
                 return Math.round(upg.costBase * Math.pow(1.6, Math.max(0, currentLvl - 1)));
             }
             if (key === 'scavenger') {
-                return Math.round(upg.costBase * Math.pow(1.01, currentLvl));
+                return Math.round(upg.costBase * Math.pow(1.10, currentLvl));
             }
             return Math.round(upg.costBase * Math.pow(1.6, currentLvl));
         }

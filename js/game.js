@@ -2379,7 +2379,7 @@
                     this.createExplosion(z.position, 3.8, 85 * (z.userData.dmgMult || 1), 3.8, false, true);
                 }
                 const scavengerLvl = this.upgrades.scavenger || 0;
-                const scavengerMult = Math.pow(1.01, scavengerLvl);
+                const scavengerMult = Math.pow(1.10, scavengerLvl);
                 this.money += Math.round(z.userData.reward * scavengerMult);
                 this.totalKills++;
                 audio.playCoin();
@@ -6039,7 +6039,9 @@
                         intelShown: this.intelShown,
                         stockPrices: this.stockPrices || {},
                         prevStockPrices: this.prevStockPrices || {},
+                        stockPriceHistory: this.stockPriceHistory || {},
                         stockPortfolio: this.stockPortfolio || {},
+                        totalDividendsEarned: this.totalDividendsEarned || 0,
                         latestStockNews: this.latestStockNews || null,
                         playerPosition: { x: this.playerGroup.position.x, z: this.playerGroup.position.z },
                         dayNightTime: this.dayNightTime || 0,
@@ -6099,7 +6101,9 @@
                     if (data.intelShown) this.intelShown = { ...this.intelShown, ...data.intelShown };
                     if (data.stockPrices) this.stockPrices = data.stockPrices;
                     if (data.prevStockPrices) this.prevStockPrices = data.prevStockPrices;
+                    if (data.stockPriceHistory) this.stockPriceHistory = data.stockPriceHistory;
                     if (data.stockPortfolio) this.stockPortfolio = data.stockPortfolio;
+                    if (data.totalDividendsEarned !== undefined) this.totalDividendsEarned = data.totalDividendsEarned;
                     if (data.latestStockNews) this.latestStockNews = data.latestStockNews;
                     this.dayNightTime = data.dayNightTime !== undefined ? data.dayNightTime : 22;
 
@@ -7224,12 +7228,24 @@
                 if (!this.stockPrices) this.stockPrices = {};
                 if (!this.prevStockPrices) this.prevStockPrices = {};
                 if (!this.stockPortfolio) this.stockPortfolio = {};
+                if (!this.stockPriceHistory) this.stockPriceHistory = {};
 
                 if (typeof STOCKS_DATA !== 'undefined') {
                     Object.keys(STOCKS_DATA).forEach(id => {
+                        const base = STOCKS_DATA[id].basePrice;
                         if (!this.stockPrices[id]) {
-                            this.stockPrices[id] = STOCKS_DATA[id].basePrice;
-                            this.prevStockPrices[id] = STOCKS_DATA[id].basePrice;
+                            this.stockPrices[id] = base;
+                            this.prevStockPrices[id] = base;
+                        }
+                        if (!this.stockPriceHistory[id] || !Array.isArray(this.stockPriceHistory[id]) || this.stockPriceHistory[id].length < 3) {
+                            this.stockPriceHistory[id] = [
+                                Math.round(base * 0.94),
+                                Math.round(base * 0.97),
+                                Math.round(base * 0.95),
+                                Math.round(base * 0.98),
+                                Math.round(base * 0.99),
+                                this.stockPrices[id]
+                            ];
                         }
                     });
                 }
@@ -7247,22 +7263,22 @@
                     this.prevStockPrices[id] = this.stockPrices[id];
                 });
 
-                // Balanced Economic Model: Comparable to Plündererbonus (+1% to +5% on average, sometimes better)
+                // Balanced Economic Model: Comparable to Plündererbonus (+10% scaling model)
                 stockKeys.forEach(id => {
                     const def = STOCKS_DATA[id];
                     const curPrice = this.stockPrices[id] || def.basePrice;
-                    const vol = def.volatility || 0.06;
+                    const vol = def.volatility || 0.08;
                     
                     if (isWaveEnd) {
-                        // Baseline growth per wave: moderate +1.5% drift with slight stock-specific volatility
-                        // Yields ~ +1% to +6% per wave under normal conditions
-                        const trendDrift = 0.015;
-                        const randomFluctuation = (Math.random() - 0.46) * vol;
+                        // Baseline growth per wave: moderate +2.5% drift with slight stock-specific volatility
+                        // Yields ~ +2% to +8% per wave under normal conditions
+                        const trendDrift = 0.025;
+                        const randomFluctuation = (Math.random() - 0.45) * vol;
                         const factor = 1 + trendDrift + randomFluctuation;
                         let newPrice = Math.max(5, Math.round(curPrice * factor));
                         
                         // Soft damping towards mean to prevent runaway exponential inflation
-                        if (newPrice > def.basePrice * 4.5) {
+                        if (newPrice > def.basePrice * 5.0) {
                             newPrice = Math.round(newPrice * 0.96);
                         } else if (newPrice < def.basePrice * 0.35) {
                             newPrice = Math.round(newPrice * 1.05);
@@ -7278,23 +7294,90 @@
                 });
 
                 // Balanced Breaking News Trigger (~30% chance on wave end): Noticeable boost but not overpowered
+                let activeNewsStock = null;
+                let isGoodNews = false;
                 if (isWaveEnd && Math.random() < 0.32) {
                     const randomStockKey = stockKeys[Math.floor(Math.random() * stockKeys.length)];
                     const stockDef = STOCKS_DATA[randomStockKey];
                     if (stockDef && stockDef.news && stockDef.news.length > 0) {
                         const randomNews = stockDef.news[Math.floor(Math.random() * stockDef.news.length)];
                         this.latestStockNews = randomNews;
+                        activeNewsStock = randomStockKey;
 
-                        // Moderate news impact: +12% to +24% for good news, -8% to -14% for bad news
+                        // Moderate news impact: +14% to +28% for good news, -8% to -14% for bad news
                         const lowerNews = randomNews.toLowerCase();
-                        const isGoodNews = !lowerNews.includes('skandal') && !lowerNews.includes('kritik') && !lowerNews.includes('leck') && !lowerNews.includes('crash') && !lowerNews.includes('chaos') && !lowerNews.includes('selbstzündung');
+                        isGoodNews = !lowerNews.includes('skandal') && !lowerNews.includes('kritik') && !lowerNews.includes('leck') && !lowerNews.includes('crash') && !lowerNews.includes('chaos') && !lowerNews.includes('selbstzündung');
                         
                         const cur = this.stockPrices[randomStockKey];
-                        const multiplier = isGoodNews ? (1.12 + Math.random() * 0.12) : (0.90 - Math.random() * 0.06);
+                        const multiplier = isGoodNews ? (1.14 + Math.random() * 0.14) : (0.90 - Math.random() * 0.06);
                         this.stockPrices[randomStockKey] = Math.max(5, Math.round(cur * multiplier));
 
                         const newsEl = document.getElementById('stock-news-text');
                         if (newsEl) newsEl.innerText = randomNews;
+                    }
+                }
+
+                // Record price history for charts
+                stockKeys.forEach(id => {
+                    if (!this.stockPriceHistory[id]) this.stockPriceHistory[id] = [];
+                    this.stockPriceHistory[id].push(this.stockPrices[id]);
+                    if (this.stockPriceHistory[id].length > 12) {
+                        this.stockPriceHistory[id].shift();
+                    }
+                });
+
+                // ================== WAVE DIVIDEND PAYOUT (~3.5% - 15%) ==================
+                if (isWaveEnd && this.stockPortfolio) {
+                    let totalDividends = 0;
+                    const dividendItems = [];
+
+                    stockKeys.forEach(id => {
+                        const holding = this.stockPortfolio[id];
+                        if (holding && holding.shares > 0) {
+                            const def = STOCKS_DATA[id];
+                            const curPrice = this.stockPrices[id] || def.basePrice;
+                            const holdingVal = holding.shares * curPrice;
+
+                            // Dividend rate per wave: base yield + small random fluctuation (+/- 0.8%)
+                            let rate = (def && def.dividendYield) ? def.dividendYield : 0.075;
+                            rate += (Math.random() - 0.48) * 0.016;
+
+                            // If this stock had positive news, boost dividend by +2.5% for this wave
+                            if (activeNewsStock === id) {
+                                rate += isGoodNews ? 0.025 : -0.015;
+                            }
+
+                            // Strict clamp to 2.5% - 18.0% per wave
+                            rate = Math.max(0.025, Math.min(0.180, rate));
+
+                            const payout = Math.round(holdingVal * rate);
+                            if (payout > 0) {
+                                totalDividends += payout;
+                                holding.totalDividendsEarned = (holding.totalDividendsEarned || 0) + payout;
+                                dividendItems.push({
+                                    id,
+                                    ticker: def.ticker,
+                                    shares: holding.shares,
+                                    payout,
+                                    ratePct: (rate * 100).toFixed(1)
+                                });
+                            }
+                        }
+                    });
+
+                    if (totalDividends > 0) {
+                        this.money += totalDividends;
+                        this.totalDividendsEarned = (this.totalDividendsEarned || 0) + totalDividends;
+                        if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') {
+                            audio.playCoin();
+                        }
+                        if (typeof showWarningToast === 'function') {
+                            const detailStr = dividendItems.length === 1
+                                ? `${dividendItems[0].ticker} (${dividendItems[0].ratePct}%)`
+                                : `${dividendItems.length} Aktien (~3-15%)`;
+                            showWarningToast(`💰 AKTIEN-DIVIDENDE: +$${totalDividends.toLocaleString()} gutgeschrieben! (${detailStr})`);
+                        }
+                        this.syncHUD();
                     }
                 }
 
