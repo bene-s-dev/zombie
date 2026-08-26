@@ -132,6 +132,8 @@
                 this.updateCameraSettings();
                 this.buildEnvironment();
                 this.createBaseCore();
+                this.createStockMarketBuilding();
+                this.initStockMarket();
                 this.createPlayer();
                 this.createDogMesh();
                 this.setupControls();
@@ -206,6 +208,13 @@
                             this.selectAc130Weapon('105mm');
                         }
                     }
+                    if (e.code === 'KeyF') {
+                        if (typeof isStockMarketOpen !== 'undefined' && isStockMarketOpen) {
+                            closeStockMarketModal();
+                        } else {
+                            openStockMarketModal();
+                        }
+                    }
                     if (e.code === 'KeyE') {
                         if (typeof Storage === 'undefined' || Storage.data.extraAirstrikeEnabled !== false) {
                             this.triggerAirstrike();
@@ -230,6 +239,8 @@
                         const inspectModal = document.getElementById('inspect-modal');
                         if (inspectModal && !inspectModal.classList.contains('hidden')) {
                             closeInspectModal();
+                        } else if (typeof isStockMarketOpen !== 'undefined' && isStockMarketOpen) {
+                            closeStockMarketModal();
                         } else if (this.isPlacementMode) {
                             cancelPlacement();
                         } else if (isShopOpen) {
@@ -337,16 +348,24 @@
                     const clickableObjects = [];
                     this.turrets.forEach(t => t.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
                     this.walls.forEach(w => w.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
+                    if (this.stockMarketBuilding) {
+                        this.stockMarketBuilding.traverse(child => { if (child.isMesh) clickableObjects.push(child); });
+                    }
 
                     const intersects = this.raycaster.intersectObjects(clickableObjects, true);
                     if (intersects.length > 0) {
                         let topObj = intersects[0].object;
                         let depth = 0;
                         while (topObj && topObj.parent && topObj.parent !== this.scene && depth++ < 15) {
+                            if (topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall || topObj.userData.isStockMarket)) break;
                             topObj = topObj.parent;
                         }
-                        if (topObj && topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) {
-                            this.inspectStructure(topObj);
+                        if (topObj && topObj.userData) {
+                            if (topObj.userData.isStockMarket) {
+                                if (typeof openStockMarketModal === 'function') openStockMarketModal();
+                            } else if (topObj.userData.isTurret || topObj.userData.isWall) {
+                                this.inspectStructure(topObj);
+                            }
                         }
                     }
                 };
@@ -355,7 +374,7 @@
                 window.addEventListener('click', (e) => handleSelection(e.clientX, e.clientY, e));
 
                 const isUiTarget = (e, touch) => {
-                    const interactiveSelector = 'button, input, select, textarea, label, a, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto, [onclick], [data-touch-action]';
+                    const interactiveSelector = 'button, input, select, textarea, label, a, #shop-modal, #stock-market-modal, #stock-market-prompt, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto, [onclick], [data-touch-action]';
                     
                     if (touch && typeof document.elementFromPoint === 'function') {
                         const el = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -4839,6 +4858,23 @@
                     this.baseCoreCrystal.rotation.y += (dt * 1.2);
                     this.baseCoreCrystal.position.y = 5.4 + Math.sin(now * 0.003) * 0.15;
                 }
+                if (this.stockMarketHoloChart) {
+                    this.stockMarketHoloChart.rotation.y += (dt * 1.4);
+                    this.stockMarketHoloChart.rotation.x = Math.sin(now * 0.002) * 0.2;
+                }
+                if (this.stockMarketBuilding && this.playerGroup && (this._frameCount % 4 === 0)) {
+                    const dStockX = this.playerGroup.position.x - this.stockMarketBuilding.position.x;
+                    const dStockZ = this.playerGroup.position.z - this.stockMarketBuilding.position.z;
+                    const distStockSq = dStockX * dStockX + dStockZ * dStockZ;
+                    const promptEl = document.getElementById('stock-market-prompt');
+                    if (promptEl) {
+                        if (distStockSq < 49.0 && !this.isAc130Active && !this.isGameOver && !this.isPlacementMode) {
+                            promptEl.classList.remove('hidden');
+                        } else {
+                            promptEl.classList.add('hidden');
+                        }
+                    }
+                }
                 if (this.beaconLights && this.beaconLights.length > 0 && (this._frameCount % 10 === 0)) {
                     const isLit = (now % 1200 < 600);
                     for (let bi = 0; bi < this.beaconLights.length; bi++) {
@@ -5165,6 +5201,10 @@
                         }
                         b.position.addScaledVector(b.userData.dir, b.userData.speed * dt);
                         b.userData.life -= dt;
+
+                        if (b.userData.isEnemy && Math.random() < 0.25) {
+                            this.createBloodSparks(b.position, 0x84cc16);
+                        }
 
                         let bulletHit = false;
 
@@ -5569,7 +5609,7 @@
 
                         if (z.userData.type === 'spitter') {
                             z.userData.spitTimer = (z.userData.spitTimer || 0) + dt;
-                            if (z.userData.spitTimer >= 2.8 && distToPlayerSq > 25.0 && distToPlayerSq < 324.0) { // 5^2=25, 18^2=324
+                            if (z.userData.spitTimer >= 3.2 && distToPlayerSq > 25.0 && distToPlayerSq < 324.0) { // 5^2=25, 18^2=324
                                 z.userData.spitTimer = 0;
                                 if (!this._spitGeo) {
                                     this._spitGeo = new THREE.SphereGeometry(0.35, 8, 8);
@@ -5582,7 +5622,7 @@
                                 spitMesh.userData = {
                                     dir: dir,
                                     speed: 22,
-                                    damage: 14 * z.userData.dmgMult,
+                                    damage: 11 * z.userData.dmgMult,
                                     life: 1.8,
                                     isEnemy: true
                                 };
@@ -5700,6 +5740,10 @@
 
                 if (this.gameSeconds % 5 === 0) {
                     this.saveGameSession();
+                }
+
+                if (this.gameSeconds % 15 === 0) {
+                    this.updateStockPrices(false);
                 }
 
                 // Safety: trigger next wave if all zombies gone but nextWave() was missed
@@ -5993,6 +6037,10 @@
                         currentWeapon: this.currentWeapon ? this.currentWeapon.id : 'pistol',
                         upgrades: this.upgrades,
                         intelShown: this.intelShown,
+                        stockPrices: this.stockPrices || {},
+                        prevStockPrices: this.prevStockPrices || {},
+                        stockPortfolio: this.stockPortfolio || {},
+                        latestStockNews: this.latestStockNews || null,
                         playerPosition: { x: this.playerGroup.position.x, z: this.playerGroup.position.z },
                         dayNightTime: this.dayNightTime || 0,
                         turrets: this.turrets.map(t => ({
@@ -6049,6 +6097,10 @@
                     }
                     if (data.upgrades) this.upgrades = { ...this.upgrades, ...data.upgrades };
                     if (data.intelShown) this.intelShown = { ...this.intelShown, ...data.intelShown };
+                    if (data.stockPrices) this.stockPrices = data.stockPrices;
+                    if (data.prevStockPrices) this.prevStockPrices = data.prevStockPrices;
+                    if (data.stockPortfolio) this.stockPortfolio = data.stockPortfolio;
+                    if (data.latestStockNews) this.latestStockNews = data.latestStockNews;
                     this.dayNightTime = data.dayNightTime !== undefined ? data.dayNightTime : 22;
 
                     if (data.playerPosition && this.playerGroup) {
@@ -6120,6 +6172,17 @@
                     this.currentWave++;
                     this.zombiesLeftToSpawn = Math.round(20 + (this.currentWave - 1) * 4.5);
                     this.money += 180 + (this.currentWave * 40);
+
+                    // Automatic Survivor Max-HP Progression (+15 Max-HP per wave)
+                    this.maxPlayerHp += 15;
+                    this.playerHp = Math.min(this.maxPlayerHp, this.playerHp + 30);
+                    if (typeof showWarningToast === 'function') {
+                        showWarningToast(`💚 ÜBERLEBENDEN-LEVEL: +15 MAX-HP! (${this.maxPlayerHp} HP)`);
+                    }
+
+                    // Dynamic Stock Market Fluctuation on Wave Completion
+                    this.updateStockPrices(true);
+
                     this.isWaveTransitioning = false;
                     this.updateSpawnInterval();
                     this.syncHUD();
@@ -6140,6 +6203,11 @@
                 this.activeSimultaneousWaves = activeCount + 1;
                 this.currentWave++;
 
+                // Automatic Survivor Max-HP Progression
+                this.maxPlayerHp += 15;
+                this.playerHp = Math.min(this.maxPlayerHp, this.playerHp + 30);
+                this.updateStockPrices(true);
+
                 const newZombiesCount = Math.round(20 + (this.currentWave - 1) * 4.5);
                 this.zombiesLeftToSpawn += newZombiesCount;
 
@@ -6148,7 +6216,7 @@
 
                 audio.playCoin();
                 if (typeof showWarningToast === 'function') {
-                    showWarningToast(`⚠️ WELLE ${this.currentWave} GESTARTET! (+$${bonusMoney})`);
+                    showWarningToast(`⚠️ WELLE ${this.currentWave} GESTARTET! (+$${bonusMoney} • +15 Max-HP)`);
                 }
 
                 this.updateSpawnInterval();
@@ -7013,6 +7081,194 @@
                 this.baseGroup.add(this.baseShieldMesh);
 
                 this.scene.add(this.baseGroup);
+            }
+
+            createStockMarketBuilding() {
+                if (this.stockMarketBuilding) {
+                    this.scene.remove(this.stockMarketBuilding);
+                }
+
+                const group = new THREE.Group();
+                group.position.set(-16.5, 0, 11.5);
+                group.rotation.y = Math.PI / 5; // angled toward the base center
+                group.userData = { isStockMarket: true };
+
+                // 1. Concrete / Steel Foundation Platform
+                const platMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.5 });
+                const platform = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.4, 4.8), platMat);
+                platform.position.y = 0.2;
+                platform.receiveShadow = true;
+                platform.castShadow = true;
+                platform.userData = { isStockMarket: true };
+                group.add(platform);
+
+                // 2. Yellow hazard stripe border around the platform
+                const hazardMat = new THREE.MeshBasicMaterial({ color: 0xeab308 });
+                const hazardBorder = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.08, 5.0), hazardMat);
+                hazardBorder.position.y = 0.42;
+                hazardBorder.userData = { isStockMarket: true };
+                group.add(hazardBorder);
+
+                // 3. Main Trading Booth Bunker Walls
+                const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.7 });
+                const booth = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.6, 3.6), wallMat);
+                booth.position.y = 1.7;
+                booth.castShadow = true;
+                booth.receiveShadow = true;
+                booth.userData = { isStockMarket: true };
+                group.add(booth);
+
+                // 4. Front Trading Counter & Glass Screen
+                const glassMat = new THREE.MeshPhongMaterial({
+                    color: 0x064e3b,
+                    emissive: 0x047857,
+                    emissiveIntensity: 0.4,
+                    shininess: 90,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const frontWindow = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.3, 0.2), glassMat);
+                frontWindow.position.set(0, 1.8, 1.82);
+                frontWindow.userData = { isStockMarket: true };
+                group.add(frontWindow);
+
+                // Window counter sill
+                const sillMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.8 });
+                const sill = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.2, 0.6), sillMat);
+                sill.position.set(0, 1.1, 1.95);
+                sill.castShadow = true;
+                sill.userData = { isStockMarket: true };
+                group.add(sill);
+
+                // 5. Overhanging Angled Roof
+                const roofMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.85 });
+                const roof = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.4, 4.4), roofMat);
+                roof.position.set(0, 3.1, 0.2);
+                roof.castShadow = true;
+                roof.userData = { isStockMarket: true };
+                group.add(roof);
+
+                // 6. Glowing Neon Sign "ZOMBIE-BÖRSE"
+                const signBackMat = new THREE.MeshStandardMaterial({ color: 0x052e16, roughness: 0.2, metalness: 0.9 });
+                const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.8, 0.3), signBackMat);
+                signBoard.position.set(0, 3.65, 0.3);
+                signBoard.castShadow = true;
+                signBoard.userData = { isStockMarket: true };
+                group.add(signBoard);
+
+                // Neon Green Glowing Board Border
+                const neonBorderMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+                const neonBorder = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.88, 0.1), neonBorderMat);
+                neonBorder.position.set(0, 3.65, 0.35);
+                neonBorder.userData = { isStockMarket: true };
+                group.add(neonBorder);
+
+                // 3D Dollar / Ticker Emblem on Top
+                const dollarMat = new THREE.MeshPhongMaterial({
+                    color: 0x34d399,
+                    emissive: 0x10b981,
+                    emissiveIntensity: 0.8,
+                    shininess: 100
+                });
+                const dollarIcon = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.1, 12, 24), dollarMat);
+                dollarIcon.position.set(0, 4.4, 0.3);
+                dollarIcon.userData = { isStockMarket: true };
+                group.add(dollarIcon);
+
+                const dollarBar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 8), dollarMat);
+                dollarBar.position.set(0, 4.4, 0.3);
+                dollarBar.userData = { isStockMarket: true };
+                group.add(dollarBar);
+
+                // 7. Rotating Holographic Chart Mesh
+                const holoMat = new THREE.MeshBasicMaterial({
+                    color: 0x34d399,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.75
+                });
+                const holoMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), holoMat);
+                holoMesh.position.set(0, 5.4, 0.3);
+                holoMesh.userData = { isStockMarket: true };
+                group.add(holoMesh);
+                this.stockMarketHoloChart = holoMesh;
+
+                // 8. Emerald Cyber Light Illuminating Booth
+                const marketLight = new THREE.PointLight(0x10b981, 1.8, 12);
+                marketLight.position.set(0, 3.2, 2.2);
+                group.add(marketLight);
+
+                this.stockMarketBuilding = group;
+                this.scene.add(this.stockMarketBuilding);
+            }
+
+            initStockMarket() {
+                if (!this.stockPrices) this.stockPrices = {};
+                if (!this.prevStockPrices) this.prevStockPrices = {};
+                if (!this.stockPortfolio) this.stockPortfolio = {};
+
+                if (typeof STOCKS_DATA !== 'undefined') {
+                    Object.keys(STOCKS_DATA).forEach(id => {
+                        if (!this.stockPrices[id]) {
+                            this.stockPrices[id] = STOCKS_DATA[id].basePrice;
+                            this.prevStockPrices[id] = STOCKS_DATA[id].basePrice;
+                        }
+                    });
+                }
+            }
+
+            updateStockPrices(isWaveEnd = false) {
+                if (typeof STOCKS_DATA === 'undefined') return;
+                this.initStockMarket();
+
+                const stockKeys = Object.keys(STOCKS_DATA);
+                if (stockKeys.length === 0) return;
+
+                // Copy current prices to previous prices
+                stockKeys.forEach(id => {
+                    this.prevStockPrices[id] = this.stockPrices[id];
+                });
+
+                // Random price fluctuations
+                stockKeys.forEach(id => {
+                    const def = STOCKS_DATA[id];
+                    const curPrice = this.stockPrices[id] || def.basePrice;
+                    const vol = def.volatility || 0.1;
+                    
+                    // Brownian random factor
+                    const randomDelta = (Math.random() - 0.48) * vol * curPrice;
+                    let newPrice = Math.max(1, Math.round(curPrice + randomDelta));
+
+                    // Wave end boost / dip momentum
+                    if (isWaveEnd) {
+                        const waveFactor = 1 + (Math.random() - 0.45) * 0.15;
+                        newPrice = Math.max(1, Math.round(newPrice * waveFactor));
+                    }
+
+                    this.stockPrices[id] = newPrice;
+                });
+
+                // Event-Driven Breaking News Trigger
+                if (isWaveEnd || Math.random() < 0.4) {
+                    const randomStockKey = stockKeys[Math.floor(Math.random() * stockKeys.length)];
+                    const stockDef = STOCKS_DATA[randomStockKey];
+                    if (stockDef && stockDef.news && stockDef.news.length > 0) {
+                        const randomNews = stockDef.news[Math.floor(Math.random() * stockDef.news.length)];
+                        this.latestStockNews = randomNews;
+
+                        // News impact: pump or dip
+                        const isGoodNews = !randomNews.toLowerCase().includes('skandal') && !randomNews.toLowerCase().includes('kritik') && !randomNews.toLowerCase().includes('leck') && !randomNews.toLowerCase().includes('crash') && !randomNews.toLowerCase().includes('chaos') && !randomNews.toLowerCase().includes('selbstzündung');
+                        const multiplier = isGoodNews ? (1.15 + Math.random() * 0.25) : (0.75 - Math.random() * 0.15);
+                        this.stockPrices[randomStockKey] = Math.max(1, Math.round(this.stockPrices[randomStockKey] * multiplier));
+
+                        const newsEl = document.getElementById('stock-news-text');
+                        if (newsEl) newsEl.innerText = randomNews;
+                    }
+                }
+
+                if (typeof isStockMarketOpen !== 'undefined' && isStockMarketOpen && typeof renderStockMarket === 'function') {
+                    renderStockMarket();
+                }
             }
 
             createPlayer() {

@@ -611,10 +611,12 @@ updateTacticalExtrasHUD();
             closeInspectModal();
         }
 
+        let isStockMarketOpen = false;
+
         function updateMusicDucking() {
             const intelModal = document.getElementById('intel-modal');
             const isIntelOpen = intelModal && !intelModal.classList.contains('hidden');
-            const isPausedAny = isShopOpen || isPauseModalOpen || isIntelOpen || (gameInstance && (gameInstance.isPaused || gameInstance.isGameOver));
+            const isPausedAny = isShopOpen || isPauseModalOpen || isIntelOpen || isStockMarketOpen || (gameInstance && (gameInstance.isPaused || gameInstance.isGameOver));
 
             if (isPausedAny) {
                 audio.duckMusic();
@@ -835,6 +837,219 @@ updateTacticalExtrasHUD();
                 shopModal.classList.add('hidden');
             }
             updateMusicDucking();
+        }
+
+        function openStockMarketModal() {
+            if (!gameInstance || gameInstance.isGameOver) return;
+            isStockMarketOpen = true;
+            gameInstance.isPaused = true;
+            const modal = document.getElementById('stock-market-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+            if (typeof renderStockMarket === 'function') {
+                renderStockMarket();
+            }
+            updateMusicDucking();
+        }
+
+        function closeStockMarketModal() {
+            isStockMarketOpen = false;
+            const modal = document.getElementById('stock-market-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            if (gameInstance) {
+                gameInstance.isPaused = isShopOpen || isPauseModalOpen || gameInstance.isPlacementMode;
+            }
+            updateMusicDucking();
+        }
+
+        function renderStockMarket() {
+            if (!gameInstance) return;
+            const listContainer = document.getElementById('stock-market-list');
+            const cashEl = document.getElementById('stock-cash-display');
+            const portfolioValEl = document.getElementById('stock-portfolio-value');
+            const investedEl = document.getElementById('stock-invested-display');
+            const profitEl = document.getElementById('stock-profit-display');
+            const newsEl = document.getElementById('stock-news-text');
+
+            if (!gameInstance.stockPrices) gameInstance.initStockMarket();
+            if (!gameInstance.stockPortfolio) gameInstance.stockPortfolio = {};
+
+            if (cashEl) cashEl.innerText = `$${gameInstance.money.toLocaleString()}`;
+            if (newsEl && gameInstance.latestStockNews) newsEl.innerText = gameInstance.latestStockNews;
+
+            let totalPortfolioVal = 0;
+            let totalInvested = 0;
+
+            let html = '';
+            if (typeof STOCKS_DATA !== 'undefined') {
+                const stockKeys = Object.keys(STOCKS_DATA);
+
+                stockKeys.forEach(id => {
+                    const def = STOCKS_DATA[id];
+                    const currentPrice = gameInstance.stockPrices[id] || def.basePrice;
+                    const prevPrice = (gameInstance.prevStockPrices && gameInstance.prevStockPrices[id]) ? gameInstance.prevStockPrices[id] : def.basePrice;
+                    const changePct = prevPrice > 0 ? ((currentPrice - prevPrice) / prevPrice) * 100 : 0;
+                    const isUp = changePct >= 0;
+
+                    const holding = gameInstance.stockPortfolio[id] || { shares: 0, totalPaid: 0 };
+                    const shares = holding.shares || 0;
+                    const shareVal = shares * currentPrice;
+                    const paid = holding.totalPaid || 0;
+                    const holdingProfit = shareVal - paid;
+                    const holdingProfitPct = paid > 0 ? (holdingProfit / paid) * 100 : 0;
+
+                    totalPortfolioVal += shareVal;
+                    totalInvested += paid;
+
+                    const maxAffordable = Math.floor(gameInstance.money / currentPrice);
+
+                    html += `
+                        <div class="bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-3 sm:p-4 transition flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
+                            <!-- Stock Info -->
+                            <div class="flex items-start space-x-3 flex-1 min-w-[200px]">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-center flex-shrink-0 text-xl sm:text-2xl shadow-inner">
+                                    <i class="fa-solid ${def.icon}"></i>
+                                </div>
+                                <div class="flex flex-col">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-teko text-xl sm:text-2xl font-bold text-white leading-none">${def.name}</span>
+                                        <span class="bg-slate-800 text-slate-300 font-mono text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-bold">${def.ticker}</span>
+                                    </div>
+                                    <span class="text-[10px] sm:text-xs text-emerald-400/90 font-mono font-medium">${def.category}</span>
+                                    <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 leading-snug">${def.desc}</p>
+                                </div>
+                            </div>
+
+                            <!-- Price & Value -->
+                            <div class="flex items-center justify-between md:justify-end gap-3 sm:gap-6 border-t md:border-t-0 border-slate-800/80 pt-2 md:pt-0">
+                                <!-- Current Price -->
+                                <div class="flex flex-col text-left md:text-right">
+                                    <span class="text-[10px] text-slate-400 font-mono uppercase">KURS</span>
+                                    <span class="font-mono text-base sm:text-lg font-bold text-white">$${currentPrice.toLocaleString()}</span>
+                                    <span class="font-mono text-[10px] sm:text-xs font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'} flex items-center md:justify-end space-x-1">
+                                        <i class="fa-solid ${isUp ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'} text-[9px]"></i>
+                                        <span>${isUp ? '+' : ''}${changePct.toFixed(1)}%</span>
+                                    </span>
+                                </div>
+
+                                <!-- Owned Shares & Depot Value -->
+                                <div class="flex flex-col text-left md:text-right min-w-[90px] sm:min-w-[110px]">
+                                    <span class="text-[10px] text-slate-400 font-mono uppercase">IM DEPOT</span>
+                                    <span class="font-mono text-xs sm:text-sm font-bold ${shares > 0 ? 'text-emerald-300' : 'text-slate-500'}">${shares.toLocaleString()} Stück</span>
+                                    <span class="font-mono text-[10px] sm:text-xs text-slate-400">$${shareVal.toLocaleString()}</span>
+                                    ${shares > 0 && paid > 0 ? `
+                                        <span class="font-mono text-[9px] sm:text-[10px] font-bold ${holdingProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                                            ${holdingProfit >= 0 ? '+' : ''}$${holdingProfit.toLocaleString()} (${holdingProfit >= 0 ? '+' : ''}${holdingProfitPct.toFixed(1)}%)
+                                        </span>
+                                    ` : ''}
+                                </div>
+
+                                <!-- Buy / Sell Actions -->
+                                <div class="flex flex-col sm:flex-row gap-1.5">
+                                    <!-- Buy Actions -->
+                                    <div class="flex items-center space-x-1">
+                                        <button type="button" onclick="buyStock('${id}', 1)" ${gameInstance.money < currentPrice ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                            +1
+                                        </button>
+                                        <button type="button" onclick="buyStock('${id}', 10)" ${gameInstance.money < currentPrice * 10 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                            +10
+                                        </button>
+                                        <button type="button" onclick="buyStock('${id}', 'max')" ${maxAffordable < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-emerald-800 hover:bg-emerald-700 active:bg-emerald-900 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                            MAX
+                                        </button>
+                                    </div>
+                                    <!-- Sell Actions -->
+                                    <div class="flex items-center space-x-1">
+                                        <button type="button" onclick="sellStock('${id}', 1)" ${shares < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-700 hover:bg-rose-600 active:bg-rose-800 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                            -1
+                                        </button>
+                                        <button type="button" onclick="sellStock('${id}', 10)" ${shares < 10 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-800 hover:bg-rose-700 active:bg-rose-900 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                            -10
+                                        </button>
+                                        <button type="button" onclick="sellStock('${id}', 'all')" ${shares < 1 ? 'disabled' : ''} class="px-2 sm:px-2.5 py-1.5 rounded-lg font-mono font-bold text-[11px] sm:text-xs bg-rose-900 hover:bg-rose-800 active:bg-rose-950 disabled:opacity-30 disabled:pointer-events-none text-white transition shadow cursor-pointer">
+                                            ALLE
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (listContainer) listContainer.innerHTML = html;
+
+            if (portfolioValEl) portfolioValEl.innerText = `$${totalPortfolioVal.toLocaleString()}`;
+            if (investedEl) investedEl.innerText = `$${totalInvested.toLocaleString()}`;
+
+            const totalProfit = totalPortfolioVal - totalInvested;
+            const totalProfitPct = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+            if (profitEl) {
+                profitEl.innerText = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toLocaleString()} (${totalProfit >= 0 ? '+' : ''}${totalProfitPct.toFixed(1)}%)`;
+                profitEl.className = `font-mono text-sm sm:text-lg font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+            }
+        }
+
+        function buyStock(stockId, countOrMax) {
+            if (!gameInstance || gameInstance.isGameOver) return;
+            const def = STOCKS_DATA[stockId];
+            if (!def) return;
+            const price = (gameInstance.stockPrices && gameInstance.stockPrices[stockId]) || def.basePrice;
+
+            let count = countOrMax === 'max' ? Math.floor(gameInstance.money / price) : parseInt(countOrMax, 10);
+            if (isNaN(count) || count <= 0) return;
+
+            const totalCost = count * price;
+            if (gameInstance.money < totalCost) return;
+
+            gameInstance.money -= totalCost;
+            if (!gameInstance.stockPortfolio) gameInstance.stockPortfolio = {};
+            if (!gameInstance.stockPortfolio[stockId]) {
+                gameInstance.stockPortfolio[stockId] = { shares: 0, totalPaid: 0 };
+            }
+            gameInstance.stockPortfolio[stockId].shares += count;
+            gameInstance.stockPortfolio[stockId].totalPaid += totalCost;
+
+            if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') audio.playCoin();
+            showPurchaseToast(`${count}x ${def.ticker} für $${totalCost.toLocaleString()} gekauft!`);
+            gameInstance.syncHUD();
+            renderStockMarket();
+            gameInstance.saveGameSession();
+        }
+
+        function sellStock(stockId, countOrAll) {
+            if (!gameInstance || gameInstance.isGameOver) return;
+            const def = STOCKS_DATA[stockId];
+            if (!def) return;
+            const price = (gameInstance.stockPrices && gameInstance.stockPrices[stockId]) || def.basePrice;
+            const holding = gameInstance.stockPortfolio && gameInstance.stockPortfolio[stockId];
+            if (!holding || holding.shares <= 0) return;
+
+            let count = countOrAll === 'all' ? holding.shares : Math.min(holding.shares, parseInt(countOrAll, 10));
+            if (isNaN(count) || count <= 0) return;
+
+            const totalRevenue = count * price;
+            const avgCostPerShare = holding.shares > 0 ? (holding.totalPaid / holding.shares) : 0;
+            const costBasisSold = avgCostPerShare * count;
+
+            gameInstance.money += totalRevenue;
+            holding.shares -= count;
+            holding.totalPaid = Math.max(0, holding.totalPaid - costBasisSold);
+
+            if (holding.shares <= 0) {
+                holding.shares = 0;
+                holding.totalPaid = 0;
+            }
+
+            if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') audio.playCoin();
+            const profit = totalRevenue - costBasisSold;
+            showPurchaseToast(`${count}x ${def.ticker} für $${totalRevenue.toLocaleString()} verkauft (${profit >= 0 ? '+' : ''}$${Math.round(profit)})!`);
+            gameInstance.syncHUD();
+            renderStockMarket();
+            gameInstance.saveGameSession();
         }
 
         function showPurchaseToast(msg) {

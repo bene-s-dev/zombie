@@ -99,3 +99,112 @@ const AC130_CONFIG = {
     }
 };
 
+const STOCKS_DATA = {
+    BRAIN: {
+        id: 'BRAIN',
+        name: 'BrainCorp Industries',
+        ticker: 'BRAIN',
+        category: 'Biotech & Gehirn-Farming',
+        icon: 'fa-brain text-pink-400',
+        basePrice: 120,
+        volatility: 0.12,
+        desc: 'Marktführer für frische, unverbrauchte Gehirne. Immer hungrig auf exponentielles Wachstum!',
+        news: [
+            'BrainCorp meldet Rekordernte frischer Großhirne: Analysten im Freudentaumel!',
+            'Gehirnmangel in Sektor 4 treibt Nachfrage nach Zerebral-Konzentrat an!',
+            'Skandal: BrainCorp lieferte versehentlich schimmlige Kleinhirne aus.'
+        ]
+    },
+    FLEISCH: {
+        id: 'FLEISCH',
+        name: 'Gammel & Söhne Delikatessen',
+        ticker: 'GLMM',
+        category: 'Lebensmittel & Biomasse',
+        icon: 'fa-drumstick-bite text-amber-500',
+        basePrice: 45,
+        volatility: 0.08,
+        desc: 'Garantiert 100% zähes Gammelfleisch. Die verlässliche Notration seit Tag 1.',
+        news: [
+            'Gammel & Söhne expandiert mit neuer Kadaver-Verarbeitungsanlage!',
+            'Verkaufsschlager: Neue Knochenmark-Pastete bricht alle Umsatzrekorde!',
+            'Kritik an Fleischkonsistenz bei Gammel & Söhne sorgt für kurzen Kursdämpfer.'
+        ]
+    },
+    TOXIC: {
+        id: 'TOXIC',
+        name: 'Spucker Cola AG',
+        ticker: 'SPCK',
+        category: 'Konsumgüter & Säure-Chemie',
+        icon: 'fa-flask text-lime-400',
+        basePrice: 85,
+        volatility: 0.16,
+        desc: 'Ätzend prickelnder Erfrischungsgenuss aus 100% echtem Spucker-Säureextrakt.',
+        news: [
+            'Spucker Cola Zero-Acid erobert den Untoten-Markt im Sturm!',
+            'Säure-Pipeline leckgeschlagen: Spucker Cola verliert Millionen Liter Konzentrat!',
+            'Spucker-Gewerkschaft streikt: Cola-Vorräte werden knapp – Kurs klettert!'
+        ]
+    },
+    STREAM: {
+        id: 'STREAM',
+        name: 'NecroFlix & Chill',
+        ticker: 'NFLX',
+        category: 'Unterhaltung & Grab-Medien',
+        icon: 'fa-tv text-purple-400',
+        basePrice: 210,
+        volatility: 0.11,
+        desc: 'Endloses Streaming für die ewige Grabesruhe. 24/7 Blockbuster für Untote.',
+        news: [
+            'NecroFlix-Erfolgsserie "The Walking Alive" bricht weltweite Streaming-Rekorde!',
+            'Abo-Zahlen bei NecroFlix steigen rasant – wer stirbt, braucht Unterhaltung!',
+            'Server-Crash bei NecroFlix: Millionen Zombies starren frustriert ins Leere.'
+        ]
+    },
+    BOOM: {
+        id: 'BOOM',
+        name: 'Kamikaze Fireworks & Napalm',
+        ticker: 'BOOM',
+        category: 'Rüstung & Pyrotechnik',
+        icon: 'fa-bomb text-orange-500',
+        basePrice: 320,
+        volatility: 0.24,
+        desc: 'Explosive Renditen garantiert! Unser Napalm brennt garantiert noch im Jenseits.',
+        news: [
+            'Großauftrag: Kamikaze Inc. liefert 50.000 Sprengstoff-Westen an die Front!',
+            'Unerwartete Selbstzündung im Zentrallager: BOOM-Aktie erleidet Kursknall!',
+            'BOOM stellt neue Super-Napalm-Formel vor: Anleger reißen sich um Anteile!'
+        ]
+    },
+    CRAB: {
+        id: 'CRAB',
+        name: 'Krabbler Express Logistik',
+        ticker: 'CRAB',
+        category: 'Transport & Blitz-Logistik',
+        icon: 'fa-truck-fast text-emerald-400',
+        basePrice: 65,
+        volatility: 0.09,
+        desc: 'Lieferungen auf allen Vieren in Rekordzeit. Schneller als jeder Überlebende.',
+        news: [
+            'Krabbler Express schließt Kooperation mit Schnell-Lieferdienst ab!',
+            'Verkehrschaos auf Highway 66: Krabbler-Schwärme blockieren Lieferkette.',
+            'Quartalszahlen übertreffen Erwartungen: Krabbler Logistik wächst zweistellig!'
+        ]
+    },
+    SARG: {
+        id: 'SARG',
+        name: 'Rost & Sarg Bestattungs-Fonds',
+        ticker: 'SARG',
+        category: 'Finanzen & Ewigkeits-Immobilien',
+        icon: 'fa-skull-crossbones text-rose-500',
+        basePrice: 500,
+        volatility: 0.06,
+        desc: 'Krisensicheres Wachstumsgeschäft – unsere Kundschaft stirbt garantiert niemals aus.',
+        news: [
+            'Rost & Sarg schüttet Rekord-Dividende an Anteilseigner aus!',
+            'Überbelegung auf Friedhöfen eröffnet neue Geschäftsfelder im Luxus-Mausoleum-Sektor!',
+            'Holzmangel verteuert Sargproduktion – Margen steigen trotz Krise!'
+        ]
+    }
+};
+
+
