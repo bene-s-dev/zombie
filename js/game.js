@@ -5963,11 +5963,11 @@
                     const activeCount = this.activeSimultaneousWaves || 1;
                     if (activeCount >= 5) {
                         earlyWaveBadge.innerText = '5/5 MAX';
-                        earlyWaveBadge.className = 'font-mono text-[9px] sm:text-[10px] font-bold text-red-400';
+                        earlyWaveBadge.className = 'font-mono text-[8.5px] sm:text-[10.5px] md:text-xs font-bold text-red-400 leading-none';
                         earlyWaveBtn.classList.add('opacity-60', 'cursor-not-allowed');
                     } else {
                         earlyWaveBadge.innerText = `${activeCount}/5`;
-                        earlyWaveBadge.className = 'font-mono text-[9px] sm:text-[10px] font-bold text-amber-300';
+                        earlyWaveBadge.className = 'font-mono text-[8.5px] sm:text-[10.5px] md:text-xs font-bold text-amber-300 leading-none';
                         earlyWaveBtn.classList.remove('opacity-60', 'cursor-not-allowed');
                     }
                 }
