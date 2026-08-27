@@ -58,7 +58,7 @@ const UPGRADES = {
     // CATEGORY: PLAYER
     player_hp: { category: 'player', name: 'Kampfweste & Max HP', level: 0, maxLevel: Infinity, costBase: 180, desc: 'Erhöht maximale Spieler-Gesundheit um +35 HP' },
     player_speed: { category: 'player', name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 140, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
-    scavenger: { category: 'player', name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 1000, desc: 'Erhöht erbeutetes Geld pro Zombie um +10% multiplikativ pro Stufe (Kein Stufenlimit)' },
+    scavenger: { category: 'player', name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 1000, desc: 'Erhöht erbeutetes Geld pro Zombie um +2% multiplikativ pro Stufe (Kein Stufenlimit)' },
 
     // CATEGORY: HQ / BASE
     base_hp: { category: 'hq', name: 'Basis & Turm-Panzerung', level: 0, maxLevel: Infinity, costBase: 220, desc: 'Erhöht maximale Basis-HP um +600 HP und verstärkt Panzerung aller Türme um +15% pro Stufe' },

@@ -367,8 +367,8 @@ updateTacticalExtrasHUD();
                             descText = `MAX-STUFE: K9-Alpha-Rudelführer (<b>${maxDmg} Dmg</b>, maximaler Sprungradius, Verlangsamung & Reißbiss).`;
                         }
                     } else if (key === 'scavenger') {
-                        const totalBonusPct = ((Math.pow(1.10, currentLvl) - 1) * 100).toFixed(1).replace(/\.0$/, '');
-                        descText = `Erhöht erbeutetes Geld pro Zombie um +10% multiplikativ pro Stufe (Aktueller Bonus: <b>+${totalBonusPct}%</b>, unbegrenzt)`;
+                        const totalBonusPct = ((Math.pow(1.02, currentLvl) - 1) * 100).toFixed(1).replace(/\.0$/, '');
+                        descText = `Erhöht erbeutetes Geld pro Zombie um +2% multiplikativ pro Stufe (Aktueller Bonus: <b>+${totalBonusPct}%</b>, unbegrenzt)`;
                     }
 
                     const card = document.createElement('div');
