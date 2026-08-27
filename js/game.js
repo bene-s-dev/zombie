@@ -2372,7 +2372,7 @@
                     this.createExplosion(z.position, 3.8, 85 * (z.userData.dmgMult || 1), 3.8, false, true);
                 }
                 const scavengerLvl = this.upgrades.scavenger || 0;
-                const scavengerMult = Math.pow(1.02, scavengerLvl);
+                const scavengerMult = Math.pow(1.05, scavengerLvl);
                 this.money += Math.round(z.userData.reward * scavengerMult);
                 this.totalKills++;
                 audio.playCoin();
