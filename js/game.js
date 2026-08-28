@@ -241,15 +241,21 @@
                         else toggleShop();
                     }
                     if (e.code === 'Escape' || e.key === 'Escape') {
-                        const inspectModal = document.getElementById('inspect-modal');
-                        if (inspectModal && !inspectModal.classList.contains('hidden')) {
-                            closeInspectModal();
-                        } else if (this.isPlacementMode) {
-                            cancelPlacement();
-                        } else if (typeof isShopOpen !== 'undefined' && isShopOpen) {
-                            toggleShop(false);
+                        const scavModal = document.getElementById('scavenger-info-modal');
+                        if (scavModal && !scavModal.classList.contains('hidden')) {
+                            if (typeof closeScavengerInfoModal === 'function') closeScavengerInfoModal();
+                            else scavModal.classList.add('hidden');
                         } else {
-                            togglePauseModal();
+                            const inspectModal = document.getElementById('inspect-modal');
+                            if (inspectModal && !inspectModal.classList.contains('hidden')) {
+                                closeInspectModal();
+                            } else if (this.isPlacementMode) {
+                                cancelPlacement();
+                            } else if (typeof isShopOpen !== 'undefined' && isShopOpen) {
+                                toggleShop(false);
+                            } else {
+                                togglePauseModal();
+                            }
                         }
                     }
                 });
@@ -331,7 +337,7 @@
                     if (targetEl) {
                         if (targetEl === this.renderer.domElement || targetEl.tagName === 'CANVAS' || targetEl.id === 'game-container' || targetEl.id === 'game-hud') {
                             // Valid ground/game target
-                        } else if (targetEl.closest('button, input, select, textarea, label, a, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto, [onclick]')) {
+                        } else if (targetEl.closest('button, input, select, textarea, label, a, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #scavenger-info-modal, #placement-hud, .pointer-events-auto, [onclick]')) {
                             return;
                         }
                     }
@@ -381,7 +387,7 @@
                 window.addEventListener('click', (e) => handleSelection(e.clientX, e.clientY, e));
 
                 const isUiTarget = (e, touch) => {
-                    const interactiveSelector = 'button, input, select, textarea, label, a, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #placement-hud, .pointer-events-auto, [onclick], [data-touch-action]';
+                    const interactiveSelector = 'button, input, select, textarea, label, a, #shop-modal, #main-menu, #pause-modal, #game-over-modal, #inspect-modal, #intel-modal, #scavenger-info-modal, #placement-hud, .pointer-events-auto, [onclick], [data-touch-action]';
                     
                     if (touch && typeof document.elementFromPoint === 'function') {
                         const el = document.elementFromPoint(touch.clientX, touch.clientY);

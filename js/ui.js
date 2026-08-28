@@ -371,6 +371,15 @@ updateTacticalExtrasHUD();
                         descText = `Erhöht erbeutetes Geld pro Zombie um +5% multiplikativ pro Stufe (Aktueller Bonus: <b>+${totalBonusPct}%</b>, unbegrenzt)`;
                     }
 
+                    let infoBtnHtml = '';
+                    if (key === 'scavenger') {
+                        infoBtnHtml = `
+                            <button type="button" onclick="event.stopPropagation(); openScavengerInfoModal()" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-cyan-950/90 hover:bg-cyan-500 text-cyan-400 hover:text-white border border-cyan-500/60 shadow-sm transition active:scale-90 text-[10px] cursor-pointer" title="Transparenz & Diagramme zum Plündererbonus">
+                                <i class="fa-solid fa-info pointer-events-none"></i>
+                            </button>
+                        `;
+                    }
+
                     const card = document.createElement('div');
                     card.className = "p-3.5 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center hover:border-slate-700 transition";
                     card.innerHTML = `
@@ -378,6 +387,7 @@ updateTacticalExtrasHUD();
                             <div class="font-bold text-white text-xs sm:text-sm flex items-center space-x-2">
                                 <span>${upg.name}</span>
                                 <span class="bg-slate-800 text-amber-400 font-mono text-[10px] px-2 py-0.5 rounded-full">Lvl ${currentLvl}${upg.maxLevel === Infinity ? '' : '/' + upg.maxLevel}</span>
+                                ${infoBtnHtml}
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1 leading-snug">${descText}</div>
                         </div>
@@ -622,11 +632,14 @@ updateTacticalExtrasHUD();
         }
 
         let isStockMarketOpen = false;
+        let isScavengerInfoOpen = false;
 
         function updateMusicDucking() {
             const intelModal = document.getElementById('intel-modal');
             const isIntelOpen = intelModal && !intelModal.classList.contains('hidden');
-            const isPausedAny = isShopOpen || isPauseModalOpen || isIntelOpen || isStockMarketOpen || (gameInstance && (gameInstance.isPaused || gameInstance.isGameOver));
+            const scavModal = document.getElementById('scavenger-info-modal');
+            const isScavOpen = scavModal && !scavModal.classList.contains('hidden');
+            const isPausedAny = isShopOpen || isPauseModalOpen || isIntelOpen || isStockMarketOpen || isScavOpen || (gameInstance && (gameInstance.isPaused || gameInstance.isGameOver));
 
             if (isPausedAny) {
                 audio.duckMusic();
@@ -857,6 +870,251 @@ updateTacticalExtrasHUD();
 
         function closeStockMarketModal() {
             toggleShop(false);
+        }
+
+        // =========================================================================
+        // PLÜNDERER-BONUS (SCAVENGER) TRANSPARENZ & ANALYSE MODAL
+        // =========================================================================
+        let currentScavSimLevel = 0;
+
+        function openScavengerInfoModal() {
+            isScavengerInfoOpen = true;
+            const modal = document.getElementById('scavenger-info-modal');
+            if (!modal) return;
+
+            const currentLvl = (gameInstance && gameInstance.upgrades && gameInstance.upgrades.scavenger) ? gameInstance.upgrades.scavenger : 0;
+            currentScavSimLevel = currentLvl;
+
+            // Player Current Live Stats
+            const currentMult = Math.pow(1.05, currentLvl);
+            const currentBonusPct = ((currentMult - 1) * 100).toFixed(1).replace(/\.0$/, '');
+            const nextMult = Math.pow(1.05, currentLvl + 1);
+            const nextBonusPct = ((nextMult - 1) * 100).toFixed(1).replace(/\.0$/, '');
+            const nextCost = Math.round(1000 * Math.pow(1.06, currentLvl));
+
+            const curLvlEl = document.getElementById('scav-stat-current-lvl');
+            if (curLvlEl) curLvlEl.textContent = `Lvl ${currentLvl}`;
+            const curBonusEl = document.getElementById('scav-stat-current-bonus');
+            if (curBonusEl) curBonusEl.innerHTML = `+${currentBonusPct}% <span class="text-xs text-slate-400 font-normal">(${currentMult.toFixed(2)}x)</span>`;
+            const nextCostEl = document.getElementById('scav-stat-next-cost');
+            if (nextCostEl) nextCostEl.textContent = `$${nextCost.toLocaleString('de-DE')}`;
+            const nextBonusEl = document.getElementById('scav-stat-next-bonus');
+            if (nextBonusEl) nextBonusEl.innerHTML = `+${nextBonusPct}% <span class="text-xs text-slate-400 font-normal">(${nextMult.toFixed(2)}x)</span>`;
+
+            // Set simulator slider to current level
+            const slider = document.getElementById('scav-sim-slider');
+            if (slider) slider.value = currentLvl;
+
+            updateScavengerCalculator(currentLvl);
+
+            modal.classList.remove('hidden');
+            if (gameInstance) gameInstance.isPaused = true;
+            updateMusicDucking();
+        }
+
+        function closeScavengerInfoModal(e) {
+            if (e && e.target && e.target.closest && !e.target.closest('#scavenger-info-modal') && e.target.id !== 'scavenger-info-modal') return;
+            isScavengerInfoOpen = false;
+            const modal = document.getElementById('scavenger-info-modal');
+            if (modal) modal.classList.add('hidden');
+            if (gameInstance && !isShopOpen && !isPauseModalOpen && !gameInstance.isPlacementMode) {
+                gameInstance.isPaused = false;
+            }
+            updateMusicDucking();
+        }
+
+        function setScavengerSimPreset(val) {
+            let targetLvl = 0;
+            if (val === 'cur') {
+                targetLvl = (gameInstance && gameInstance.upgrades && gameInstance.upgrades.scavenger) ? gameInstance.upgrades.scavenger : 0;
+            } else {
+                targetLvl = parseInt(val) || 0;
+            }
+            const slider = document.getElementById('scav-sim-slider');
+            if (slider) slider.value = targetLvl;
+            updateScavengerCalculator(targetLvl);
+        }
+
+        function updateScavengerCalculator(targetLvl) {
+            currentScavSimLevel = Math.max(0, Math.min(50, targetLvl));
+            const lvl = currentScavSimLevel;
+
+            const lvlValEl = document.getElementById('scav-sim-lvl-val');
+            if (lvlValEl) lvlValEl.textContent = lvl;
+
+            const mult = Math.pow(1.05, lvl);
+            const bonusPct = ((mult - 1) * 100).toFixed(1).replace(/\.0$/, '');
+            const multDisplay = document.getElementById('scav-sim-mult-display');
+            if (multDisplay) multDisplay.textContent = `+${bonusPct}% (${mult.toFixed(2)}x)`;
+
+            const nextCost = Math.round(1000 * Math.pow(1.06, lvl));
+            const costDisplay = document.getElementById('scav-sim-cost-display');
+            if (costDisplay) costDisplay.textContent = `$${nextCost.toLocaleString('de-DE')}`;
+
+            // Cumulative cost from Lvl 0 to Lvl
+            let totalCost = 0;
+            for (let i = 0; i < lvl; i++) {
+                totalCost += Math.round(1000 * Math.pow(1.06, i));
+            }
+            const totalCostDisplay = document.getElementById('scav-sim-totalcost-display');
+            if (totalCostDisplay) totalCostDisplay.textContent = `$${totalCost.toLocaleString('de-DE')}`;
+
+            // 100 Walker kills ($24 base each = $2400 base)
+            const walker100Earned = Math.round(24 * mult) * 100;
+            const walker100Bonus = walker100Earned - 2400;
+            const kills100Display = document.getElementById('scav-sim-100kills-display');
+            if (kills100Display) kills100Display.innerHTML = `$${walker100Earned.toLocaleString('de-DE')} <span class="text-[10px] text-emerald-400 font-normal">(+$${walker100Bonus.toLocaleString('de-DE')})</span>`;
+
+            const bountyLvlLabel = document.getElementById('scav-bounty-sim-lvl-label');
+            if (bountyLvlLabel) bountyLvlLabel.textContent = `Lvl ${lvl}`;
+
+            renderScavengerZombieBars(lvl, mult);
+            renderScavengerSvgCurve(lvl);
+        }
+
+        function renderScavengerZombieBars(lvl, mult) {
+            const container = document.getElementById('scav-zombie-bars-container');
+            if (!container) return;
+
+            const zombieTypes = [
+                { name: 'Normaler Walker', base: 24, icon: 'fa-person-walking text-green-500', color: 'bg-green-500' },
+                { name: 'Schneller Runner', base: 28, icon: 'fa-person-running text-yellow-400', color: 'bg-yellow-500' },
+                { name: 'Kriecher (Crawler)', base: 20, icon: 'fa-bug text-amber-700', color: 'bg-amber-600' },
+                { name: 'Schildträger', base: 42, icon: 'fa-shield-halved text-sky-400', color: 'bg-sky-500' },
+                { name: 'Explodierer', base: 38, icon: 'fa-bomb text-orange-500', color: 'bg-orange-500' },
+                { name: 'Säurespucker', base: 50, icon: 'fa-biohazard text-lime-400', color: 'bg-lime-500' },
+                { name: 'Koloss (Tank)', base: 65, icon: 'fa-cubes-stacked text-purple-400', color: 'bg-purple-600' },
+                { name: 'Endboss (Megamutant)', base: 350, icon: 'fa-skull-crossbones text-red-500', color: 'bg-red-600' }
+            ];
+
+            const maxRewardAtLvl = Math.max(350, Math.round(350 * mult));
+
+            let html = '';
+            zombieTypes.forEach(z => {
+                const boosted = Math.round(z.base * mult);
+                const gain = boosted - z.base;
+                const widthPct = Math.min(100, Math.max(8, (boosted / Math.max(1, maxRewardAtLvl)) * 100));
+                const baseWidthPct = Math.min(100, Math.max(8, (z.base / Math.max(1, maxRewardAtLvl)) * 100));
+
+                html += `
+                    <div class="bg-slate-900/90 p-2 sm:p-2.5 rounded-xl border border-slate-800 flex flex-col space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center space-x-1.5">
+                                <i class="fa-solid ${z.icon} text-xs w-4 text-center"></i>
+                                <span class="font-bold text-slate-200">${z.name}</span>
+                            </div>
+                            <div class="font-mono text-right">
+                                <span class="text-slate-400 text-[11px] mr-1">$${z.base} &rarr;</span>
+                                <span class="text-emerald-400 font-bold text-xs sm:text-sm">$${boosted}</span>
+                                ${gain > 0 ? `<span class="text-[10px] text-emerald-400/80 font-normal ml-0.5">(+$${gain})</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden flex relative">
+                            <div class="bg-slate-700 h-full absolute left-0" style="width: ${baseWidthPct}%"></div>
+                            <div class="${z.color} h-full transition-all duration-300 opacity-90" style="width: ${widthPct}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderScavengerSvgCurve(activeLvl) {
+            const svg = document.getElementById('scav-svg-chart');
+            if (!svg) return;
+
+            const width = 600;
+            const height = 240;
+            const padX = 52;
+            const padY = 30;
+            const plotW = width - padX - 25;
+            const plotH = height - padY - 25;
+
+            // Max Level 50 -> Max Mult 1.05^50 = 11.467 (11.5x / +1047%)
+            const maxLvl = 50;
+            const maxMultVal = 12.0;
+
+            const getX = (lvl) => padX + (lvl / maxLvl) * plotW;
+            const getY = (mult) => (height - padY) - ((mult - 1.0) / (maxMultVal - 1.0)) * plotH;
+
+            // Background Grid lines
+            let gridHtml = `
+                <defs>
+                    <linearGradient id="scavGlowGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#06b6d4" />
+                        <stop offset="100%" stop-color="#10b981" />
+                    </linearGradient>
+                    <linearGradient id="scavAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3" />
+                        <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0" />
+                    </linearGradient>
+                </defs>
+                <rect x="${padX}" y="15" width="${plotW}" height="${plotH}" fill="#020617" rx="6" stroke="#1e293b" stroke-width="1" />
+            `;
+
+            // Horizontal Y Grid lines (1x, 3x, 6x, 9x, 12x)
+            const yLevels = [1.0, 3.0, 6.0, 9.0, 12.0];
+            yLevels.forEach(val => {
+                const y = getY(val);
+                const pctLabel = `+${Math.round((val - 1) * 100)}%`;
+                gridHtml += `
+                    <line x1="${padX}" y1="${y}" x2="${padX + plotW}" y2="${y}" stroke="#1e293b" stroke-dasharray="3 3" stroke-width="1" />
+                    <text x="${padX - 8}" y="${y + 3}" fill="#64748b" font-size="9" font-family="monospace" text-anchor="end">${pctLabel}</text>
+                `;
+            });
+
+            // Vertical X Grid lines (0, 10, 20, 30, 40, 50)
+            for (let l = 0; l <= maxLvl; l += 10) {
+                const x = getX(l);
+                gridHtml += `
+                    <line x1="${x}" y1="15" x2="${x}" y2="${height - padY}" stroke="#1e293b" stroke-dasharray="3 3" stroke-width="1" />
+                    <text x="${x}" y="${height - padY + 16}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">Lvl ${l}</text>
+                `;
+            }
+
+            // Old linear 2% curve (comparison line)
+            let oldLinearPoints = [];
+            for (let l = 0; l <= maxLvl; l += 2) {
+                const oldMult = 1 + (l * 0.02);
+                oldLinearPoints.push(`${getX(l).toFixed(1)},${getY(oldMult).toFixed(1)}`);
+            }
+            const oldLinearPath = `M ${oldLinearPoints.join(' L ')}`;
+
+            // Current 5% exponential curve points
+            let expPoints = [];
+            for (let l = 0; l <= maxLvl; l += 1) {
+                const curMult = Math.pow(1.05, l);
+                expPoints.push(`${getX(l).toFixed(1)},${getY(curMult).toFixed(1)}`);
+            }
+            const expPath = `M ${expPoints.join(' L ')}`;
+            const areaPath = `M ${getX(0)},${getY(1.0)} L ${expPoints.join(' L ')} L ${getX(maxLvl)},${getY(1.0)} Z`;
+
+            // Active Simulated Level Marker
+            const activeMult = Math.pow(1.05, activeLvl);
+            const activeX = getX(activeLvl);
+            const activeY = getY(activeMult);
+            const activeBonusPct = ((activeMult - 1) * 100).toFixed(1).replace(/\.0$/, '');
+
+            const markerHtml = `
+                <line x1="${activeX}" y1="15" x2="${activeX}" y2="${height - padY}" stroke="#38bdf8" stroke-dasharray="2 2" stroke-width="1.5" />
+                <circle cx="${activeX}" cy="${activeY}" r="6" fill="#38bdf8" stroke="#020617" stroke-width="2" />
+                <circle cx="${activeX}" cy="${activeY}" r="12" fill="#38bdf8" opacity="0.25" />
+                <g transform="translate(${Math.min(padX + plotW - 95, Math.max(padX + 5, activeX - 45))}, ${Math.max(20, activeY - 30)})">
+                    <rect x="0" y="0" width="90" height="20" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1" />
+                    <text x="45" y="14" fill="#38bdf8" font-size="10" font-family="monospace" font-weight="bold" text-anchor="middle">L${activeLvl}: +${activeBonusPct}%</text>
+                </g>
+            `;
+
+            svg.innerHTML = `
+                ${gridHtml}
+                <!-- Old Linear Path (2%) -->
+                <path d="${oldLinearPath}" fill="none" stroke="#475569" stroke-dasharray="4 4" stroke-width="1.5" />
+                <!-- Area fill under exponential curve -->
+                <path d="${areaPath}" fill="url(#scavAreaGrad)" />
+                <!-- Compounding Exponential Line (5%) -->
+                <path d="${expPath}" fill="none" stroke="url(#scavGlowGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                ${markerHtml}
+            `;
         }
 
         function renderStockSparklineSVG(history, isUp) {
@@ -1281,6 +1539,9 @@ updateTacticalExtrasHUD();
             gameInstance.saveGameSession();
             showPurchaseToast(`${upg.name} auf Level ${currentLvl + 1} verbessert!`);
             if (typeof audio !== 'undefined' && typeof audio.playCoin === 'function') audio.playCoin();
+            if (key === 'scavenger' && isScavengerInfoOpen) {
+                openScavengerInfoModal();
+            }
         }
 
         function repairBase() {
