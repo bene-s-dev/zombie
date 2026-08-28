@@ -185,29 +185,34 @@
                 window.addEventListener('keydown', (e) => {
                     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
                     this.keys[e.code] = true;
+                    if (e.key) {
+                        this.keys[e.key] = true;
+                        this.keys[e.key.toLowerCase()] = true;
+                        this.keys[e.key.toUpperCase()] = true;
+                    }
                     if (e.code === 'Space') {
                         if (this.isAc130Active) {
                             this.fireAc130Current();
                         }
                         e.preventDefault();
                     }
-                    if (e.code === 'KeyV') {
+                    if (e.code === 'KeyV' || e.key === 'v' || e.key === 'V') {
                         if (typeof Storage === 'undefined' || Storage.data.extraAc130Enabled !== false) {
                             this.triggerAc130();
                         }
                     }
                     if (this.isAc130Active) {
-                        if (e.code === 'Digit1' || e.code === 'Numpad1') {
+                        if (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1') {
                             this.selectAc130Weapon('25mm');
                         }
-                        if (e.code === 'Digit2' || e.code === 'Numpad2') {
+                        if (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') {
                             this.selectAc130Weapon('40mm');
                         }
-                        if (e.code === 'Digit3' || e.code === 'Numpad3') {
+                        if (e.code === 'Digit3' || e.code === 'Numpad3' || e.key === '3') {
                             this.selectAc130Weapon('105mm');
                         }
                     }
-                    if (e.code === 'KeyF') {
+                    if (e.code === 'KeyF' || e.key === 'f' || e.key === 'F') {
                         if (typeof isShopOpen !== 'undefined' && isShopOpen && typeof activeShopTab !== 'undefined' && activeShopTab === 'stocks') {
                             toggleShop(false);
                         } else {
@@ -215,27 +220,27 @@
                             if (typeof switchShopTab === 'function') switchShopTab('stocks');
                         }
                     }
-                    if (e.code === 'KeyE') {
+                    if (e.code === 'KeyE' || e.key === 'e' || e.key === 'E') {
                         if (typeof Storage === 'undefined' || Storage.data.extraAirstrikeEnabled !== false) {
                             this.triggerAirstrike();
                         }
                     }
-                    if (e.code === 'KeyQ') {
+                    if (e.code === 'KeyQ' || e.key === 'q' || e.key === 'Q') {
                         if (typeof Storage === 'undefined' || Storage.data.extraNukeEnabled !== false) {
                             this.triggerNuke();
                         }
                     }
-                    if (e.code === 'KeyT') {
+                    if (e.code === 'KeyT' || e.key === 't' || e.key === 'T') {
                         this.toggleGameSpeed();
                     }
-                    if (e.code === 'KeyR' && this.isPlacementMode) {
+                    if ((e.code === 'KeyR' || e.key === 'r' || e.key === 'R') && this.isPlacementMode) {
                         rotatePlacement();
                     }
-                    if (e.code === 'KeyB') {
+                    if (e.code === 'KeyB' || e.key === 'b' || e.key === 'B') {
                         if (this.isPlacementMode) cancelPlacement();
                         else toggleShop();
                     }
-                    if (e.code === 'Escape') {
+                    if (e.code === 'Escape' || e.key === 'Escape') {
                         const inspectModal = document.getElementById('inspect-modal');
                         if (inspectModal && !inspectModal.classList.contains('hidden')) {
                             closeInspectModal();
@@ -252,6 +257,15 @@
                 window.addEventListener('keyup', (e) => {
                     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
                     this.keys[e.code] = false;
+                    if (e.key) {
+                        this.keys[e.key] = false;
+                        this.keys[e.key.toLowerCase()] = false;
+                        this.keys[e.key.toUpperCase()] = false;
+                    }
+                });
+
+                window.addEventListener('blur', () => {
+                    this.keys = {};
                 });
 
                 window.addEventListener('wheel', (e) => {
@@ -4938,10 +4952,10 @@
                         }
                     } else {
                         // Manual player controls when NOT in AC-130 mode
-                        if (this.keys['KeyW'] || this.keys['ArrowUp']) moveZ -= 1;
-                        if (this.keys['KeyS'] || this.keys['ArrowDown']) moveZ += 1;
-                        if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
-                        if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
+                        if (this.keys['KeyW'] || this.keys['ArrowUp'] || this.keys['w'] || this.keys['W']) moveZ -= 1;
+                        if (this.keys['KeyS'] || this.keys['ArrowDown'] || this.keys['s'] || this.keys['S']) moveZ += 1;
+                        if (this.keys['KeyA'] || this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) moveX -= 1;
+                        if (this.keys['KeyD'] || this.keys['ArrowRight'] || this.keys['d'] || this.keys['D']) moveX += 1;
 
                         if (this.touchJoystick.active) {
                             moveX = this.touchJoystick.vectorX;
@@ -5012,7 +5026,7 @@
                     }
 
                     if (moveX !== 0 || moveZ !== 0) {
-                        const speedUpgradeBonus = 1 + (this.upgrades.player_speed * 0.08);
+                        const speedUpgradeBonus = 1 + ((this.upgrades.player_speed || 0) * 0.12);
                         const rawMag = Math.hypot(moveX, moveZ);
 
                         let inputMagnitude = 1.0;
@@ -5030,40 +5044,50 @@
                             const moveSpeed = (baseSpeed * speedUpgradeBonus * inputMagnitude) * dt;
 
                             const moveLen = rawMag || 1;
-                            const nextX = THREE.MathUtils.clamp(this.playerGroup.position.x + (moveX / moveLen) * moveSpeed, -76, 76);
-                            const nextZ = THREE.MathUtils.clamp(this.playerGroup.position.z + (moveZ / moveLen) * moveSpeed, -76, 76);
+                            const stepX = (moveX / moveLen) * moveSpeed;
+                            const stepZ = (moveZ / moveLen) * moveSpeed;
 
-                            let blockedByWall = false;
-                            for (let w of this.walls) {
-                                if (checkWallCollision(nextX, nextZ, 0.45, w)) {
-                                    blockedByWall = true;
-                                    break;
+                            const curX = this.playerGroup.position.x;
+                            const curZ = this.playerGroup.position.z;
+
+                            const checkBlocked = (x, z) => {
+                                for (let w of this.walls) {
+                                    if (checkWallCollision(x, z, 0.45, w)) {
+                                        return true;
+                                    }
                                 }
-                            }
-
-                            let blockedByObstacle = false;
-                            if (this.environmentObstacles) {
-                                for (let i = 0; i < this.environmentObstacles.length; i++) {
-                                    const obs = this.environmentObstacles[i];
-                                    const odx = nextX - obs.x;
-                                    const odz = nextZ - obs.z;
-                                    const minD = obs.radius + 0.5;
-                                    if (Math.abs(odx) < minD && Math.abs(odz) < minD) {
-                                        if (odx * odx + odz * odz < minD * minD) {
-                                            blockedByObstacle = true;
-                                            break;
+                                if (this.environmentObstacles) {
+                                    for (let i = 0; i < this.environmentObstacles.length; i++) {
+                                        const obs = this.environmentObstacles[i];
+                                        const odx = x - obs.x;
+                                        const odz = z - obs.z;
+                                        const minD = obs.radius + 0.5;
+                                        if (Math.abs(odx) < minD && Math.abs(odz) < minD) {
+                                            if (odx * odx + odz * odz < minD * minD) {
+                                                return true;
+                                            }
                                         }
                                     }
                                 }
-                            }
+                                const dbx = x - this.baseGroup.position.x;
+                                const dbz = z - this.baseGroup.position.z;
+                                return (dbx * dbx + dbz * dbz) < 27.04;
+                            };
 
-                            const dbx = nextX - this.baseGroup.position.x;
-                            const dbz = nextZ - this.baseGroup.position.z;
-                            const blockedByBase = (dbx * dbx + dbz * dbz) < 27.04;
+                            const nextX = THREE.MathUtils.clamp(curX + stepX, -76, 76);
+                            const nextZ = THREE.MathUtils.clamp(curZ + stepZ, -76, 76);
 
-                            if (!blockedByWall && !blockedByBase && !blockedByObstacle) {
+                            if (!checkBlocked(nextX, nextZ)) {
                                 this.playerGroup.position.x = nextX;
                                 this.playerGroup.position.z = nextZ;
+                            } else {
+                                // Sliding collision response: allow independent axis movement
+                                if (stepX !== 0 && !checkBlocked(nextX, curZ)) {
+                                    this.playerGroup.position.x = nextX;
+                                }
+                                if (stepZ !== 0 && !checkBlocked(this.playerGroup.position.x, nextZ)) {
+                                    this.playerGroup.position.z = nextZ;
+                                }
                             }
                             
                             this.playerWalkCycle += dt * 18 * inputMagnitude;

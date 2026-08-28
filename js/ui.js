@@ -1233,7 +1233,7 @@ updateTacticalExtrasHUD();
                 return Math.round(upg.costBase * Math.pow(1.6, Math.max(0, currentLvl - 1)));
             }
             if (key === 'scavenger') {
-                return Math.round(upg.costBase * Math.pow(1.055, currentLvl));
+                return Math.round(upg.costBase * Math.pow(1.06, currentLvl));
             }
             return Math.round(upg.costBase * Math.pow(1.6, currentLvl));
         }
