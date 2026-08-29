@@ -923,6 +923,23 @@ updateTacticalExtrasHUD();
             updateMusicDucking();
         }
 
+        function formatScavCompact(val, decimals = 1) {
+            if (!Number.isFinite(val)) return '∞';
+            if (val < 1000) return val.toFixed(decimals).replace(/\.0+$/, '');
+            if (val < 1_000_000) return (val / 1000).toFixed(decimals).replace(/\.0+$/, '') + 'k';
+            if (val < 1_000_000_000) return (val / 1_000_000).toFixed(decimals).replace(/\.0+$/, '') + ' Mio.';
+            if (val < 1_000_000_000_000) return (val / 1_000_000_000).toFixed(decimals).replace(/\.0+$/, '') + ' Mrd.';
+            if (val < 1_000_000_000_000_000) return (val / 1_000_000_000_000).toFixed(decimals).replace(/\.0+$/, '') + ' Bio.';
+            if (val < 1_000_000_000_000_000_000) return (val / 1_000_000_000_000_000).toFixed(decimals).replace(/\.0+$/, '') + ' Brd.';
+            return (val / 1e18).toFixed(decimals).replace(/\.0+$/, '') + ' Trill.';
+        }
+
+        function formatScavCurrency(val) {
+            if (!Number.isFinite(val)) return '$∞';
+            if (val < 100_000_000) return '$' + Math.round(val).toLocaleString('de-DE');
+            return '$' + formatScavCompact(val, 2);
+        }
+
         function setScavengerSimPreset(val) {
             let targetLvl = 0;
             if (val === 'cur') {
@@ -936,34 +953,45 @@ updateTacticalExtrasHUD();
         }
 
         function updateScavengerCalculator(targetLvl) {
-            currentScavSimLevel = Math.max(0, Math.min(50, targetLvl));
+            currentScavSimLevel = Math.max(0, Math.min(400, targetLvl));
             const lvl = currentScavSimLevel;
 
             const lvlValEl = document.getElementById('scav-sim-lvl-val');
             if (lvlValEl) lvlValEl.textContent = lvl;
 
             const mult = Math.pow(1.05, lvl);
-            const bonusPct = ((mult - 1) * 100).toFixed(1).replace(/\.0$/, '');
+            const bonusPct = (mult - 1) * 100;
             const multDisplay = document.getElementById('scav-sim-mult-display');
-            if (multDisplay) multDisplay.textContent = `+${bonusPct}% (${mult.toFixed(2)}x)`;
-
-            const nextCost = Math.round(1000 * Math.pow(1.10, lvl));
-            const costDisplay = document.getElementById('scav-sim-cost-display');
-            if (costDisplay) costDisplay.textContent = `$${nextCost.toLocaleString('de-DE')}`;
-
-            // Cumulative cost from Lvl 0 to Lvl
-            let totalCost = 0;
-            for (let i = 0; i < lvl; i++) {
-                totalCost += Math.round(1000 * Math.pow(1.10, i));
+            if (multDisplay) {
+                if (bonusPct < 1000) {
+                    multDisplay.textContent = `+${bonusPct.toFixed(1).replace(/\.0$/, '')}% (${mult.toFixed(2)}x)`;
+                } else {
+                    multDisplay.textContent = `+${formatScavCompact(bonusPct, 1)}% (${formatScavCompact(mult, 2)}x)`;
+                }
             }
+
+            const nextCost = 1000 * Math.pow(1.10, lvl);
+            const costDisplay = document.getElementById('scav-sim-cost-display');
+            if (costDisplay) costDisplay.textContent = formatScavCurrency(nextCost);
+
+            // Cumulative cost from Lvl 0 to Lvl:
+            let totalCost = (lvl <= 100)
+                ? Array.from({length: lvl}, (_, i) => Math.round(1000 * Math.pow(1.10, i))).reduce((a, b) => a + b, 0)
+                : (10000 * (Math.pow(1.10, lvl) - 1));
             const totalCostDisplay = document.getElementById('scav-sim-totalcost-display');
-            if (totalCostDisplay) totalCostDisplay.textContent = `$${totalCost.toLocaleString('de-DE')}`;
+            if (totalCostDisplay) totalCostDisplay.textContent = formatScavCurrency(totalCost);
 
             // 100 Walker kills ($24 base each = $2400 base)
-            const walker100Earned = Math.round(24 * mult) * 100;
+            const walker100Earned = 24 * mult * 100;
             const walker100Bonus = walker100Earned - 2400;
             const kills100Display = document.getElementById('scav-sim-100kills-display');
-            if (kills100Display) kills100Display.innerHTML = `$${walker100Earned.toLocaleString('de-DE')} <span class="text-[10px] text-emerald-400 font-normal">(+$${walker100Bonus.toLocaleString('de-DE')})</span>`;
+            if (kills100Display) {
+                if (walker100Earned < 100_000_000) {
+                    kills100Display.innerHTML = `$${Math.round(walker100Earned).toLocaleString('de-DE')} <span class="text-[10px] text-emerald-400 font-normal">(+$${Math.round(walker100Bonus).toLocaleString('de-DE')})</span>`;
+                } else {
+                    kills100Display.innerHTML = `${formatScavCurrency(walker100Earned)} <span class="text-[10px] text-emerald-400 font-normal">(+${formatScavCurrency(walker100Bonus)})</span>`;
+                }
+            }
 
             const bountyLvlLabel = document.getElementById('scav-bounty-sim-lvl-label');
             if (bountyLvlLabel) bountyLvlLabel.textContent = `Lvl ${lvl}`;
@@ -987,14 +1015,17 @@ updateTacticalExtrasHUD();
                 { name: 'Endboss (Megamutant)', base: 350, icon: 'fa-skull-crossbones text-red-500', color: 'bg-red-600' }
             ];
 
-            const maxRewardAtLvl = Math.max(350, Math.round(350 * mult));
+            const maxRewardAtLvl = Math.max(350, 350 * mult);
 
             let html = '';
             zombieTypes.forEach(z => {
-                const boosted = Math.round(z.base * mult);
+                const boosted = z.base * mult;
                 const gain = boosted - z.base;
                 const widthPct = Math.min(100, Math.max(8, (boosted / Math.max(1, maxRewardAtLvl)) * 100));
                 const baseWidthPct = Math.min(100, Math.max(8, (z.base / Math.max(1, maxRewardAtLvl)) * 100));
+
+                const boostedStr = formatScavCurrency(boosted);
+                const gainStr = (gain > 0) ? `(+${formatScavCurrency(gain)})` : '';
 
                 html += `
                     <div class="bg-slate-900/90 p-2 sm:p-2.5 rounded-xl border border-slate-800 flex flex-col space-y-1.5">
@@ -1005,8 +1036,8 @@ updateTacticalExtrasHUD();
                             </div>
                             <div class="font-mono text-right">
                                 <span class="text-slate-400 text-[11px] mr-1">$${z.base} &rarr;</span>
-                                <span class="text-emerald-400 font-bold text-xs sm:text-sm">$${boosted}</span>
-                                ${gain > 0 ? `<span class="text-[10px] text-emerald-400/80 font-normal ml-0.5">(+$${gain})</span>` : ''}
+                                <span class="text-emerald-400 font-bold text-xs sm:text-sm">${boostedStr}</span>
+                                ${gain > 0 ? `<span class="text-[10px] text-emerald-400/80 font-normal ml-0.5">${gainStr}</span>` : ''}
                             </div>
                         </div>
                         <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden flex relative">
@@ -1030,12 +1061,15 @@ updateTacticalExtrasHUD();
             const plotW = width - padX - 25;
             const plotH = height - padY - 25;
 
-            // Max Level 50 -> Max Mult 1.05^50 = 11.467 (11.5x / +1047%)
-            const maxLvl = 50;
-            const maxMultVal = 12.0;
+            // Level range up to 400: Max Mult 1.05^400 = 2.989e8 (~299 Mio. x)
+            const maxLvl = 400;
+            const logMax = 400 * Math.log10(1.05); // ~8.4755
 
-            const getX = (lvl) => padX + (lvl / maxLvl) * plotW;
-            const getY = (mult) => (height - padY) - ((mult - 1.0) / (maxMultVal - 1.0)) * plotH;
+            const getX = (lvl) => padX + (Math.max(0, Math.min(maxLvl, lvl)) / maxLvl) * plotW;
+            const getY = (mult) => {
+                const logVal = Math.log10(Math.max(1.0, mult));
+                return (height - padY) - (logVal / logMax) * plotH;
+            };
 
             // Background Grid lines
             let gridHtml = `
@@ -1045,46 +1079,60 @@ updateTacticalExtrasHUD();
                         <stop offset="100%" stop-color="#10b981" />
                     </linearGradient>
                     <linearGradient id="scavAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3" />
+                        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.35" />
                         <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0" />
                     </linearGradient>
                 </defs>
                 <rect x="${padX}" y="15" width="${plotW}" height="${plotH}" fill="#020617" rx="6" stroke="#1e293b" stroke-width="1" />
             `;
 
-            // Horizontal Y Grid lines (1x, 3x, 6x, 9x, 12x)
-            const yLevels = [1.0, 3.0, 6.0, 9.0, 12.0];
-            yLevels.forEach(val => {
-                const y = getY(val);
-                const pctLabel = `+${Math.round((val - 1) * 100)}%`;
+            // Horizontal Y Grid lines (Log scale: 1x, 10x, 100x, 1k x, 10k x, 100k x, 1M x, 10M x, 100M x, 300M x)
+            const yTicks = [
+                { mult: 1, label: '1x' },
+                { mult: 10, label: '10x' },
+                { mult: 100, label: '100x' },
+                { mult: 1000, label: '1k x' },
+                { mult: 10000, label: '10k x' },
+                { mult: 100000, label: '100k x' },
+                { mult: 1000000, label: '1M x' },
+                { mult: 10000000, label: '10M x' },
+                { mult: 100000000, label: '100M x' },
+                { mult: Math.pow(1.05, 400), label: '300M x' }
+            ];
+
+            yTicks.forEach(t => {
+                const y = getY(t.mult);
                 gridHtml += `
                     <line x1="${padX}" y1="${y}" x2="${padX + plotW}" y2="${y}" stroke="#1e293b" stroke-dasharray="3 3" stroke-width="1" />
-                    <text x="${padX - 8}" y="${y + 3}" fill="#64748b" font-size="9" font-family="monospace" text-anchor="end">${pctLabel}</text>
+                    <text x="${padX - 8}" y="${y + 3}" fill="#64748b" font-size="9" font-family="monospace" text-anchor="end">${t.label}</text>
                 `;
             });
 
-            // Vertical X Grid lines (0, 10, 20, 30, 40, 50)
-            for (let l = 0; l <= maxLvl; l += 10) {
+            // Vertical X Grid lines (0, 50, 100, 150, 200, 250, 300, 350, 400)
+            for (let l = 0; l <= maxLvl; l += 50) {
                 const x = getX(l);
                 gridHtml += `
                     <line x1="${x}" y1="15" x2="${x}" y2="${height - padY}" stroke="#1e293b" stroke-dasharray="3 3" stroke-width="1" />
-                    <text x="${x}" y="${height - padY + 16}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">Lvl ${l}</text>
+                    <text x="${x}" y="${height - padY + 16}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">L${l}</text>
                 `;
             }
 
             // Old linear 2% curve (comparison line)
             let oldLinearPoints = [];
-            for (let l = 0; l <= maxLvl; l += 2) {
+            for (let l = 0; l <= maxLvl; l += 10) {
                 const oldMult = 1 + (l * 0.02);
                 oldLinearPoints.push(`${getX(l).toFixed(1)},${getY(oldMult).toFixed(1)}`);
             }
             const oldLinearPath = `M ${oldLinearPoints.join(' L ')}`;
 
-            // Current 5% exponential curve points
+            // Current 5% exponential curve points (log-linear representation)
             let expPoints = [];
-            for (let l = 0; l <= maxLvl; l += 1) {
+            for (let l = 0; l <= maxLvl; l += 4) {
                 const curMult = Math.pow(1.05, l);
                 expPoints.push(`${getX(l).toFixed(1)},${getY(curMult).toFixed(1)}`);
+            }
+            if (maxLvl % 4 !== 0) {
+                expPoints.push(`${getX(maxLvl).toFixed(1)},${getY(Math.pow(1.05, maxLvl)).toFixed(1)}`);
             }
             const expPath = `M ${expPoints.join(' L ')}`;
             const areaPath = `M ${getX(0)},${getY(1.0)} L ${expPoints.join(' L ')} L ${getX(maxLvl)},${getY(1.0)} Z`;
@@ -1093,15 +1141,19 @@ updateTacticalExtrasHUD();
             const activeMult = Math.pow(1.05, activeLvl);
             const activeX = getX(activeLvl);
             const activeY = getY(activeMult);
-            const activeBonusPct = ((activeMult - 1) * 100).toFixed(1).replace(/\.0$/, '');
+            const activeBadgeText = `L${activeLvl}: ${formatScavCompact(activeMult, 1)}x`;
+
+            const badgeW = 100;
+            const badgeX = Math.min(padX + plotW - badgeW, Math.max(padX + 5, activeX - badgeW / 2));
+            const badgeY = Math.max(20, activeY - 26);
 
             const markerHtml = `
                 <line x1="${activeX}" y1="15" x2="${activeX}" y2="${height - padY}" stroke="#38bdf8" stroke-dasharray="2 2" stroke-width="1.5" />
-                <circle cx="${activeX}" cy="${activeY}" r="6" fill="#38bdf8" stroke="#020617" stroke-width="2" />
-                <circle cx="${activeX}" cy="${activeY}" r="12" fill="#38bdf8" opacity="0.25" />
-                <g transform="translate(${Math.min(padX + plotW - 95, Math.max(padX + 5, activeX - 45))}, ${Math.max(20, activeY - 30)})">
-                    <rect x="0" y="0" width="90" height="20" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1" />
-                    <text x="45" y="14" fill="#38bdf8" font-size="10" font-family="monospace" font-weight="bold" text-anchor="middle">L${activeLvl}: +${activeBonusPct}%</text>
+                <circle cx="${activeX}" cy="${activeY}" r="5" fill="#38bdf8" stroke="#020617" stroke-width="2" />
+                <circle cx="${activeX}" cy="${activeY}" r="11" fill="#38bdf8" opacity="0.25" />
+                <g transform="translate(${badgeX}, ${badgeY})">
+                    <rect x="0" y="0" width="${badgeW}" height="20" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1" />
+                    <text x="${badgeW / 2}" y="14" fill="#38bdf8" font-size="10" font-family="monospace" font-weight="bold" text-anchor="middle">${activeBadgeText}</text>
                 </g>
             `;
 
