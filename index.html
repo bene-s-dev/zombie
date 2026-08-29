@@ -1068,7 +1068,7 @@
                         <div>
                             <div class="flex items-center space-x-2">
                                 <h2 class="font-teko text-2xl sm:text-3xl font-bold text-white tracking-wider uppercase leading-none">Plünderer-Bonus: Transparenz</h2>
-                                <span class="bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-mono font-bold uppercase">Modell v2.4</span>
+                                <span class="bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-mono font-bold uppercase">Modell v2.5</span>
                             </div>
                             <p class="text-[11px] sm:text-xs text-slate-400 mt-0.5">Wirtschaftsformeln, interaktive Diagramme & Rebalance-Historie</p>
                         </div>
@@ -1087,10 +1087,10 @@
                         <div>
                             <div class="text-xs sm:text-sm font-bold text-white flex items-center space-x-1.5">
                                 <span>Datum der letzten Anpassung:</span>
-                                <span class="text-amber-400 font-mono font-bold">28. August 2026</span>
+                                <span class="text-amber-400 font-mono font-bold">29. August 2026</span>
                             </div>
                             <div class="text-[11px] text-slate-300">
-                                <strong>Rebalance:</strong> Multiplikator von +2% auf <span class="text-emerald-400 font-bold">+5% exponentiell</span> angehoben. Kostenkurve auf <span class="text-cyan-300 font-mono font-bold">1.06^Level</span> harmonisiert.
+                                <strong>Rebalance:</strong> Kostenkurve auf <span class="text-cyan-300 font-mono font-bold">1.10^Level (+10% Preis/Stufe)</span> angepasst. Ertragsmultiplikator bleibt stark bei <span class="text-emerald-400 font-bold">+5% exponentiell</span>.
                             </div>
                         </div>
                     </div>
@@ -1245,9 +1245,9 @@
                         <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 font-mono">
                             <div class="text-amber-400 font-bold mb-1">2. Upgrade-Kostenformel:</div>
                             <div class="text-slate-300 text-[11px] bg-slate-950 p-2 rounded-lg border border-slate-800/60 mb-1">
-                                Kosten = Math.round( 1000 &times; 1.06<sup>Level</sup> )
+                                Kosten = Math.round( 1000 &times; 1.10<sup>Level</sup> )
                             </div>
-                            <p class="text-[10px] text-slate-400 font-sans leading-tight">Die Kosten steigen moderat mit Faktor 1.06, wodurch auch hohe Stufen (Lvl 30+) erreichbar und lohnend bleiben.</p>
+                            <p class="text-[10px] text-slate-400 font-sans leading-tight">Die Kosten steigen dynamisch mit Faktor 1.10 (+10% pro Stufe), wodurch die Wirtschaft auch bei hohen Wellen ausgewogen bleibt.</p>
                         </div>
                     </div>
                     <div class="p-2.5 rounded-xl bg-cyan-950/30 border border-cyan-500/20 text-[11px] text-slate-300 leading-snug">
@@ -1263,9 +1263,15 @@
                     </div>
                     <div class="space-y-2 text-xs">
                         <div class="flex items-start space-x-2.5 p-2 rounded-xl bg-slate-900/60 border border-emerald-500/30">
-                            <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 font-mono font-bold text-[10px] rounded-md whitespace-nowrap">28. Aug 2026 (Live)</span>
+                            <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 font-mono font-bold text-[10px] rounded-md whitespace-nowrap">29. Aug 2026 (Live)</span>
                             <div class="text-[11px] text-slate-300 leading-snug">
-                                <strong class="text-white">Major Economy Rebalance:</strong> Erhöhung des Multiplikators von 2% auf <strong>+5% exponentiell</strong> ($1.05^L$). Kostenbasis auf moderate 1.06x Skalierung optimiert, um eine dynamische und motivierende Progression bis ins High-Wave-Endgame zu gewährleisten.
+                                <strong class="text-white">Kostenrebalance:</strong> Preissteigerung pro Stufe von 1.06x (+6%) auf <strong>1.10x (+10% pro Stufe)</strong> angehoben ($1.10^L$). Dämpft das exponentielle Schneeballsystem im Mid- und Late-Game spürbar ein, während der +5% Ertragsbonus erhalten bleibt.
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-2.5 p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">
+                            <span class="px-2 py-0.5 bg-slate-800 text-slate-400 font-mono font-bold text-[10px] rounded-md whitespace-nowrap">28. Aug 2026</span>
+                            <div class="text-[11px] text-slate-400 leading-snug">
+                                <strong class="text-slate-300">Major Economy Rebalance:</strong> Erhöhung des Ertragsmultiplikators von 2% auf +5% exponentiell ($1.05^L$).
                             </div>
                         </div>
                         <div class="flex items-start space-x-2.5 p-2 rounded-xl bg-slate-900/40 border border-slate-800/60">

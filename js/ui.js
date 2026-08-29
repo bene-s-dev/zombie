@@ -890,7 +890,7 @@ updateTacticalExtrasHUD();
             const currentBonusPct = ((currentMult - 1) * 100).toFixed(1).replace(/\.0$/, '');
             const nextMult = Math.pow(1.05, currentLvl + 1);
             const nextBonusPct = ((nextMult - 1) * 100).toFixed(1).replace(/\.0$/, '');
-            const nextCost = Math.round(1000 * Math.pow(1.06, currentLvl));
+            const nextCost = Math.round(1000 * Math.pow(1.10, currentLvl));
 
             const curLvlEl = document.getElementById('scav-stat-current-lvl');
             if (curLvlEl) curLvlEl.textContent = `Lvl ${currentLvl}`;
@@ -947,14 +947,14 @@ updateTacticalExtrasHUD();
             const multDisplay = document.getElementById('scav-sim-mult-display');
             if (multDisplay) multDisplay.textContent = `+${bonusPct}% (${mult.toFixed(2)}x)`;
 
-            const nextCost = Math.round(1000 * Math.pow(1.06, lvl));
+            const nextCost = Math.round(1000 * Math.pow(1.10, lvl));
             const costDisplay = document.getElementById('scav-sim-cost-display');
             if (costDisplay) costDisplay.textContent = `$${nextCost.toLocaleString('de-DE')}`;
 
             // Cumulative cost from Lvl 0 to Lvl
             let totalCost = 0;
             for (let i = 0; i < lvl; i++) {
-                totalCost += Math.round(1000 * Math.pow(1.06, i));
+                totalCost += Math.round(1000 * Math.pow(1.10, i));
             }
             const totalCostDisplay = document.getElementById('scav-sim-totalcost-display');
             if (totalCostDisplay) totalCostDisplay.textContent = `$${totalCost.toLocaleString('de-DE')}`;
@@ -1491,7 +1491,7 @@ updateTacticalExtrasHUD();
                 return Math.round(upg.costBase * Math.pow(1.6, Math.max(0, currentLvl - 1)));
             }
             if (key === 'scavenger') {
-                return Math.round(upg.costBase * Math.pow(1.06, currentLvl));
+                return Math.round(upg.costBase * Math.pow(1.10, currentLvl));
             }
             return Math.round(upg.costBase * Math.pow(1.6, currentLvl));
         }
