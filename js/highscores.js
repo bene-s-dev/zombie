@@ -10,23 +10,14 @@ function generateRandomPlayerName() {
     return `${prefix}-${num}`;
 }
 
-const DEFAULT_COMMUNITY_HIGHSCORES = [
-    { name: 'ZOMBIEBERGER', wave: 28, kills: 3367, time: 1759, difficulty: 'medium' },
-    { name: 'OPPI 3', wave: 28, kills: 2574, time: 1193, difficulty: 'medium' },
-    { name: 'OPPI 2', wave: 27, kills: 2276, time: 1048, difficulty: 'medium' },
-    { name: 'OPPI', wave: 25, kills: 2466, time: 1125, difficulty: 'medium' },
-    { name: 'HERETODIE', wave: 21, kills: 1744, time: 1021, difficulty: 'medium' },
-    { name: 'HERETODIE', wave: 19, kills: 1216, time: 943, difficulty: 'medium' },
-    { name: 'HERETODIE', wave: 14, kills: 798, time: 672, difficulty: 'medium' },
-    { name: 'VIPER-07', wave: 12, kills: 620, time: 540, difficulty: 'medium' }
-];
+const DEFAULT_COMMUNITY_HIGHSCORES = [];
 
 function ensureDefaultHighscores() {
     if (!Storage.data || !Storage.data.highscores) {
         Storage.load();
     }
-    if (!Storage.data.highscores || !Array.isArray(Storage.data.highscores) || Storage.data.highscores.length === 0) {
-        Storage.data.highscores = [...DEFAULT_COMMUNITY_HIGHSCORES];
+    if (!Storage.data.highscores || !Array.isArray(Storage.data.highscores)) {
+        Storage.data.highscores = [];
         Storage.save();
     }
     if (Storage.data.customPlayerName === undefined) {
@@ -145,36 +136,11 @@ async function fetchOnlineHighscores() {
 
         if (res.ok) {
             const rawList = await res.json();
-            
-            // If online table is empty, seed it with default highscores
-            if (Array.isArray(rawList) && rawList.length === 0 && DEFAULT_COMMUNITY_HIGHSCORES.length > 0) {
-                const seedEntries = DEFAULT_COMMUNITY_HIGHSCORES.map(item => ({
-                    name: item.name,
-                    wave: item.wave,
-                    kills: item.kills,
-                    time: item.time,
-                    difficulty: item.difficulty || 'medium',
-                    date: '22.08.'
-                }));
-                fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify(seedEntries)
-                }).catch(() => {});
-            }
+            const onlineScores = deduplicateAndSortScores(Array.isArray(rawList) ? rawList : []);
 
-            const localScores = Storage.data.highscores || [];
-            const merged = deduplicateAndSortScores([...(Array.isArray(rawList) ? rawList : []), ...localScores]);
-
-            Storage.data.highscores = merged;
-            if (merged.length > 0) {
-                Storage.data.highScoreSeconds = Math.max(Storage.data.highScoreSeconds || 0, merged[0].time);
-            }
+            // Supabase is the single source of truth for online highscores
+            Storage.data.highscores = onlineScores;
+            Storage.data.highScoreSeconds = onlineScores.length > 0 ? (onlineScores[0].time || 0) : 0;
             Storage.save();
 
             if (statusDot) statusDot.className = "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
