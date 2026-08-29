@@ -1134,11 +1134,12 @@
                         <div class="flex items-center space-x-1.5 flex-wrap gap-1">
                             <span class="text-[10px] text-slate-400 mr-1">Presets:</span>
                             <button type="button" onclick="setScavengerSimPreset('cur')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-400 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Aktuell</button>
-                            <button type="button" onclick="setScavengerSimPreset(5)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 5</button>
                             <button type="button" onclick="setScavengerSimPreset(10)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 10</button>
-                            <button type="button" onclick="setScavengerSimPreset(20)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 20</button>
-                            <button type="button" onclick="setScavengerSimPreset(30)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 30</button>
-                            <button type="button" onclick="setScavengerSimPreset(50)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-cyan-400 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 50</button>
+                            <button type="button" onclick="setScavengerSimPreset(50)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 50</button>
+                            <button type="button" onclick="setScavengerSimPreset(100)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 100</button>
+                            <button type="button" onclick="setScavengerSimPreset(200)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 200</button>
+                            <button type="button" onclick="setScavengerSimPreset(300)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 300</button>
+                            <button type="button" onclick="setScavengerSimPreset(400)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-cyan-400 text-[10px] font-mono font-bold rounded-md transition cursor-pointer">Lvl 400</button>
                         </div>
                     </div>
 
@@ -1146,14 +1147,15 @@
                     <div class="space-y-1.5">
                         <div class="flex justify-between items-center text-xs font-mono">
                             <span class="text-slate-400">Simuliertes Upgrade-Level:</span>
-                            <span class="text-cyan-300 font-bold text-sm sm:text-base"><span id="scav-sim-lvl-val">0</span> / 50</span>
+                            <span class="text-cyan-300 font-bold text-sm sm:text-base"><span id="scav-sim-lvl-val">0</span> / 400</span>
                         </div>
-                        <input type="range" id="scav-sim-slider" min="0" max="50" step="1" value="0" oninput="updateScavengerCalculator(parseInt(this.value))" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                        <input type="range" id="scav-sim-slider" min="0" max="400" step="1" value="0" oninput="updateScavengerCalculator(parseInt(this.value))" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
                         <div class="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>Lvl 0 (Start)</span>
-                            <span>Lvl 10 (+63%)</span>
-                            <span>Lvl 25 (+239%)</span>
-                            <span>Lvl 50 (+1047%)</span>
+                            <span>Lvl 0 (1x)</span>
+                            <span>Lvl 100 (131x)</span>
+                            <span>Lvl 200 (17.3k x)</span>
+                            <span>Lvl 300 (2.27M x)</span>
+                            <span>Lvl 400 (299M x)</span>
                         </div>
                     </div>
 
