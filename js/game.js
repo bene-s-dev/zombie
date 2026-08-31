@@ -109,11 +109,19 @@
                 this.gridCellSize = 8;
                 this.grid = new Map();
 
-                // Object Pools
+                // Object Pools & Performance Tuning
                 this.bulletPool = [];
                 this.particlePool = [];
                 this.beaconLights = [];
                 this.environmentObstacles = [];
+                this.zombiePool = {
+                    normal: [], runner: [], crawler: [], shield: [], exploder: [],
+                    spitter: [], tank: [], summoner: [], raider: [], boss: [], minion_crawler: []
+                };
+                this.targetFps = 30;
+                this._lastRenderTime = 0;
+                this._pausedFrameRendered = false;
+
                 this.environmentTheme = (typeof Storage !== 'undefined' && Storage.data && Storage.data.environmentTheme) ? Storage.data.environmentTheme : 'tactical';
                 this.environmentGroup = null;
                 this._frameCount = 0;
@@ -847,8 +855,48 @@
                     this.showTacticalIntel(type);
                 }
 
+                let zombieGroup = null;
+                if (this.zombiePool && this.zombiePool[type] && this.zombiePool[type].length > 0) {
+                    zombieGroup = this.zombiePool[type].pop();
+                    zombieGroup.position.set(x, 0, z);
+                    zombieGroup.rotation.set(0, 0, 0);
+                    zombieGroup.visible = true;
+                    if (!zombieGroup.parent) this.scene.add(zombieGroup);
+                } else {
+                    zombieGroup = this.createZombieMesh(type, scale, color);
+                    zombieGroup.position.set(x, 0, z);
+                    this.scene.add(zombieGroup);
+                }
+
+                zombieGroup.userData = {
+                    type: type,
+                    hp: hp,
+                    maxHp: hp,
+                    speed: speed,
+                    scale: scale,
+                    reward: reward,
+                    dmgMult: dmgMult,
+                    armorThreshold: armorThreshold,
+                    isShield: (type === 'shield'),
+                    walkCycle: Math.random() * Math.PI * 2,
+                    bodyMaterials: zombieGroup.userData.bodyMaterials || []
+                };
+
+                if (this.isAc130Active) {
+                    if (!this.whiteHotMat) this.whiteHotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                    zombieGroup.traverse((child) => {
+                        if (child.isMesh) {
+                            if (!child.userData.ac130OrigMat) child.userData.ac130OrigMat = child.material;
+                            child.material = this.whiteHotMat;
+                        }
+                    });
+                }
+
+                this.zombies.push(zombieGroup);
+            }
+
+            createZombieMesh(type, scale, color) {
                 const zombieGroup = new THREE.Group();
-                zombieGroup.position.set(x, 0, z);
 
                 if (!this._zombieMats) this._zombieMats = {};
                 if (!this._zombieMats[type]) {
@@ -864,11 +912,10 @@
                 if (!this._unitBoxGeo) this._unitBoxGeo = new THREE.BoxGeometry(1, 1, 1);
                 if (!this._unitSphereGeo) this._unitSphereGeo = new THREE.SphereGeometry(1, 8, 8);
 
-                if (type === 'crawler') {
+                if (type === 'crawler' || type === 'minion_crawler') {
                     const torso = new THREE.Mesh(this._unitBoxGeo, bodyMat);
                     torso.scale.set(0.7 * scale, 0.4 * scale, 0.8 * scale);
                     torso.position.y = 0.25 * scale;
-                    torso.castShadow = true;
                     zombieGroup.add(torso);
 
                     const head = new THREE.Mesh(this._unitBoxGeo, bodyMat);
@@ -889,41 +936,31 @@
                     const legL = new THREE.Mesh(this._unitBoxGeo, clothMat);
                     legL.scale.set(0.25 * scale, 0.7 * scale, 0.25 * scale);
                     legL.position.set(-0.2 * scale, 0.35 * scale, 0);
-                    legL.castShadow = true;
-                    legL.receiveShadow = true;
                     zombieGroup.add(legL);
 
                     const legR = new THREE.Mesh(this._unitBoxGeo, clothMat);
                     legR.scale.set(0.25 * scale, 0.7 * scale, 0.25 * scale);
                     legR.position.set(0.2 * scale, 0.35 * scale, 0);
-                    legR.castShadow = true;
-                    legR.receiveShadow = true;
                     zombieGroup.add(legR);
 
                     const torso = new THREE.Mesh(this._unitBoxGeo, bodyMat);
                     torso.scale.set(0.7 * scale, 0.9 * scale, 0.4 * scale);
                     torso.position.y = 1.15 * scale;
-                    torso.castShadow = true;
-                    torso.receiveShadow = true;
                     zombieGroup.add(torso);
 
                     const armL = new THREE.Mesh(this._unitBoxGeo, bodyMat);
                     armL.scale.set(0.2 * scale, 0.2 * scale, 0.8 * scale);
                     armL.position.set(-0.45 * scale, 1.2 * scale, 0.3 * scale);
-                    armL.castShadow = true;
                     zombieGroup.add(armL);
 
                     const armR = new THREE.Mesh(this._unitBoxGeo, bodyMat);
                     armR.scale.set(0.2 * scale, 0.2 * scale, 0.8 * scale);
                     armR.position.set(0.45 * scale, 1.2 * scale, 0.3 * scale);
-                    armR.castShadow = true;
                     zombieGroup.add(armR);
 
                     const head = new THREE.Mesh(this._unitBoxGeo, bodyMat);
                     head.scale.set(0.45 * scale, 0.45 * scale, 0.45 * scale);
                     head.position.y = 1.75 * scale;
-                    head.castShadow = true;
-                    head.receiveShadow = true;
                     zombieGroup.add(head);
 
                     const eye1 = new THREE.Mesh(this._unitBoxGeo, eyeMat);
@@ -962,76 +999,36 @@
                         const shieldMesh = new THREE.Mesh(this._unitBoxGeo, shieldMat);
                         shieldMesh.scale.set(1.3 * scale, 1.5 * scale, 0.18 * scale);
                         shieldMesh.position.set(0, 1.1 * scale, 0.5 * scale);
-                        shieldMesh.castShadow = true;
                         zombieGroup.add(shieldMesh);
                         bodyMaterials.push(shieldMat);
                     }
                 }
 
-                zombieGroup.userData = {
-                    type: type,
-                    hp: hp,
-                    maxHp: hp,
-                    speed: speed,
-                    scale: scale,
-                    reward: reward,
-                    dmgMult: dmgMult,
-                    armorThreshold: armorThreshold,
-                    isShield: (type === 'shield'),
-                    walkCycle: Math.random() * Math.PI * 2,
-                    bodyMaterials: bodyMaterials
-                };
-
-                if (this.isAc130Active) {
-                    if (!this.whiteHotMat) this.whiteHotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                    zombieGroup.traverse((child) => {
-                        if (child.isMesh) {
-                            if (!child.userData.ac130OrigMat) child.userData.ac130OrigMat = child.material;
-                            child.material = this.whiteHotMat;
-                        }
-                    });
-                }
-
-                this.zombies.push(zombieGroup);
-                this.scene.add(zombieGroup);
+                zombieGroup.userData = { bodyMaterials: bodyMaterials };
+                return zombieGroup;
             }
 
             spawnMinionCrawler(x, z) {
                 if (this.isPaused || this.isGameOver) return;
                 const waveHpScale = Math.pow(1.10, this.currentWave - 1);
                 const waveDmgScale = Math.pow(1.05, this.currentWave - 1);
-
-                const zombieGroup = new THREE.Group();
-                zombieGroup.position.set(x, 0, z);
-
-                const bodyMat = new THREE.MeshBasicMaterial({ color: 0x451a03 });
-                const eyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-
-                if (!this._unitBoxGeo) this._unitBoxGeo = new THREE.BoxGeometry(1, 1, 1);
-
                 const scale = 0.55;
-                const torso = new THREE.Mesh(this._unitBoxGeo, bodyMat);
-                torso.scale.set(0.7 * scale, 0.4 * scale, 0.8 * scale);
-                torso.position.y = 0.25 * scale;
-                zombieGroup.add(torso);
 
-                const head = new THREE.Mesh(this._unitBoxGeo, bodyMat);
-                head.scale.set(0.4 * scale, 0.4 * scale, 0.4 * scale);
-                head.position.set(0, 0.4 * scale, 0.4 * scale);
-                zombieGroup.add(head);
-
-                const eye1 = new THREE.Mesh(this._unitBoxGeo, eyeMat);
-                eye1.scale.set(0.08 * scale, 0.08 * scale, 0.08 * scale);
-                eye1.position.set(-0.1 * scale, 0.42 * scale, 0.58 * scale);
-                zombieGroup.add(eye1);
-
-                const eye2 = new THREE.Mesh(this._unitBoxGeo, eyeMat);
-                eye2.scale.set(0.08 * scale, 0.08 * scale, 0.08 * scale);
-                eye2.position.set(0.1 * scale, 0.42 * scale, 0.58 * scale);
-                zombieGroup.add(eye2);
+                let zombieGroup = null;
+                if (this.zombiePool && this.zombiePool['minion_crawler'] && this.zombiePool['minion_crawler'].length > 0) {
+                    zombieGroup = this.zombiePool['minion_crawler'].pop();
+                    zombieGroup.position.set(x, 0, z);
+                    zombieGroup.rotation.set(0, 0, 0);
+                    zombieGroup.visible = true;
+                    if (!zombieGroup.parent) this.scene.add(zombieGroup);
+                } else {
+                    zombieGroup = this.createZombieMesh('minion_crawler', scale, 0x451a03);
+                    zombieGroup.position.set(x, 0, z);
+                    this.scene.add(zombieGroup);
+                }
 
                 zombieGroup.userData = {
-                    type: 'crawler',
+                    type: 'minion_crawler',
                     hp: 18 * waveHpScale,
                     maxHp: 18 * waveHpScale,
                     speed: 0.115 * this.diffMult,
@@ -1039,7 +1036,8 @@
                     reward: 15,
                     dmgMult: 0.6 * waveDmgScale,
                     armorThreshold: 0,
-                    walkCycle: Math.random() * Math.PI * 2
+                    walkCycle: Math.random() * Math.PI * 2,
+                    bodyMaterials: zombieGroup.userData.bodyMaterials || []
                 };
 
                 if (this.isAc130Active) {
@@ -1053,7 +1051,6 @@
                 }
 
                 this.zombies.push(zombieGroup);
-                this.scene.add(zombieGroup);
             }
 
             updateTurrets() {
@@ -2387,15 +2384,33 @@
                 if (idx !== -1) this.zombies.splice(idx, 1);
                 this.scene.remove(z);
 
-                if (z.userData.type === 'exploder' && !z.userData.hasExploded) {
+                if (z.userData && z.userData.bodyMaterials) {
+                    for (let mi = 0; mi < z.userData.bodyMaterials.length; mi++) {
+                        const mat = z.userData.bodyMaterials[mi];
+                        if (mat && mat.userData && mat.userData.origColor !== undefined) {
+                            mat.color.setHex(mat.userData.origColor);
+                        }
+                    }
+                }
+
+                if (z.userData && z.userData.type === 'exploder' && !z.userData.hasExploded) {
                     z.userData.hasExploded = true;
                     this.createExplosion(z.position, 3.8, 85 * (z.userData.dmgMult || 1), 3.8, false, true);
                 }
                 const scavengerLvl = this.upgrades.scavenger || 0;
                 const scavengerMult = Math.pow(1.05, scavengerLvl);
-                this.money += Math.round(z.userData.reward * scavengerMult);
+                this.money += Math.round((z.userData ? z.userData.reward : 20) * scavengerMult);
                 this.totalKills++;
                 audio.playCoin();
+
+                // Object Pool Recycling
+                const zType = (z.userData && z.userData.type) ? z.userData.type : 'normal';
+                if (!this.zombiePool) this.zombiePool = {};
+                if (!this.zombiePool[zType]) this.zombiePool[zType] = [];
+                if (this.zombiePool[zType].length < 40) {
+                    z.visible = false;
+                    this.zombiePool[zType].push(z);
+                }
 
                 if (this.zombiesLeftToSpawn <= 0 && this.zombies.length === 0 && !this.isWaveTransitioning) {
                     this.nextWave();
@@ -4861,7 +4876,29 @@
                 if (!this.isRunning) return;
                 requestAnimationFrame(() => this.animate());
 
+                if (document.hidden) return;
+
                 const now = performance.now();
+
+                // If paused (e.g. in shop, pause menu, intel modal), render only ONCE to save GPU/battery
+                if (this.isPaused) {
+                    if (!this._pausedFrameRendered) {
+                        this.renderer.render(this.scene, this.camera);
+                        this._pausedFrameRendered = true;
+                    }
+                    this.lastFrameTime = now;
+                    return;
+                }
+                this._pausedFrameRendered = false;
+
+                // Hard-coded 30 FPS Cap: Keeps mobile phones cool and preserves battery
+                const minFrameTime = 1000 / 30; // ~33.33ms
+                const elapsedSinceLastRender = now - (this._lastRenderTime || 0);
+                if (elapsedSinceLastRender < minFrameTime - 1.5) {
+                    return;
+                }
+                this._lastRenderTime = now - (elapsedSinceLastRender % minFrameTime);
+
                 const dt = Math.min((now - (this.lastFrameTime || now)) / 1000, 0.1) * (this.gameSpeed || 1);
                 this.lastFrameTime = now;
                 this._frameCount++;
@@ -4876,11 +4913,6 @@
                     for (let bi = 0; bi < this.beaconLights.length; bi++) {
                         this.beaconLights[bi].visible = isLit;
                     }
-                }
-
-                if (this.isPaused) {
-                    this.renderer.render(this.scene, this.camera);
-                    return;
                 }
 
                 if (!this.isGameOver) {
@@ -6354,13 +6386,13 @@
                 this.scene.fog = new THREE.Fog(0x020617, 75, 185);
 
                 const isMobile = this.isMobile;
-                // Optimized lightweight DPR (max 1.25 on mobile, 1.5 on desktop) to cut GPU fillrate overhead by 50%
-                const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5);
+                // Maximum energy saving: 0.85 DPR on mobile, 1.0 on desktop (drastically reduces pixel shader calculations)
+                const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 0.85 : 1.0);
 
                 this.renderer = new THREE.WebGLRenderer({ 
-                    antialias: !isMobile,
-                    precision: isMobile ? 'mediump' : 'highp',
-                    powerPreference: 'high-performance'
+                    antialias: false,
+                    precision: 'mediump',
+                    powerPreference: 'low-power'
                 });
                 this.renderer.setPixelRatio(dpr);
                 this.renderer.setSize(window.innerWidth, window.innerHeight);

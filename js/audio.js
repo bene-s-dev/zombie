@@ -3,6 +3,7 @@ class SoundEngine {
         this.ctx = null;
         this.musicInterval = null;
         this._noiseBuffer = null;
+        this._soundTimers = {};
     }
     init() {
         try {
@@ -22,6 +23,14 @@ class SoundEngine {
         }
     }
 
+    canPlaySound(key, minInterval = 40) {
+        if (!Storage.data.sfxEnabled) return false;
+        const now = performance.now();
+        if (now - (this._soundTimers[key] || 0) < minInterval) return false;
+        this._soundTimers[key] = now;
+        return true;
+    }
+
     ensureNoiseBuffer() {
         if (this._noiseBuffer || !this.ctx) return this._noiseBuffer;
         try {
@@ -36,7 +45,7 @@ class SoundEngine {
         return this._noiseBuffer;
     }
     playPistol() {
-        if (!Storage.data.sfxEnabled) return;
+        if (!this.canPlaySound('pistol', 55)) return;
         this.init();
         if (!this.ctx || !this._noiseBuffer) return;
         try {
@@ -71,7 +80,7 @@ class SoundEngine {
     }
 
     playRifle() {
-        if (!Storage.data.sfxEnabled) return;
+        if (!this.canPlaySound('rifle', 50)) return;
         this.init();
         if (!this.ctx || !this._noiseBuffer) return;
         try {
@@ -106,7 +115,7 @@ class SoundEngine {
     }
 
     playShotgun() {
-        if (!Storage.data.sfxEnabled) return;
+        if (!this.canPlaySound('shotgun', 120)) return;
         this.init();
         if (!this.ctx || !this._noiseBuffer) return;
         try {
@@ -141,7 +150,7 @@ class SoundEngine {
     }
 
     playTesla() {
-        if (!Storage.data.sfxEnabled || !this.ctx) return;
+        if (!this.canPlaySound('tesla', 90) || !this.ctx) return;
         try {
             const now = this.ctx.currentTime;
             const osc = this.ctx.createOscillator();
@@ -159,7 +168,7 @@ class SoundEngine {
     }
 
     playRocket() {
-        if (!Storage.data.sfxEnabled) return;
+        if (!this.canPlaySound('rocket', 140)) return;
         this.init();
         if (!this.ctx || !this._noiseBuffer) return;
         try {

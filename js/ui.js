@@ -786,7 +786,7 @@ updateTacticalExtrasHUD();
             const statusText = document.getElementById('pause-theme-status-text');
             const btnText = document.getElementById('pause-theme-btn-text');
             if (statusText) {
-                statusText.innerText = (theme === 'tactical') ? "Taktisch (Neu & Detailliert)" : "Classic Clean (Retro-Gitter)";
+                statusText.innerText = (theme === 'tactical') ? "Taktisch (Neu & Detailliert)" : "Klassisch (Retro Gitter & High-Perf)";
             }
             if (btnText) {
                 btnText.innerText = (theme === 'tactical') ? "CLEANER LOOK" : "NEUER LOOK";
