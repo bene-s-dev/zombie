@@ -1904,33 +1904,7 @@ updateTacticalExtrasHUD();
             triggerFullscreen();
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) loadingScreen.classList.remove('hidden');
-
-            const startTime = performance.now();
-            const totalDurationMs = 2200;
-
-            let isFinished = false;
-            let currentStatus = 'Initialisiere 3D-Engine & Materialien...';
-
-            function animLoop() {
-                if (isFinished) return;
-                const elapsed = performance.now() - startTime;
-                const progress = Math.min(100, (elapsed / totalDurationMs) * 100);
-
-                if (progress < 35) {
-                    currentStatus = 'Initialisiere 3D-Engine & Materialien...';
-                } else if (progress < 70) {
-                    currentStatus = 'Pre-Instanziierung aller Zombie-Typen...';
-                } else {
-                    currentStatus = 'Kompiliere WebGL-Pipeline & Starte...';
-                }
-
-                updateLoadingUI(progress, currentStatus);
-
-                if (progress < 100) {
-                    requestAnimationFrame(animLoop);
-                }
-            }
-            requestAnimationFrame(animLoop);
+            updateLoadingUI(30, 'Initialisiere 3D-Engine & Audio...');
 
             try {
                 audio.init();
@@ -1941,14 +1915,13 @@ updateTacticalExtrasHUD();
                 const container = document.getElementById('three-container');
                 if (container) container.innerHTML = '';
 
-                await new Promise(r => setTimeout(r, 150));
+                updateLoadingUI(60, 'Lade Spielwelt & Shader...');
 
                 gameInstance = new Game3D();
                 if (sessionToRestore) {
                     gameInstance.restoreGameSession(sessionToRestore);
                 }
                 gameInstance.saveGameSession();
-                await new Promise(r => setTimeout(r, 200));
 
                 if (gameInstance && gameInstance.renderer && gameInstance.scene && gameInstance.camera) {
                     try {
@@ -1957,14 +1930,10 @@ updateTacticalExtrasHUD();
                     } catch(e) {}
                 }
 
-                const remainingTime = Math.max(0, totalDurationMs - (performance.now() - startTime));
-                await new Promise(r => setTimeout(r, remainingTime));
+                updateLoadingUI(100, 'Bereit!');
             } catch (err) {
                 console.error("Game startup error:", err);
             } finally {
-                isFinished = true;
-                updateLoadingUI(100, 'Vorbereitung abgeschlossen!');
-
                 audio.startMusic();
                 const mainMenu = document.getElementById('main-menu');
                 if (mainMenu) {
