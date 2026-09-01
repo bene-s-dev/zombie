@@ -2439,7 +2439,7 @@
                 const baseAngle = this.playerGroup.rotation.y;
 
                 const wLvl = this.weaponLevels[this.currentWeapon.id] || 1;
-                let weaponDmg = this.currentWeapon.damage * (1 + (wLvl - 1) * 0.35);
+                let weaponDmg = this.currentWeapon.damage * (1 + (wLvl - 1) * 0.45);
 
                 const isCrit = Math.random() < (this.upgrades.crit_chance * 0.10);
                 if (isCrit) weaponDmg *= 2.0;
@@ -2630,15 +2630,15 @@
 
                 const now = performance.now();
                 const droneLvl = this.upgrades.combat_drone;
-                const firerate = Math.max(140, 340 - droneLvl * 35);
+                const firerate = Math.max(75, 320 - droneLvl * 15);
                 if (now < this.lastDroneFired + firerate) return;
 
                 let closestZombie = null;
-                let minDistSq = 576.0;
+                let minDistSq = 676.0;
 
                 for (let zi = 0; zi < this.zombies.length; zi++) {
                     const z = this.zombies[zi];
-                    if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                    if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) continue;
                     const distSq = this.droneGroup.position.distanceToSquared(z.position);
                     if (distSq < minDistSq) {
                         minDistSq = distSq;
@@ -2658,25 +2658,31 @@
                     if (!this._droneLaserMat) {
                         this._droneLaserMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
                     }
-                    const bullet = new THREE.Mesh(SHARED_BULLET_GEO, this._droneLaserMat);
 
-                    bullet.position.copy(this.droneGroup.position);
-                    bullet.position.y -= 0.18;
-                    bullet.rotation.y = angle;
+                    const droneDmg = Math.round(35 * Math.pow(1.08, droneLvl - 1) + (droneLvl * 28));
+                    const shotCount = droneLvl >= 12 ? 3 : (droneLvl >= 5 ? 2 : 1);
 
-                    const droneDmg = 30 + (droneLvl * 16);
+                    for (let s = 0; s < shotCount; s++) {
+                        const bullet = new THREE.Mesh(SHARED_BULLET_GEO, this._droneLaserMat);
+                        bullet.position.copy(this.droneGroup.position);
+                        bullet.position.y -= 0.18;
+                        
+                        const spread = (s - (shotCount - 1) / 2) * 0.08;
+                        const shotAngle = angle + spread;
+                        bullet.rotation.y = shotAngle;
 
-                    bullet.userData = {
-                        dir: new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)),
-                        speed: 60,
-                        damage: droneDmg,
-                        isExplosive: false,
-                        isTurretBullet: true,
-                        life: 1.5
-                    };
+                        bullet.userData = {
+                            dir: new THREE.Vector3(Math.sin(shotAngle), 0, Math.cos(shotAngle)),
+                            speed: 65,
+                            damage: droneDmg,
+                            isExplosive: false,
+                            isTurretBullet: true,
+                            life: 1.6
+                        };
 
-                    this.bullets.push(bullet);
-                    this.scene.add(bullet);
+                        this.bullets.push(bullet);
+                        this.scene.add(bullet);
+                    }
                     audio.playPistol();
                 }
             }
@@ -2893,12 +2899,12 @@
                 const playerPos = this.playerGroup.position;
                 const dogPos = this.dogGroup.position;
 
-                // Scale dog slightly with high level
-                const baseScale = 1.0 + (dogLvl - 1) * 0.06;
+                // Scale dog slightly with high level (capped at 1.7x size)
+                const baseScale = Math.min(1.7, 1.0 + (dogLvl - 1) * 0.04);
                 this.dogGroup.scale.set(baseScale, baseScale, baseScale);
 
                 // 1. Target Selection (Scan for living zombies within aggro range)
-                const aggroRange = 14.0 + (dogLvl * 2.5);
+                const aggroRange = 16.0 + Math.min(28, dogLvl * 1.4);
                 const aggroRangeSq = aggroRange * aggroRange;
                 let targetZombie = null;
                 let minZombieDistSq = aggroRangeSq;
@@ -2917,9 +2923,9 @@
                     }
                 }
 
-                // If player is too far away (>22m), leash back to player
+                // If player is too far away (>26m), leash back to player
                 const distToPlayer = dogPos.distanceTo(playerPos);
-                if (distToPlayer > 22.0) {
+                if (distToPlayer > 26.0) {
                     targetZombie = null;
                 }
 
@@ -2938,37 +2944,53 @@
                     this.dogState = 'chase';
                     targetX = targetZombie.position.x;
                     targetZ = targetZombie.position.z;
-                    moveSpeed = 8.5 + (dogLvl * 1.4);
+                    moveSpeed = Math.min(22, 9.2 + (dogLvl * 0.75));
 
                     const distToZombie = dogPos.distanceTo(targetZombie.position);
 
-                    // BITE ATTACK RANGE CHECK (~2.1 units)
-                    const biteRange = 2.1 + (dogLvl >= 5 ? 0.6 : 0);
+                    // BITE ATTACK RANGE CHECK (~2.1 - 3.2 units)
+                    const biteRange = 2.1 + Math.min(1.2, dogLvl * 0.06);
                     if (distToZombie <= biteRange) {
-                        const biteCooldown = Math.max(380, 800 - dogLvl * 80);
+                        const biteCooldown = Math.max(180, 750 - dogLvl * 35);
                         if (now - this.lastDogBite >= biteCooldown) {
                             this.lastDogBite = now;
-                            this.dogLungeTimer = 0.24;
+                            this.dogLungeTimer = 0.22;
                             
                             // Visual bite leap
                             this.dogGroup.position.y = 0.45;
 
-                            // Deal Damage
-                            const baseDogDmg = 50 + (dogLvl * 28);
-                            const isCrit = Math.random() < 0.15;
-                            const finalDamage = isCrit ? baseDogDmg * 2 : baseDogDmg;
+                            // Scaled base damage + percentage execute bonus for late-game waves
+                            const baseDogDmg = Math.round(55 * Math.pow(1.08, dogLvl - 1) + (dogLvl * 40));
+                            const percentBonus = Math.min(targetZombie.userData.maxHp * 0.035, 150 * dogLvl);
+                            const isCrit = Math.random() < Math.min(0.50, 0.15 + (dogLvl * 0.01));
+                            const finalDamage = Math.round(isCrit ? (baseDogDmg + percentBonus) * 2.2 : (baseDogDmg + percentBonus));
 
                             targetZombie.userData.hp -= finalDamage;
                             
+                            // Level 3+ Cleave / Area Bite to surrounding zombies (3.5m radius)
+                            if (dogLvl >= 3 && this.zombies.length > 1) {
+                                const cleaveRadiusSq = 12.25;
+                                for (let zi = 0; zi < this.zombies.length; zi++) {
+                                    const otherZ = this.zombies[zi];
+                                    if (!otherZ || otherZ === targetZombie || otherZ.userData.hp <= 0 || otherZ.userData.isDead) continue;
+                                    if (dogPos.distanceToSquared(otherZ.position) <= cleaveRadiusSq) {
+                                        const cleaveDmg = Math.round(finalDamage * 0.45);
+                                        otherZ.userData.hp -= cleaveDmg;
+                                        this.flashZombieHit(otherZ);
+                                        if (otherZ.userData.hp <= 0) this.killZombie(otherZ);
+                                    }
+                                }
+                            }
+
                             // Knockback zombie
                             const knockAngle = Math.atan2(targetZombie.position.x - dogPos.x, targetZombie.position.z - dogPos.z);
-                            const knockbackForce = 0.4 + (dogLvl * 0.12);
+                            const knockbackForce = 0.4 + Math.min(1.2, dogLvl * 0.08);
                             targetZombie.position.x += Math.sin(knockAngle) * knockbackForce;
                             targetZombie.position.z += Math.cos(knockAngle) * knockbackForce;
 
-                            // Level 4+ Slow / Bleed
-                            if (dogLvl >= 4 && targetZombie.userData.speed) {
-                                targetZombie.userData.speed = Math.max(0.015, targetZombie.userData.speed * 0.7);
+                            // Level 2+ Slow / Bleed
+                            if (dogLvl >= 2 && targetZombie.userData.speed) {
+                                targetZombie.userData.speed = Math.max(0.015, targetZombie.userData.speed * (0.85 - Math.min(0.4, dogLvl * 0.02)));
                             }
 
                             // Flash and particles
@@ -5533,7 +5555,7 @@
                                     }
 
                                     if (this.upgrades.base_spikes > 0) {
-                                        const spikeDmg = (this.upgrades.base_spikes * 22) * dt;
+                                        const spikeDmg = ((this.upgrades.base_spikes * 65) + (z.userData.maxHp * 0.03 * this.upgrades.base_spikes)) * dt;
                                         z.userData.hp -= spikeDmg;
                                         if (z.userData.hp <= 0) this.killZombie(z);
                                     }
@@ -5767,7 +5789,9 @@
                 this.gameSeconds++;
 
                 if (this.upgrades.auto_repair > 0 && this.baseHp < this.maxBaseHp) {
-                    this.baseHp = Math.min(this.maxBaseHp, this.baseHp + (this.upgrades.auto_repair * 6));
+                    const repairAmount = Math.round((this.upgrades.auto_repair * 15) + (this.maxBaseHp * 0.004 * this.upgrades.auto_repair));
+                    this.baseHp = Math.min(this.maxBaseHp, this.baseHp + repairAmount);
+                    this._needHudSync = true;
                 }
 
                 if (this.gameSeconds > Storage.data.highScoreSeconds) {

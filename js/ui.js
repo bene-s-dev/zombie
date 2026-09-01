@@ -358,14 +358,26 @@ updateTacticalExtrasHUD();
 
                     let descText = upg.desc;
                     if (key === 'companion_dog') {
-                        const currentDmg = 50 + (currentLvl * 28);
-                        if (currentLvl < upg.maxLevel) {
-                            const nextDmg = 50 + ((currentLvl + 1) * 28);
-                            descText = `Dein treuer K9-Begleiter kämpft an deiner Seite! (Aktuell: <b>${currentDmg} Dmg / Biss</b>). Nächste Stufe: <b>${nextDmg} Dmg</b>, schnelleres Anstürmen & stärkere Verlangsamung!`;
+                        const currentDmg = Math.round(55 * Math.pow(1.08, currentLvl - 1) + (currentLvl * 40));
+                        const nextDmg = Math.round(55 * Math.pow(1.08, currentLvl) + ((currentLvl + 1) * 40));
+                        const cleaveText = currentLvl >= 3 ? " • Inkl. 3.5m Rundum-Flächenbiss" : " (Ab Lvl 3: Rundum-Flächenbiss)";
+                        descText = `K9-Kampfhund (Aktuell: <b>${currentDmg} Dmg / Biss</b>${cleaveText}). Nächste Stufe: <b>${nextDmg} Dmg</b>, +Sprint-Tempo & +Bissfrequenz!`;
+                    } else if (key === 'combat_drone') {
+                        if (currentLvl === 0) {
+                            descText = `Schaltet die autonome Begleit-Kampfdrohne frei (Laser-Dauerfeuer gegen nahe Zombies).`;
                         } else {
-                            const maxDmg = 50 + (currentLvl * 28);
-                            descText = `MAX-STUFE: K9-Alpha-Rudelführer (<b>${maxDmg} Dmg</b>, maximaler Sprungradius, Verlangsamung & Reißbiss).`;
+                            const currentDmg = Math.round(35 * Math.pow(1.08, currentLvl - 1) + (currentLvl * 28));
+                            const nextDmg = Math.round(35 * Math.pow(1.08, currentLvl) + ((currentLvl + 1) * 28));
+                            descText = `Kampfdrohne (Aktuell: <b>${currentDmg} Dmg / Laserschuss</b>). Nächste Stufe: <b>${nextDmg} Dmg</b> & höhere Feuerrate!`;
                         }
+                    } else if (key === 'auto_repair') {
+                        const curRate = Math.round((currentLvl * 15) + ((gameInstance.maxBaseHp || 3000) * 0.004 * currentLvl));
+                        const nextRate = Math.round(((currentLvl + 1) * 15) + ((gameInstance.maxBaseHp || 3000) * 0.004 * (currentLvl + 1)));
+                        descText = `Nano-Drohnen (Aktuell: <b>+${curRate} HP / Sek</b>). Nächste Stufe: <b>+${nextRate} HP / Sek</b> automatische Basis-Reparatur.`;
+                    } else if (key === 'base_spikes') {
+                        const curDps = currentLvl * 65;
+                        const nextDps = (currentLvl + 1) * 65;
+                        descText = `Schock-Perimeter (Aktuell: <b>${curDps} DPS + 3% Zombie-HP</b>). Nächste Stufe: <b>${nextDps} DPS + 3% Zombie-HP</b> Kontaktschaden.`;
                     } else if (key === 'scavenger') {
                         const totalBonusPct = ((Math.pow(1.05, currentLvl) - 1) * 100).toFixed(1).replace(/\.0$/, '');
                         descText = `Erhöht erbeutetes Geld pro Zombie um +5% multiplikativ pro Stufe (Aktueller Bonus: <b>+${totalBonusPct}%</b>, unbegrenzt)`;
@@ -1540,12 +1552,21 @@ updateTacticalExtrasHUD();
             const upg = UPGRADES[key];
             if (!upg) return 0;
             if (key === 'companion_dog') {
-                return Math.round(upg.costBase * Math.pow(1.6, Math.max(0, currentLvl - 1)));
+                return Math.round(upg.costBase * Math.pow(1.14, Math.max(0, currentLvl - 1)));
+            }
+            if (key === 'combat_drone') {
+                return Math.round(upg.costBase * Math.pow(1.14, currentLvl));
             }
             if (key === 'scavenger') {
                 return Math.round(upg.costBase * Math.pow(1.10, currentLvl));
             }
-            return Math.round(upg.costBase * Math.pow(1.6, currentLvl));
+            if (key === 'player_hp' || key === 'base_hp') {
+                return Math.round(upg.costBase * Math.pow(1.12, currentLvl));
+            }
+            if (key === 'auto_repair' || key === 'base_spikes') {
+                return Math.round(upg.costBase * Math.pow(1.15, currentLvl));
+            }
+            return Math.round(upg.costBase * Math.pow(1.5, currentLvl));
         }
 
         function buyUpgrade(key) {
@@ -1635,38 +1656,29 @@ updateTacticalExtrasHUD();
             updateMenuAudioUI();
         }
 
-        function switchMenuTab(tab) {
-            const playCol = document.getElementById('menu-play-col');
-            const hsCol = document.getElementById('menu-hs-col');
-            const tabPlayBtn = document.getElementById('menu-tab-play');
-            const tabHsBtn = document.getElementById('menu-tab-hs');
-            
-            if (!playCol || !hsCol) return;
-            
-            if (tab === 'play') {
-                playCol.classList.remove('hidden');
-                hsCol.classList.add('hidden');
-                hsCol.classList.remove('flex');
-                if (tabPlayBtn) {
-                    tabPlayBtn.className = "flex-1 py-2 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-lg flex items-center justify-center space-x-1.5";
-                }
-                if (tabHsBtn) {
-                    tabHsBtn.className = "flex-1 py-2 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition text-slate-400 hover:text-white bg-slate-900/60 flex items-center justify-center space-x-1.5";
-                }
-            } else {
-                playCol.classList.add('hidden');
-                hsCol.classList.remove('hidden');
-                hsCol.classList.add('flex');
-                if (tabPlayBtn) {
-                    tabPlayBtn.className = "flex-1 py-2 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition text-slate-400 hover:text-white bg-slate-900/60 flex items-center justify-center space-x-1.5";
-                }
-                if (tabHsBtn) {
-                    tabHsBtn.className = "flex-1 py-2 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg flex items-center justify-center space-x-1.5";
-                }
+        function openMenuLeaderboardModal() {
+            const modal = document.getElementById('menu-leaderboard-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
                 if (typeof fetchOnlineHighscores === 'function') {
                     fetchOnlineHighscores();
                 }
             }
+        }
+
+        function closeMenuLeaderboardModal() {
+            const modal = document.getElementById('menu-leaderboard-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openMenuGuideModal() {
+            const modal = document.getElementById('menu-guide-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeMenuGuideModal() {
+            const modal = document.getElementById('menu-guide-modal');
+            if (modal) modal.classList.add('hidden');
         }
 
         function toggleMenuAudio() {

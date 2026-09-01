@@ -56,18 +56,18 @@ const WALL_TYPES = {
 
 const UPGRADES = {
     // CATEGORY: PLAYER
-    player_hp: { category: 'player', name: 'Kampfweste & Max HP', level: 0, maxLevel: Infinity, costBase: 180, desc: 'Erhöht maximale Spieler-Gesundheit um +35 HP' },
-    player_speed: { category: 'player', name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 140, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12%' },
+    player_hp: { category: 'player', name: 'Kampfweste & Max HP', level: 0, maxLevel: Infinity, costBase: 180, desc: 'Erhöht maximale Spieler-Gesundheit um +40 HP pro Stufe (Kein Stufenlimit)' },
+    player_speed: { category: 'player', name: 'Sprint-Geschwindigkeit', level: 0, maxLevel: 5, costBase: 140, desc: 'Erhöht die Laufgeschwindigkeit des Überlebenden um +12% pro Stufe' },
     scavenger: { category: 'player', name: 'Plünderer-Bonus', level: 0, maxLevel: Infinity, costBase: 1000, desc: 'Erhöht erbeutetes Geld pro Zombie um +5% multiplikativ pro Stufe (Kein Stufenlimit)' },
 
     // CATEGORY: HQ / BASE
-    base_hp: { category: 'hq', name: 'Basis & Turm-Panzerung', level: 0, maxLevel: Infinity, costBase: 220, desc: 'Erhöht maximale Basis-HP um +600 HP und verstärkt Panzerung aller Türme um +15% pro Stufe' },
-    auto_repair: { category: 'hq', name: 'Nano-Reparatur-Drohnen', level: 0, maxLevel: 5, costBase: 450, desc: 'Repariert die Basis kontinuierlich im Kampf (+6 HP/Sek)' },
-    base_spikes: { category: 'hq', name: 'Dornen-Perimeter', level: 0, maxLevel: 5, costBase: 300, desc: 'Fügt Zombies Schaden zu, die die Basis-Grenze angreifen' },
+    base_hp: { category: 'hq', name: 'Basis & Turm-Panzerung', level: 0, maxLevel: Infinity, costBase: 220, desc: 'Erhöht Basis-HP um +600 HP und verstärkt Panzerung aller Türme um +15% pro Stufe (Kein Stufenlimit)' },
+    auto_repair: { category: 'hq', name: 'Nano-Reparatur-Drohnen', level: 0, maxLevel: Infinity, costBase: 420, desc: 'Repariert die Basis kontinuierlich im Kampf (+15 HP/Sek + 0.4% Max-HP/Sek pro Stufe, kein Stufenlimit)' },
+    base_spikes: { category: 'hq', name: 'Plasma-Schock-Perimeter', level: 0, maxLevel: Infinity, costBase: 350, desc: 'Fügt angreifenden Zombies massiven Kontaktschaden zu (+65 DPS + 3% Zombie-Max-HP pro Stufe, kein Stufenlimit)' },
 
     // CATEGORY: COMPANIONS
-    companion_dog: { category: 'companion', name: 'Hundeschule', level: 1, maxLevel: 5, costBase: 320, desc: 'Verbessert deinen aktiven K9-Begleiter! Erhöht Angriffsschaden, Sprintgeschwindigkeit, Angriffstempo und Verlangsamungseffekte.' },
-    combat_drone: { category: 'companion', name: 'Begleit-Kampfdrohne', level: 0, maxLevel: 5, costBase: 650, desc: 'Schaltet eine schwebende 3D-Drohne frei, die über dir fliegt und automatisch Zombies beschießt!' }
+    companion_dog: { category: 'companion', name: 'K9-Hundeschule (Elite-Training)', level: 1, maxLevel: Infinity, costBase: 380, desc: 'Macht deinen K9-Hund zu einer tödlichen Kampfbestie! Skaliert Schaden, Sprint-Tempo, Beiß-Radius und ab Stufe 3 Rundum-Flächenbiss (Kein Stufenlimit)' },
+    combat_drone: { category: 'companion', name: 'Begleit-Kampfdrohne', level: 0, maxLevel: Infinity, costBase: 680, desc: 'Schaltet eine schwebende 3D-Kampfdrohne frei, die mit Lasersalven automatisch Zombies vernichtet (Kein Stufenlimit)' }
 };
 
 const AC130_CONFIG = {

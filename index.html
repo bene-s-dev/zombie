@@ -408,298 +408,235 @@
         </div>
 
         <!-- ================= START SCREEN / MAIN MENU OVERLAY ================= -->
-        <div id="main-menu" class="absolute inset-0 z-50 flex flex-col p-2 sm:p-4 md:p-6 bg-slate-950 overflow-y-auto custom-scroll safe-area-padding selection:bg-amber-500 selection:text-slate-950">
-            <!-- Ambient Background Layer (Clean & Cinematic without text collision) -->
+        <div id="main-menu" class="absolute inset-0 z-50 flex flex-col justify-between p-4 sm:p-6 md:p-8 bg-slate-950 overflow-y-auto custom-scroll safe-area-padding selection:bg-amber-500 selection:text-slate-950">
+            <!-- Ambient Background Layer (Cinematic dark vignette) -->
             <div class="fixed inset-0 pointer-events-none bg-cover bg-center opacity-20 scale-105 transition-transform duration-1000" style="background-image: url('og-image.jpg');"></div>
-            <div class="fixed inset-0 pointer-events-none bg-gradient-to-t from-slate-950 via-slate-950/90 to-slate-950/80"></div>
-            <div class="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent"></div>
+            <div class="fixed inset-0 pointer-events-none bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/75"></div>
+            <div class="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent"></div>
 
             <!-- Top Header Bar -->
-            <header class="w-full max-w-6xl mx-auto flex justify-between items-center px-1 sm:px-2 pt-1 mb-2.5 sm:mb-4 flex-shrink-0 relative z-10">
-                <!-- Brand Title -->
-                <div class="flex items-center space-x-2.5 sm:space-x-3.5">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-red-600/30 to-amber-500/20 border border-red-500/50 flex items-center justify-center shadow-lg shadow-red-950/60 backdrop-blur-md">
-                        <i class="fa-solid fa-biohazard text-red-500 text-xl sm:text-2xl animate-pulse"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center space-x-2">
-                            <h1 class="font-teko text-2xl sm:text-3xl md:text-4xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300 uppercase leading-none">
-                                TASKFORCE: UNDEAD
-                            </h1>
-                            <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase font-mono tracking-wider shadow-sm hidden xs:inline-block">SEASON 3</span>
-                        </div>
-                        <span class="text-[9px] sm:text-xs font-mono font-bold tracking-widest text-amber-400 uppercase flex items-center space-x-1.5 mt-0.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                            <span>TACTICAL 3D SURVIVAL • PROTOCOL ACTIVE</span>
-                        </span>
-                    </div>
+            <header class="w-full max-w-xl mx-auto flex justify-between items-center px-1 pt-1 flex-shrink-0 relative z-10">
+                <!-- Personal Record Badge -->
+                <div class="bg-slate-900/90 border border-slate-800/90 px-3 py-1.5 rounded-xl flex items-center space-x-2 text-xs font-bold shadow-lg backdrop-blur-md">
+                    <i class="fa-solid fa-trophy text-amber-400 text-sm"></i>
+                    <span class="text-slate-400 hidden xs:inline">Dein Rekord:</span>
+                    <strong id="menu-highscore" class="text-amber-400 font-mono">Kein Rekord</strong>
                 </div>
 
-                <!-- Top Header Badges & Quick Toggles -->
-                <div class="flex items-center space-x-1.5 sm:space-x-2">
-                    <!-- Personal Record Badge -->
-                    <div class="bg-slate-900/90 border border-slate-800/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl flex items-center space-x-1.5 sm:space-x-2 text-[11px] sm:text-xs font-bold shadow-lg backdrop-blur-md">
-                        <i class="fa-solid fa-trophy text-amber-400 text-xs sm:text-sm"></i>
-                        <span class="text-slate-400 hidden sm:inline">Dein Rekord:</span>
-                        <strong id="menu-highscore" class="text-amber-400 font-mono">Kein Rekord</strong>
-                    </div>
-
+                <!-- Header Action Buttons -->
+                <div class="flex items-center space-x-2">
                     <!-- Quick Audio Toggle Button -->
-                    <button type="button" id="menu-audio-btn" onclick="toggleMenuAudio()" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-slate-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl flex items-center space-x-1.5 text-slate-300 transition shadow-lg cursor-pointer active:scale-95" title="Ton umschalten">
+                    <button type="button" id="menu-audio-btn" onclick="toggleMenuAudio()" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-1.5 text-slate-300 transition shadow-lg cursor-pointer active:scale-95" title="Ton umschalten">
                         <i class="fa-solid fa-volume-high text-emerald-400 text-sm"></i>
                         <span class="hidden sm:inline text-emerald-400 font-mono text-[10px] font-bold">AUDIO</span>
                     </button>
 
-                    <!-- Fullscreen Toggle Button (Desktop & supported mobile) -->
-                    <button type="button" onclick="triggerFullscreen()" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-slate-800 p-2 sm:px-3 sm:py-2 rounded-xl text-slate-400 hover:text-white transition shadow-lg cursor-pointer active:scale-95" title="Vollbild umschalten">
+                    <!-- Fullscreen Toggle Button -->
+                    <button type="button" onclick="triggerFullscreen()" class="bg-slate-900/90 hover:bg-slate-800 active:bg-slate-950 border border-slate-800 p-2 sm:px-3 sm:py-1.5 rounded-xl text-slate-400 hover:text-white transition shadow-lg cursor-pointer active:scale-95" title="Vollbild umschalten">
                         <i class="fa-solid fa-expand text-sm"></i>
                     </button>
                 </div>
             </header>
 
-            <!-- Responsive Segmented Tab Switcher (Visible on Mobile & Tablet, optional tab switcher on Desktop) -->
-            <div class="w-full max-w-6xl mx-auto mb-3 flex-shrink-0 bg-slate-900/80 p-1 rounded-2xl border border-slate-800/90 flex space-x-1 backdrop-blur-md md:hidden relative z-10">
-                <button type="button" id="menu-tab-play" onclick="switchMenuTab('play')" class="flex-1 py-2.5 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-lg flex items-center justify-center space-x-1.5 cursor-pointer">
-                    <i class="fa-solid fa-gamepad text-sm"></i>
-                    <span>EINSATZ</span>
-                </button>
-                <button type="button" id="menu-tab-hs" onclick="switchMenuTab('highscores')" class="flex-1 py-2.5 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition text-slate-400 hover:text-white bg-slate-950/60 flex items-center justify-center space-x-1.5 cursor-pointer">
-                    <i class="fa-solid fa-trophy text-sm"></i>
-                    <span>BESTENLISTE</span>
-                </button>
-                <button type="button" id="menu-tab-intel" onclick="switchMenuTab('intel')" class="flex-1 py-2.5 rounded-xl font-teko text-base sm:text-lg font-bold tracking-wider uppercase transition text-slate-400 hover:text-white bg-slate-950/60 flex items-center justify-center space-x-1.5 cursor-pointer">
-                    <i class="fa-solid fa-book-skull text-sm"></i>
-                    <span>BRIEFING</span>
-                </button>
-            </div>
-
-            <!-- Main Content Container: Symmetrical Side-by-Side Dashboard on Desktop, Tabs on Mobile -->
-            <div class="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 relative z-10">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-5 lg:gap-6 items-stretch w-full">
-                    
-                    <!-- LEFT COLUMN / MAIN OPERATIONS HUB (Col 1-7 on desktop) -->
-                    <div id="menu-play-col" class="md:col-span-6 lg:col-span-7 flex flex-col justify-between space-y-3.5 sm:space-y-4 bg-slate-900/70 border border-slate-800/90 p-4 sm:p-6 rounded-2xl sm:rounded-3xl backdrop-blur-2xl shadow-2xl relative overflow-hidden">
-                        <!-- Tactical Glow Accent -->
-                        <div class="pointer-events-none absolute -top-24 -left-24 w-56 h-56 bg-red-600/10 rounded-full blur-3xl"></div>
-                        <div class="pointer-events-none absolute -bottom-24 -right-24 w-56 h-56 bg-amber-600/10 rounded-full blur-3xl"></div>
-
-                        <!-- Top Mission Header & Feature Overview -->
-                        <div class="space-y-2.5 relative z-10">
-                            <div class="flex items-center justify-between">
-                                <div class="inline-flex items-center space-x-2 bg-red-950/80 border border-red-500/40 px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-bold text-red-400 tracking-wider uppercase">
-                                    <i class="fa-solid fa-shield-halved text-red-400 animate-pulse"></i>
-                                    <span>OPERATION // SURVIVAL PROTOCOL</span>
-                                </div>
-                                <button type="button" onclick="switchMenuTab('intel')" class="hidden md:inline-flex items-center space-x-1.5 text-[10px] text-slate-400 hover:text-amber-400 font-mono transition cursor-pointer bg-slate-950/60 border border-slate-800 px-2.5 py-1 rounded-lg">
-                                    <i class="fa-solid fa-book-skull text-xs"></i>
-                                    <span>Taktik & Briefing</span>
-                                </button>
-                            </div>
-                            
-                            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-medium">
-                                Verteidige die Basis gegen endlose Horden, errichte autonome Geschütztürme, kommandiere deinen K9-Kampfhund und fordere verheerende AC-130 Luftschläge an!
-                            </p>
-
-                            <!-- Tactical Assets Grid (4 Interactive Feature Chips) -->
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
-                                <div class="bg-slate-950/80 border border-slate-800/90 p-2 rounded-xl text-left flex flex-col justify-between">
-                                    <span class="text-sm">🐕</span>
-                                    <span class="text-[10px] font-bold text-slate-200 mt-1 leading-tight">K9-Begleiter</span>
-                                    <span class="text-[9px] text-slate-400 font-mono">Autonome Jagd</span>
-                                </div>
-                                <div class="bg-slate-950/80 border border-slate-800/90 p-2 rounded-xl text-left flex flex-col justify-between">
-                                    <span class="text-sm">🛡️</span>
-                                    <span class="text-[10px] font-bold text-slate-200 mt-1 leading-tight">Base-Defense</span>
-                                    <span class="text-[9px] text-slate-400 font-mono">Wälle & Drohnen</span>
-                                </div>
-                                <div class="bg-slate-950/80 border border-slate-800/90 p-2 rounded-xl text-left flex flex-col justify-between">
-                                    <span class="text-sm">✈️</span>
-                                    <span class="text-[10px] font-bold text-slate-200 mt-1 leading-tight">AC-130 Gunship</span>
-                                    <span class="text-[9px] text-slate-400 font-mono">25/40/105mm</span>
-                                </div>
-                                <button type="button" onclick="openScavengerInfoModal()" class="bg-cyan-950/40 hover:bg-cyan-950/70 border border-cyan-500/40 p-2 rounded-xl text-left flex flex-col justify-between transition active:scale-95 cursor-pointer">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm">💰</span>
-                                        <i class="fa-solid fa-chart-line text-[10px] text-cyan-400"></i>
-                                    </div>
-                                    <span class="text-[10px] font-bold text-cyan-300 mt-1 leading-tight">Plünderer-Bonus</span>
-                                    <span class="text-[9px] text-cyan-400/80 font-mono">+5% Zombiefonds</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- OPERATOR RUFZEICHEN & SCHWIERIGKEITSGRAD -->
-                        <div class="space-y-3 relative z-10 bg-slate-950/60 p-3 sm:p-3.5 rounded-2xl border border-slate-800/80">
-                            <!-- Operator Name -->
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center justify-between">
-                                    <span><i class="fa-solid fa-id-badge text-amber-400 mr-1.5"></i> Operator Rufzeichen:</span>
-                                    <span class="text-[9px] text-slate-500 font-mono">MAX. 12 ZEICHEN</span>
-                                </label>
-                                <div class="flex items-center space-x-2 bg-slate-900 border border-slate-700/80 focus-within:border-amber-500/90 px-3 py-2 rounded-xl transition-all shadow-inner">
-                                    <i class="fa-solid fa-user-ninja text-amber-400 text-sm"></i>
-                                    <input type="text" id="menu-player-name" maxlength="12" placeholder="Z. B. VIPER-07" onchange="setPlayerName(this.value)" oninput="setPlayerName(this.value)" class="flex-1 bg-transparent text-xs sm:text-sm text-white placeholder-slate-500 font-mono font-bold uppercase tracking-wider focus:outline-none">
-                                    <button type="button" onclick="randomizeMenuPlayerName()" class="text-slate-400 hover:text-amber-400 p-1 transition cursor-pointer active:scale-95" title="Zufälligen Namen generieren">
-                                        <i class="fa-solid fa-dice text-sm"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Difficulty Selector Pills -->
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center justify-between">
-                                    <span><i class="fa-solid fa-skull text-red-400 mr-1.5"></i> Einsatz-Schwierigkeit:</span>
-                                </label>
-                                <div class="grid grid-cols-3 gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
-                                    <button type="button" id="diff-pill-easy" onclick="setMenuDifficulty('easy')" class="py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition text-slate-400 hover:text-white cursor-pointer flex items-center justify-center space-x-1">
-                                        <span>LEICHT</span>
-                                    </button>
-                                    <button type="button" id="diff-pill-medium" onclick="setMenuDifficulty('medium')" class="py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md cursor-pointer flex items-center justify-center space-x-1">
-                                        <span>NORMAL</span>
-                                    </button>
-                                    <button type="button" id="diff-pill-hard" onclick="setMenuDifficulty('hard')" class="py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition text-slate-400 hover:text-white cursor-pointer flex items-center justify-center space-x-1">
-                                        <span>SCHWER</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- START ACTION BUTTONS -->
-                        <div class="space-y-2.5 pt-1 relative z-10">
-                            <!-- SPIEL FORTSETZEN Button (Visible when save session exists) -->
-                            <button type="button" id="resume-game-btn" onclick="resumeGame()" class="hidden w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-teko text-xl sm:text-2xl md:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-emerald-950/60 active:scale-98 transition transform flex items-center justify-center space-x-2.5 cursor-pointer border border-emerald-400/40">
-                                <i class="fa-solid fa-rotate-left text-lg sm:text-2xl"></i>
-                                <span id="resume-game-btn-text">SPIEL FORTSETZEN</span>
-                            </button>
-
-                            <!-- NEUES SPIEL / MISSION STARTEN Button -->
-                            <button type="button" onclick="startNewGame()" class="w-full py-3.5 sm:py-4 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl sm:text-3xl md:text-4xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/60 active:scale-98 transition transform flex items-center justify-center space-x-2.5 cursor-pointer border border-red-400/40">
-                                <i class="fa-solid fa-play text-xl sm:text-2xl"></i>
-                                <span>MISSION STARTEN</span>
-                            </button>
+            <!-- Center Content: Classic AAA Game Vertical Menu -->
+            <main class="w-full max-w-md mx-auto my-auto flex flex-col items-center justify-center py-6 relative z-10 space-y-6">
+                <!-- Game Brand Logo -->
+                <div class="text-center space-y-2">
+                    <div class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-gradient-to-br from-red-600/30 to-amber-500/20 border border-red-500/50 shadow-2xl shadow-red-950/80 backdrop-blur-md mb-1">
+                        <i class="fa-solid fa-biohazard text-red-500 text-2xl sm:text-3xl animate-pulse"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-teko text-4xl sm:text-5xl md:text-6xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300 uppercase leading-none drop-shadow-md">
+                            TASKFORCE: UNDEAD
+                        </h1>
+                        <div class="flex items-center justify-center space-x-2 mt-1">
+                            <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full uppercase font-mono tracking-wider shadow-sm">SEASON 3</span>
+                            <span class="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-widest">3D BASE DEFENSE</span>
                         </div>
                     </div>
+                </div>
 
-                    <!-- RIGHT COLUMN / SEASON 3 LEADERBOARD (Col 8-12 on desktop) -->
-                    <div id="menu-hs-col" class="hidden md:flex md:col-span-6 lg:col-span-5 flex-col justify-between bg-slate-900/70 border border-slate-800/90 p-4 sm:p-5 rounded-2xl sm:rounded-3xl backdrop-blur-2xl shadow-2xl min-h-0 relative overflow-hidden">
-                        <!-- Header -->
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 flex-shrink-0">
-                            <div class="flex items-center space-x-2.5">
-                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-sm">
-                                    <i class="fa-solid fa-trophy text-base"></i>
-                                </div>
-                                <div>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="font-teko text-xl sm:text-2xl font-bold tracking-wider text-slate-100 uppercase leading-none">BESTENLISTE</span>
-                                        <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded uppercase font-teko tracking-wider">SEASON 3</span>
-                                    </div>
-                                    <span class="text-[9px] sm:text-[10px] text-slate-400 font-mono">Globale Rangliste aller Rekorde</span>
-                                </div>
+                <!-- Operator Name Input Field -->
+                <div class="w-full space-y-1.5">
+                    <label class="text-[11px] text-slate-400 font-bold uppercase tracking-wider flex items-center justify-between px-1">
+                        <span><i class="fa-solid fa-id-badge text-amber-400 mr-1.5"></i> Operator Rufzeichen:</span>
+                        <span class="text-[9px] text-slate-500 font-mono">MAX. 12 ZEICHEN</span>
+                    </label>
+                    <div class="flex items-center space-x-2 bg-slate-900/90 border border-slate-700/80 focus-within:border-amber-500/90 px-3.5 py-2.5 rounded-2xl transition-all shadow-inner backdrop-blur-md">
+                        <i class="fa-solid fa-user-ninja text-amber-400 text-sm"></i>
+                        <input type="text" id="menu-player-name" maxlength="12" placeholder="Z. B. VIPER-07" onchange="setPlayerName(this.value)" oninput="setPlayerName(this.value)" class="flex-1 bg-transparent text-sm text-white placeholder-slate-500 font-mono font-bold uppercase tracking-wider focus:outline-none">
+                        <button type="button" onclick="randomizeMenuPlayerName()" class="text-slate-400 hover:text-amber-400 p-1 transition cursor-pointer active:scale-95" title="Zufälligen Namen generieren">
+                            <i class="fa-solid fa-dice text-base"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Primary Action Buttons (Vertical Stack) -->
+                <div class="w-full space-y-3">
+                    <!-- SPIEL FORTSETZEN Button (Visible only when active session exists) -->
+                    <button type="button" id="resume-game-btn" onclick="resumeGame()" class="hidden w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-emerald-950/60 active:scale-98 transition transform flex items-center justify-center space-x-3 cursor-pointer border border-emerald-400/40">
+                        <i class="fa-solid fa-rotate-left text-xl sm:text-2xl"></i>
+                        <span id="resume-game-btn-text">SPIEL FORTSETZEN</span>
+                    </button>
+
+                    <!-- NEUES SPIEL STARTEN Button -->
+                    <button type="button" onclick="startNewGame()" class="w-full py-4 sm:py-4.5 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-teko text-2xl sm:text-3xl tracking-wider font-bold rounded-2xl shadow-xl shadow-red-900/60 active:scale-98 transition transform flex items-center justify-center space-x-3 cursor-pointer border border-red-400/40">
+                        <i class="fa-solid fa-play text-xl sm:text-2xl"></i>
+                        <span>NEUES SPIEL STARTEN</span>
+                    </button>
+
+                    <!-- BESTENLISTE Button -->
+                    <button type="button" onclick="openMenuLeaderboardModal()" class="w-full py-3 sm:py-3.5 bg-slate-900/90 hover:bg-slate-800 text-amber-400 hover:text-amber-300 font-teko text-xl sm:text-2xl tracking-wider font-bold rounded-2xl shadow-lg border border-amber-500/40 active:scale-98 transition flex items-center justify-center space-x-2.5 cursor-pointer">
+                        <i class="fa-solid fa-trophy text-lg"></i>
+                        <span>BESTENLISTE (SEASON 3)</span>
+                    </button>
+
+                    <!-- SPIELANLEITUNG Button -->
+                    <button type="button" onclick="openMenuGuideModal()" class="w-full py-3 sm:py-3.5 bg-slate-900/70 hover:bg-slate-800 text-slate-300 hover:text-white font-teko text-xl sm:text-2xl tracking-wider font-bold rounded-2xl shadow-md border border-slate-800 active:scale-98 transition flex items-center justify-center space-x-2.5 cursor-pointer">
+                        <i class="fa-solid fa-book-skull text-lg text-slate-400"></i>
+                        <span>SPIELANLEITUNG & STEUERUNG</span>
+                    </button>
+                </div>
+            </main>
+
+            <!-- Footer: Controls Hint -->
+            <footer class="w-full max-w-xl mx-auto pt-2 pb-1 flex-shrink-0 relative z-10 text-center">
+                <div class="desktop-only text-xs text-slate-500 flex justify-center space-x-4">
+                    <span><i class="fa-solid fa-keyboard mr-1 text-slate-600"></i> [WASD] Bewegen</span>
+                    <span><i class="fa-solid fa-crosshairs mr-1 text-slate-600"></i> [Space] Schießen</span>
+                    <span><i class="fa-solid fa-store mr-1 text-slate-600"></i> [B] Shop</span>
+                    <span><i class="fa-solid fa-pause mr-1 text-slate-600"></i> [ESC] Pause</span>
+                </div>
+                <div class="mobile-only text-[11px] text-slate-500 flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-mobile-screen-button text-amber-400"></i>
+                    <span>Touch-Joystick & Schnellfeuer aktiv • Querformat empfohlen</span>
+                </div>
+            </footer>
+        </div>
+
+        <!-- ================= MENU LEADERBOARD MODAL (Full View) ================= -->
+        <div id="menu-leaderboard-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-5 bg-slate-950/90 backdrop-blur-md safe-area-padding">
+            <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden">
+                <!-- Header -->
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-sm">
+                            <i class="fa-solid fa-trophy text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h2 class="font-teko text-2xl sm:text-3xl font-bold tracking-wider text-slate-100 uppercase leading-none">BESTENLISTE</h2>
+                                <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded uppercase font-teko tracking-wider">SEASON 3</span>
                             </div>
-
-                            <div class="flex items-center space-x-1.5">
-                                <span class="inline-flex items-center text-[9px] sm:text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
-                                    <span id="online-status-dot" class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs text-slate-400 font-mono">Globale Rangliste aller Rekorde</span>
+                                <span class="inline-flex items-center text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
+                                    <span id="online-status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
                                     <span id="online-status-text">ONLINE</span>
                                 </span>
                             </div>
                         </div>
-
-                        <!-- Table Container -->
-                        <div class="flex-1 flex flex-col pt-2 min-h-0 relative">
-                            <!-- Lädt... Anzeige -->
-                            <div id="highscore-list-loading" class="flex flex-col items-center justify-center py-8 text-xs text-amber-400">
-                                <i class="fa-solid fa-circle-notch fa-spin text-2xl sm:text-3xl mb-2 text-amber-400"></i>
-                                <span class="font-mono text-[11px] sm:text-xs tracking-wider uppercase font-bold text-slate-300">Synchronisiere Bestenliste...</span>
-                            </div>
-
-                            <!-- Leere Liste -->
-                            <div id="highscore-list-empty" class="hidden text-center py-8 text-xs text-slate-500">
-                                <i class="fa-solid fa-ghost text-2xl sm:text-3xl mb-1.5 text-slate-600 block"></i>
-                                Keine Einträge vorhanden.<br>Überlebe, um dich hier einzutragen!
-                            </div>
-                            
-                            <!-- Tabelle mit dynamischer Scrollbar -->
-                            <div id="highscore-list-table-wrapper" class="hidden overflow-y-auto max-h-72 sm:max-h-80 md:max-h-96 w-full custom-scroll pr-1">
-                                <table class="w-full text-left text-xs font-semibold">
-                                    <thead>
-                                        <tr class="text-slate-400 border-b border-slate-800 text-[9px] sm:text-[10px] uppercase tracking-wider sticky top-0 bg-slate-950/95 backdrop-blur-md">
-                                            <th class="py-2 px-1.5">RANG</th>
-                                            <th class="py-2 px-2">OPERATOR</th>
-                                            <th class="py-2 px-2">ZEIT</th>
-                                            <th class="py-2 px-2 text-center">WELLE</th>
-                                            <th class="py-2 px-2 text-center">KILLS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="highscore-list-body" class="text-slate-300 text-[11px] sm:text-xs divide-y divide-slate-800/40 font-mono">
-                                        <!-- Dynamisch befüllt -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
                     </div>
 
-                    <!-- INTEL & BRIEFING TAB (Shown on Mobile when Briefing Tab active, or toggled on desktop) -->
-                    <div id="menu-intel-col" class="hidden md:hidden flex-col justify-between space-y-3.5 bg-slate-900/70 border border-slate-800/90 p-4 sm:p-6 rounded-2xl sm:rounded-3xl backdrop-blur-2xl shadow-2xl relative overflow-hidden">
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5 flex-shrink-0">
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-book-skull text-amber-400 text-sm"></i>
-                                <span class="font-teko text-xl font-bold tracking-wider text-slate-100 uppercase leading-none">TAKTIK-BRIEFING</span>
-                            </div>
-                            <span class="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">GUIDE</span>
-                        </div>
+                    <button type="button" onclick="closeMenuLeaderboardModal()" class="text-slate-400 hover:text-white p-2 text-xl cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
 
-                        <div class="space-y-3 text-xs leading-relaxed text-slate-300 overflow-y-auto max-h-72 custom-scroll pr-1">
-                            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60 space-y-1">
-                                <div class="font-bold text-amber-400 flex items-center space-x-1.5">
-                                    <span>🐕</span> <span>K9-Kampfhund</span>
-                                </div>
-                                <p class="text-[11px] text-slate-400">Greift nahe Zombies autonom an, verlangsamt sie und kann im Shop massiv aufgerüstet werden.</p>
-                            </div>
-                            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60 space-y-1">
-                                <div class="font-bold text-cyan-400 flex items-center space-x-1.5">
-                                    <span>🏰</span> <span>Geschütze & Barrikaden</span>
-                                </div>
-                                <p class="text-[11px] text-slate-400">Platziere Gatlings, Plasma-Türme, Raketen und Wälle, um deine Basis gegen Wellen abzusichern.</p>
-                            </div>
-                            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60 space-y-1">
-                                <div class="font-bold text-red-400 flex items-center space-x-1.5">
-                                    <span>✈️</span> <span>AC-130 Gunship</span>
-                                </div>
-                                <p class="text-[11px] text-slate-400">Nutze 25mm Dauerfeuer, 40mm Bofors oder 105mm AGM-Raketen per Touch/Maus für Flächenschaden.</p>
-                            </div>
-                            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60 space-y-1">
-                                <div class="font-bold text-emerald-400 flex items-center space-x-1.5">
-                                    <span>💰</span> <span>Plünderer-Bonus</span>
-                                </div>
-                                <p class="text-[11px] text-slate-400">Erhöht erbeutetes Geld pro Zombie um +5% multiplikativ pro Stufe – unverzichtbar im High-Wave Endgame.</p>
-                            </div>
-                        </div>
-
-                        <button type="button" onclick="switchMenuTab('play')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition cursor-pointer">
-                            Zurück zum Einsatz
-                        </button>
+                <!-- Table Content (Scrollable) -->
+                <div class="flex-1 flex flex-col pt-3 min-h-0 relative overflow-hidden">
+                    <!-- Lädt... Anzeige -->
+                    <div id="highscore-list-loading" class="flex flex-col items-center justify-center py-12 text-amber-400">
+                        <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2 text-amber-400"></i>
+                        <span class="font-mono text-xs tracking-wider uppercase font-bold text-slate-300">Synchronisiere Bestenliste...</span>
                     </div>
 
+                    <!-- Leere Liste -->
+                    <div id="highscore-list-empty" class="hidden text-center py-12 text-xs text-slate-500">
+                        <i class="fa-solid fa-ghost text-3xl mb-2 text-slate-600 block"></i>
+                        Keine Einträge vorhanden.<br>Überlebe, um dich hier einzutragen!
+                    </div>
+                    
+                    <!-- Tabelle mit dynamischer Scrollbar -->
+                    <div id="highscore-list-table-wrapper" class="hidden overflow-y-auto max-h-[60dvh] w-full custom-scroll pr-1">
+                        <table class="w-full text-left text-xs font-semibold">
+                            <thead>
+                                <tr class="text-slate-400 border-b border-slate-800 text-[10px] uppercase tracking-wider sticky top-0 bg-slate-900/95 backdrop-blur-md">
+                                    <th class="py-2.5 px-2">RANG</th>
+                                    <th class="py-2.5 px-2">OPERATOR</th>
+                                    <th class="py-2.5 px-2">ZEIT</th>
+                                    <th class="py-2.5 px-2 text-center">WELLE</th>
+                                    <th class="py-2.5 px-2 text-center">KILLS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="highscore-list-body" class="text-slate-300 text-xs divide-y divide-slate-800/40 font-mono">
+                                <!-- Dynamisch befüllt -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="pt-3 border-t border-slate-800 flex justify-end flex-shrink-0">
+                    <button type="button" onclick="closeMenuLeaderboardModal()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+                        ZURÜCK ZUM HAUPTMENÜ
+                    </button>
                 </div>
             </div>
-
-            <!-- Footer: Shortcuts on Desktop / Touch Hint on Mobile -->
-            <footer class="w-full max-w-6xl mx-auto pt-3 pb-1 flex-shrink-0 relative z-10">
-                <div class="desktop-only text-center text-xs text-slate-400 flex justify-center space-x-6">
-                    <span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800/60"><i class="fa-solid fa-keyboard text-slate-400 mr-1.5"></i> [WASD / Pfeile] Bewegung</span>
-                    <span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800/60"><i class="fa-solid fa-crosshairs text-slate-400 mr-1.5"></i> [Leertaste] Schießen</span>
-                    <span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800/60"><i class="fa-solid fa-store text-slate-400 mr-1.5"></i> [B] Shop</span>
-                    <span class="bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800/60"><i class="fa-solid fa-pause text-slate-400 mr-1.5"></i> [ESC] Pause</span>
-                </div>
-                <div class="mobile-only text-center text-[10px] sm:text-xs text-slate-400 flex items-center justify-center space-x-2">
-                    <span class="bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800 flex items-center space-x-1.5">
-                        <i class="fa-solid fa-mobile-screen-button text-amber-400"></i>
-                        <span>Touch-Joystick & Schnellfeuer aktiv • Querformat empfohlen</span>
-                    </span>
-                </div>
-            </footer>
         </div>
+
+        <!-- ================= MENU GUIDE MODAL ================= -->
+        <div id="menu-guide-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-5 bg-slate-950/90 backdrop-blur-md safe-area-padding">
+            <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
+                    <div class="flex items-center space-x-2.5">
+                        <i class="fa-solid fa-book-skull text-amber-400 text-xl"></i>
+                        <h2 class="font-teko text-2xl sm:text-3xl font-bold tracking-wider text-slate-100 uppercase leading-none">SPIELANLEITUNG & STEUERUNG</h2>
+                    </div>
+                    <button type="button" onclick="closeMenuGuideModal()" class="text-slate-400 hover:text-white p-2 text-xl cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto custom-scroll py-3 space-y-3 text-xs leading-relaxed text-slate-300">
+                    <div class="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                        <div class="font-bold text-amber-400 text-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-gamepad"></i> <span>Steuerung</span>
+                        </div>
+                        <p class="text-slate-400">Desktop: <b>WASD</b> / Pfeiltasten zum Bewegen, <b>Leertaste</b> zum Schießen, <b>B</b> für den Shop, <b>ESC</b> für Pause.</p>
+                        <p class="text-slate-400">Mobil: Virtueller Analog-Joystick links, Schnellfeuer-Taste rechts.</p>
+                    </div>
+
+                    <div class="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                        <div class="font-bold text-cyan-400 text-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-shield-halved"></i> <span>Basis-Verteidigung & Bau</span>
+                        </div>
+                        <p class="text-slate-400">Verteidige das Hauptquartier in der Kartenmitte! Platziere im Shop (Taste <b>B</b>) Maschinengewehr-Türme, Raketenwerfer und Barrikaden. Klicke auf gebaute Türme, um sie hochzuleveln oder zu reparieren.</p>
+                    </div>
+
+                    <div class="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                        <div class="font-bold text-emerald-400 text-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-dog"></i> <span>K9-Kampfhund & Drohnen</span>
+                        </div>
+                        <p class="text-slate-400">Dein treuer K9-Begleiter attackiert Zombies automatisch und verlangsamt sie. Durch Upgrades in der Hundeschule erhält er Flächen-Bisse und skaliert unbegrenzt in späte Wellen.</p>
+                    </div>
+
+                    <div class="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+                        <div class="font-bold text-red-400 text-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-plane-up"></i> <span>AC-130 Luftunterstützung</span>
+                        </div>
+                        <p class="text-slate-400">Fordere im Notfall das AC-130 Gunship an. Wähle zwischen 25mm Gatling, 40mm Bofors-Kanonen und verheerenden 105mm Raketen, um ganze Zombie-Schwärme auszulöschen.</p>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex justify-end flex-shrink-0">
+                    <button type="button" onclick="closeMenuGuideModal()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+                        SCHLIESSEN
+                    </button>
+                </div>
+            </div>
+        </div>
+
 
         <!-- ================= IN-GAME HUD OVERLAY ================= -->
         <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between select-none">
