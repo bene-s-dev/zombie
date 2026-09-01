@@ -2623,7 +2623,7 @@
                 const minZ = Math.min(startZ, endZ) - 1.2;
                 const maxZ = Math.max(startZ, endZ) + 1.2;
 
-                const allStructures = [...this.turrets, ...this.walls];
+                const allStructures = [...this.turrets];
                 const found = [];
 
                 for (const struct of allStructures) {
@@ -2684,7 +2684,7 @@
             updateMultiSelection(groundX, groundZ, radius = 14) {
                 this.showHoldSelectionPulse(groundX, groundZ, radius);
 
-                const allStructures = [...this.turrets, ...this.walls];
+                const allStructures = [...this.turrets];
                 const found = [];
                 const rSq = radius * radius;
 
@@ -2752,7 +2752,7 @@
                 const upgText = document.getElementById('multi-inspect-upgrade-text');
                 const repText = document.getElementById('multi-inspect-repair-text');
 
-                if (sub) sub.innerText = `${structuresList.length} STRUKTUREN GEWÄHLT`;
+                if (sub) sub.innerText = `${structuresList.length} ${structuresList.length === 1 ? 'TURM GEWÄHLT' : 'TÜRME GEWÄHLT'}`;
 
                 let totalUpgCost = 0;
                 let totalRepCost = 0;

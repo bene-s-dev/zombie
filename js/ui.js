@@ -667,10 +667,10 @@ updateTacticalExtrasHUD();
 
         function openAllStructuresMultiUpgrade() {
             if (!gameInstance) return;
-            const all = [...(gameInstance.turrets || []), ...(gameInstance.walls || [])];
+            const all = [...(gameInstance.turrets || [])];
             if (all.length === 0) {
                 if (typeof showPurchaseToast === 'function') {
-                    showPurchaseToast('ℹ️ Noch keine Verteidigungstürme oder Mauern gebaut!');
+                    showPurchaseToast('ℹ️ Noch keine Verteidigungstürme gebaut!');
                 }
                 return;
             }
