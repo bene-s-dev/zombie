@@ -3625,7 +3625,7 @@
                         this.lockedAimTarget.position.x - this.playerGroup.position.x,
                         this.lockedAimTarget.position.z - this.playerGroup.position.z
                     );
-                } else if (this.pointerWorldPos && !this.isMobile && (this.isMouseDown || this.keys['Space'])) {
+                } else if (this.isMouseDown && this.pointerWorldPos && !this.isMobile) {
                     aimAngle = Math.atan2(
                         this.pointerWorldPos.x - this.playerGroup.position.x,
                         this.pointerWorldPos.z - this.playerGroup.position.z
@@ -6319,6 +6319,8 @@
 
                         const shopActive = (typeof isShopOpen !== 'undefined' ? isShopOpen : (window.isShopOpen || false));
                         const isFiring = !shopActive && (this.keys['Space'] || this.isTouchFiring || (this.isMouseDown && !this.isHoldSelecting && !this.isPlacementMode));
+                        const hasMovement = (moveX !== 0 || moveZ !== 0);
+                        const moveAngle = hasMovement ? Math.atan2(moveX, moveZ) : this.playerGroup.rotation.y;
 
                         // Smart Aim Assist (Short-range melee defense only: 6 meters max)
                         if (isFiring && this.zombies.length > 0) {
@@ -6359,7 +6361,7 @@
                                 let diff = targetAimAngle - this.playerGroup.rotation.y;
                                 diff = Math.atan2(Math.sin(diff), Math.cos(diff));
                                 this.playerGroup.rotation.y += diff * 35.0 * dt;
-                            } else if (this.pointerWorldPos && !this.isMobile) {
+                            } else if (this.isMouseDown && this.pointerWorldPos && !this.isMobile) {
                                 const mouseAimAngle = Math.atan2(
                                     this.pointerWorldPos.x - this.playerGroup.position.x,
                                     this.pointerWorldPos.z - this.playerGroup.position.z
@@ -6367,27 +6369,17 @@
                                 let diff = mouseAimAngle - this.playerGroup.rotation.y;
                                 diff = Math.atan2(Math.sin(diff), Math.cos(diff));
                                 this.playerGroup.rotation.y += diff * 30.0 * dt;
-                            } else if (moveX !== 0 || moveZ !== 0) {
-                                const targetAngle = Math.atan2(moveX, moveZ);
-                                let diff = targetAngle - this.playerGroup.rotation.y;
+                            } else if (hasMovement) {
+                                let diff = moveAngle - this.playerGroup.rotation.y;
                                 diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                                this.playerGroup.rotation.y += diff * 18.0 * dt;
+                                this.playerGroup.rotation.y += diff * 22.0 * dt;
                             }
                         } else {
                             this.lockedAimTarget = null;
-                            if (this.pointerWorldPos && !this.isMobile && (moveX === 0 && moveZ === 0)) {
-                                const mouseAimAngle = Math.atan2(
-                                    this.pointerWorldPos.x - this.playerGroup.position.x,
-                                    this.pointerWorldPos.z - this.playerGroup.position.z
-                                );
-                                let diff = mouseAimAngle - this.playerGroup.rotation.y;
+                            if (hasMovement) {
+                                let diff = moveAngle - this.playerGroup.rotation.y;
                                 diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                                this.playerGroup.rotation.y += diff * 16.0 * dt;
-                            } else if (moveX !== 0 || moveZ !== 0) {
-                                const targetAngle = Math.atan2(moveX, moveZ);
-                                let diff = targetAngle - this.playerGroup.rotation.y;
-                                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                                this.playerGroup.rotation.y += diff * 18.0 * dt;
+                                this.playerGroup.rotation.y += diff * 22.0 * dt;
                             }
                         }
 
