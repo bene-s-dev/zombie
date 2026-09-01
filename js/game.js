@@ -1426,7 +1426,6 @@
                             else audio.playPistol();
                         }
                     }
-                    }
                 }
             }
 
@@ -2143,8 +2142,9 @@
 
                     // Perforated Muzzle Brake at barrel tip
                     const brakeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9 });
-                    const brakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.35, 8), brakeMat);
-                    brakeMesh.rotateX(Math.PI / 2);
+                    const brakeGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.35, 8);
+                    brakeGeo.rotateX(Math.PI / 2);
+                    const brakeMesh = new THREE.Mesh(brakeGeo, brakeMat);
                     brakeMesh.position.set(0, 0.65, 1.45);
                     brakeMesh.rotation.x = -0.52;
                     mantisGroup.add(brakeMesh);
@@ -2155,8 +2155,9 @@
 
                     const eosDomeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.85, roughness: 0.15 });
                     const eosDome = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12), eosDomeMat);
-                    const eosLens = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.15, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
-                    eosLens.rotateX(Math.PI / 2);
+                    const lensGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.15, 8);
+                    lensGeo.rotateX(Math.PI / 2);
+                    const eosLens = new THREE.Mesh(lensGeo, new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
                     eosLens.position.set(0, 0, 0.22);
                     eosGroup.add(eosDome);
                     eosGroup.add(eosLens);
@@ -6345,7 +6346,8 @@
                             moveZ = this.touchJoystick.vectorY;
                         }
 
-                        const isFiring = !isShopOpen && (this.keys['Space'] || this.isTouchFiring);
+                        const shopActive = (typeof isShopOpen !== 'undefined' ? isShopOpen : (window.isShopOpen || false));
+                        const isFiring = !shopActive && (this.keys['Space'] || this.isTouchFiring);
 
                         // Smart Aim Assist: Lock onto nearest zombie when firing, break lock if out of range
                         if (isFiring && this.zombies.length > 0) {
