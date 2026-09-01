@@ -1335,17 +1335,18 @@
 
                             this.bullets.push(bullet);
                         } else if (ud.isArtillery) {
-                            // Heavy Artillery Ballistic Mortar Launch (Crimson Warhead & Fiery Glow)
+                            // Heavy Guided Missile (VLS Vertical Launch + Terminal Homing)
                             if (typeof audio !== 'undefined' && audio.playRocket) audio.playRocket();
 
                             const startX = tx;
                             const startY = 2.4;
                             const startZ = tz;
-                            const targetX = closestZombie.position.x;
-                            const targetZ = closestZombie.position.z;
+                            const targetZombie = closestZombie;
+                            const targetX = targetZombie.position.x;
+                            const targetZ = targetZombie.position.z;
                             const dist = Math.hypot(targetX - startX, targetZ - startZ);
-                            const flightDuration = Math.max(0.95, Math.min(1.45, 0.75 + dist * 0.015));
-                            const apex = 14 + dist * 0.28;
+                            const flightDuration = Math.max(1.15, Math.min(1.85, 0.95 + dist * 0.018));
+                            const cruiseAltitude = Math.max(18, 14 + dist * 0.32);
 
                             if (!this._artilleryRocketGeo) {
                                 this._artilleryRocketGeo = new THREE.CylinderGeometry(0.18, 0.14, 1.4, 8);
@@ -1370,8 +1371,9 @@
                             this.ballisticRockets.push({
                                 mesh: rocket,
                                 startX, startY, startZ,
+                                targetZombie,
                                 targetX, targetZ,
-                                apex,
+                                cruiseAltitude,
                                 duration: flightDuration,
                                 elapsed: 0,
                                 damage: ud.damage,
@@ -5857,33 +5859,63 @@
                     }
                 }
 
-                // Active Heavy Artillery Ballistic Mortar Rockets Update
+                // Active Heavy Guided Missile (VLS Vertical Launch + Terminal Homing)
                 if (this.ballisticRockets && this.ballisticRockets.length > 0) {
                     for (let bi = this.ballisticRockets.length - 1; bi >= 0; bi--) {
                         const r = this.ballisticRockets[bi];
                         r.elapsed += dt;
                         const p = Math.min(1.0, r.elapsed / r.duration);
 
-                        const curX = r.startX + (r.targetX - r.startX) * p;
-                        const curZ = r.startZ + (r.targetZ - r.startZ) * p;
-                        const curY = r.startY + (0 - r.startY) * p + 4 * r.apex * p * (1 - p);
+                        // Dynamic Homing Tracking: follow locked zombie in real-time
+                        if (r.targetZombie && r.targetZombie.userData && r.targetZombie.userData.hp > 0 && !r.targetZombie.userData.isDead) {
+                            r.targetX = r.targetZombie.position.x;
+                            r.targetZ = r.targetZombie.position.z;
+                        }
 
-                        // Look along forward velocity tangent
-                        const nextP = Math.min(1.0, p + 0.02);
-                        const nextX = r.startX + (r.targetX - r.startX) * nextP;
-                        const nextZ = r.startZ + (r.targetZ - r.startZ) * nextP;
-                        const nextY = r.startY + (0 - r.startY) * nextP + 4 * r.apex * nextP * (1 - nextP);
+                        // Cubic Bezier VLS trajectory:
+                        // P0: (startX, startY, startZ)
+                        // P1: Vertical climb top (startX, cruiseAltitude, startZ)
+                        // P2: High approach waypoint above target
+                        // P3: Target (targetX, 0.2, targetZ)
+                        const evalPos = (t, out) => {
+                            const omt = 1 - t;
+                            const c0 = omt * omt * omt;
+                            const c1 = 3 * omt * omt * t;
+                            const c2 = 3 * omt * t * t;
+                            const c3 = t * t * t;
 
-                        r.mesh.position.set(curX, curY, curZ);
-                        r.mesh.lookAt(nextX, nextY, nextZ);
+                            const p1x = r.startX + (r.targetX - r.startX) * 0.08;
+                            const p1y = r.cruiseAltitude;
+                            const p1z = r.startZ + (r.targetZ - r.startZ) * 0.08;
 
-                        // Smoke and fire particle trail
-                        if (Math.random() < 0.6) {
+                            const p2x = r.startX + (r.targetX - r.startX) * 0.65;
+                            const p2y = r.cruiseAltitude * 0.92;
+                            const p2z = r.startZ + (r.targetZ - r.startZ) * 0.65;
+
+                            out.x = c0 * r.startX + c1 * p1x + c2 * p2x + c3 * r.targetX;
+                            out.y = c0 * r.startY + c1 * p1y + c2 * p2y + c3 * 0.2;
+                            out.z = c0 * r.startZ + c1 * p1z + c2 * p2z + c3 * r.targetZ;
+                        };
+
+                        if (!this._vRocketPos) this._vRocketPos = new THREE.Vector3();
+                        if (!this._vRocketNext) this._vRocketNext = new THREE.Vector3();
+
+                        evalPos(p, this._vRocketPos);
+                        evalPos(Math.min(1.0, p + 0.02), this._vRocketNext);
+
+                        r.mesh.position.copy(this._vRocketPos);
+                        r.mesh.lookAt(this._vRocketNext.x, this._vRocketNext.y, this._vRocketNext.z);
+
+                        // Fiery rocket thruster tail particle
+                        if (Math.random() < 0.65) {
                             this.createBloodSparks(r.mesh.position, 0xf97316);
                         }
 
-                        if (p >= 1.0) {
-                            // Heavy Artillery Ground Impact Detonation with Knockback!
+                        const distToTarget = Math.hypot(r.mesh.position.x - r.targetX, r.mesh.position.z - r.targetZ);
+                        const isCloseToGround = r.mesh.position.y <= 0.8;
+
+                        if (p >= 1.0 || (p > 0.65 && distToTarget < 1.2 && isCloseToGround)) {
+                            // Heavy Guided Missile Impact Detonation with Knockback!
                             this.createExplosion(
                                 new THREE.Vector3(r.targetX, 0.2, r.targetZ),
                                 r.splashRadius,
