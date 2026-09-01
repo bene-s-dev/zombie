@@ -2739,7 +2739,7 @@
                     stats.innerHTML = `
                         <div>• Drohnengeschwader: <strong class="text-emerald-400">3x Autonome Reparaturdrohnen</strong></div>
                         <div>• Reichweite: <strong class="text-emerald-400">Global (Unbegrenzt)</strong></div>
-                        <div>• Status: <strong class="text-emerald-400">Dauerhaft Aktiv</strong></div>
+                        <div>• Pushback / Rückstoß: <strong class="text-slate-400">Keiner (0m)</strong></div>
                         <div>• Reparatur-Fokus: <strong class="text-sky-400">Alle Türme & Barrikaden</strong></div>
                         <div>• Reparaturleistung: <strong class="text-emerald-400">~225 HP / Sekunde</strong></div>
                         <div>• Panzerung: <strong class="text-teal-300">100% (UNZERSTÖRBAR)</strong></div>
@@ -2758,6 +2758,7 @@
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• Beleuchtung: <strong class="text-amber-300">360° Rundum-LED-Flutlicht</strong></div>
                         <div>• Leuchtradius: <strong class="text-sky-400">${ud.range}m</strong></div>
+                        <div>• Pushback: <strong class="text-slate-400">Keiner (0m - blendet nachts)</strong></div>
                         <div>• Taktischer Effekt: <strong class="text-amber-300">Bremst Zombies nachts auf Normaltempo</strong></div>
                         <div>• Nacht-Sensor: <strong class="text-emerald-400">Automatische Aktivierung</strong></div>
                     `;
@@ -2784,6 +2785,7 @@
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• 35mm Flak-Schaden: <strong class="text-amber-400">${Math.round(ud.damage)} pro Schuss</strong></div>
                         <div>• Flugabwehr-Radius: <strong class="text-sky-400">${ud.range}m</strong></div>
+                        <div>• Pushback: <strong class="text-sky-300">Gering (0.4m)</strong></div>
                         <div>• Schnellfeuer-Kadenz: <strong class="text-emerald-400">${ud.firerate}ms (~9 Schuss/Sek.)</strong></div>
                         <div>• Zielsuch-Sensor: <strong class="text-cyan-300">Elektro-Optisches Radar (EOS)</strong></div>
                         <div>• Spezialisierung: <strong class="text-rose-400">Schnellfeuer gegen fliegende Mutanten!</strong></div>
@@ -2813,9 +2815,10 @@
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• Schaden: <strong class="text-amber-400">${Math.round(ud.damage)}</strong></div>
                         <div>• Reichweite: <strong class="text-sky-400">${ud.range}m (Min: ${ud.minRange || 7}m)</strong></div>
+                        <div>• Pushback: <strong class="text-rose-400">Extrem (14.0m Druckwelle)</strong></div>
                         <div>• Nachladezeit: <strong class="text-emerald-400">${ud.firerate}ms</strong></div>
                         <div>• Flugbahn: <strong class="text-amber-300">Steiler Ballistischer Bogen</strong></div>
-                        <div>• Flächenwirkung: <strong class="text-rose-400">${ud.splashRadius}m Radius + Pushback</strong></div>
+                        <div>• Flächenwirkung: <strong class="text-rose-400">${ud.splashRadius}m Radius</strong></div>
                     `;
                     const upgCost = Math.round(ud.totalInvested * 0.80);
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
@@ -2843,7 +2846,8 @@
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• Schaden: <strong class="text-amber-400">${Math.round(ud.damage)}</strong></div>
                         <div>• Reichweite: <strong class="text-sky-400">${ud.range}m</strong></div>
-                        <div>• Cadence: <strong class="text-emerald-400">${ud.firerate}ms</strong></div>
+                        <div>• Pushback: <strong class="${ud.isExplosive ? 'text-amber-300' : 'text-sky-300'}">${ud.isExplosive ? 'Stark (6.0m)' : 'Gering (0.4m)'}</strong></div>
+                        <div>• Kadenz: <strong class="text-emerald-400">${ud.firerate}ms</strong></div>
                     `;
                     const upgCost = Math.round(ud.totalInvested * 0.80);
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);

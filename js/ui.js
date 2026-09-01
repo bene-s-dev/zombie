@@ -297,15 +297,17 @@ updateTacticalExtrasHUD();
                     card.className = "p-4 rounded-2xl border bg-slate-950 border-slate-800 flex justify-between items-center";
                     let statsLine = '';
                     if (t.isHangar) {
-                        statsLine = `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Global (Unbegrenzte Reichweite) | Reparatur ~225 HP/s</div>`;
+                        statsLine = `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Global | Reparatur ~225 HP/s | Pushback: 0m</div>`;
                     } else if (t.isLightMast) {
-                        statsLine = `<div class="text-[10px] text-amber-300 font-mono mt-0.5"><i class="fa-solid fa-lightbulb mr-1"></i>360° Rundum-LED-Flutlicht | Radius: ${t.range}m | Bremst Zombies nachts auf Normaltempo</div>`;
+                        statsLine = `<div class="text-[10px] text-amber-300 font-mono mt-0.5"><i class="fa-solid fa-lightbulb mr-1"></i>Radius: ${t.range}m | Bremst Nacht-Zombies | Pushback: 0m</div>`;
                     } else if (t.isArtillery) {
-                        statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5"><i class="fa-solid fa-rocket mr-1"></i>Dmg: ${t.damage} | Steilbogen: ${t.range}m | Kadenz: ${t.firerate}ms | Pushback</div>`;
+                        statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5"><i class="fa-solid fa-rocket mr-1"></i>Dmg: ${t.damage} | Bogen: ${t.range}m | <span class="text-rose-400 font-bold">Pushback: Extrem (14m)</span></div>`;
                     } else if (t.isAntiAir) {
-                        statsLine = `<div class="text-[10px] text-cyan-400 font-mono mt-0.5"><i class="fa-solid fa-crosshairs mr-1"></i>35mm Dmg: ${t.damage} | Schnellfeuer: ${t.firerate}ms (~9/s) | Luftraum: ${t.range}m</div>`;
+                        statsLine = `<div class="text-[10px] text-cyan-400 font-mono mt-0.5"><i class="fa-solid fa-crosshairs mr-1"></i>35mm Dmg: ${t.damage} | Kadenz: ${t.firerate}ms | Luft: ${t.range}m | Pushback: 0.4m</div>`;
+                    } else if (t.isExplosive) {
+                        statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5"><i class="fa-solid fa-bomb mr-1"></i>Dmg: ${t.damage} | Reichweite: ${t.range}m | <span class="text-amber-300 font-bold">Pushback: Stark (6m)</span></div>`;
                     } else {
-                        statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m | Kadenz: ${t.firerate}ms</div>`;
+                        statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5"><i class="fa-solid fa-shield mr-1"></i>Dmg: ${t.damage} | Reichweite: ${t.range}m | Kadenz: ${t.firerate}ms | Pushback: 0.4m</div>`;
                     }
                     card.innerHTML = `
                         <div class="pr-2">

@@ -49,9 +49,10 @@ const TURRET_TYPES = {
         range: 27, 
         damage: 26, 
         firerate: 260, 
+        knockback: 0.4,
         hp: 500, 
         maxHp: 500, 
-        desc: 'Autonome Waffenstation mit kontinuierlichem Sperrfeuer gegen heranrückende Infanterie.' 
+        desc: 'Autonome Waffenstation mit kontinuierlichem Sperrfeuer. Pushback: Gering (0.4m).' 
     },
     rocket: { 
         id: 'rocket', 
@@ -62,9 +63,10 @@ const TURRET_TYPES = {
         firerate: 1300, 
         isExplosive: true, 
         splashRadius: 5.5, 
+        knockback: 6.0,
         hp: 650, 
         maxHp: 650, 
-        desc: 'Schwerer Granatwerfer mit massivem Flächenschaden gegen Bodenziele und Mutanten.' 
+        desc: 'Schwerer Granatwerfer mit massivem Flächenschaden. Pushback: Stark (6.0m).' 
     },
     anti_air: {
         id: 'anti_air',
@@ -74,9 +76,10 @@ const TURRET_TYPES = {
         damage: 42,
         firerate: 110,
         isAntiAir: true,
+        knockback: 0.4,
         hp: 600,
         maxHp: 600,
-        desc: 'Schnellfeuer-Flugabwehrsystem. Zersiebt fliegende Mutanten exklusiv mit rasanter 35mm-Kadenz.' 
+        desc: 'Schnellfeuer-Flugabwehr gegen fliegende Mutanten. Pushback: Gering (0.4m).' 
     },
     artillery: {
         id: 'artillery',
@@ -92,7 +95,7 @@ const TURRET_TYPES = {
         knockback: 14.0,
         hp: 800,
         maxHp: 800,
-        desc: 'Schwerer Raketenwerfer mit weitreichendem Steilbogeneinschlag, Flächenschaden & Druckwelle.' 
+        desc: 'Schwerer Raketenwerfer mit Steilbogeneinschlag & Druckwelle. Pushback: Extrem (14.0m).' 
     },
     light_mast: {
         id: 'light_mast',
@@ -101,10 +104,11 @@ const TURRET_TYPES = {
         range: 34,
         damage: 0,
         firerate: 0,
+        knockback: 0,
         hp: 450,
         maxHp: 450,
         isLightMast: true,
-        desc: '360° Rundum-LED-Flutlicht. Erleuchtet das Gefechtsfeld taghell und bremst Zombies nachts auf Normaltempo ab.' 
+        desc: '360° Rundum-LED-Flutlicht. Erleuchtet das Gefechtsfeld taghell & bremst Nacht-Zombies ab. Pushback: Keiner (0m).' 
     },
     drone_hangar: {
         id: 'drone_hangar',
@@ -113,11 +117,12 @@ const TURRET_TYPES = {
         range: Infinity,
         damage: 0,
         firerate: 0,
+        knockback: 0,
         hp: 99999,
         maxHp: 99999,
         isIndestructible: true,
         isHangar: true,
-        desc: 'Autonome Drohnenbasis. Entsendet Reparaturdrohnen zur automatischen Instandsetzung aller Verteidigungsanlagen.' 
+        desc: 'Autonome Drohnenbasis zur Instandsetzung aller Verteidigungsanlagen. Pushback: Keiner (0m).' 
     }
 };
 
