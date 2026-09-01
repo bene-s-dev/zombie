@@ -67,6 +67,7 @@ function isRunBetter(a, b) {
 function deduplicateAndSortScores(list) {
     if (!Array.isArray(list)) return [];
     const normalized = list.map(item => ({
+        id: item.id || '',
         name: (item.name || '').toString().trim().toUpperCase().slice(0, 12) || generateRandomPlayerName(),
         time: Number(item.time) || 0,
         wave: Number(item.wave) || 1,
@@ -75,19 +76,8 @@ function deduplicateAndSortScores(list) {
         date: item.date || ''
     }));
 
-    // Deduplicate exact duplicate runs (same name + wave + kills + time + date)
-    const uniqueScores = [];
-    const seen = new Set();
-    for (const score of normalized) {
-        const key = `${score.name}_${score.wave}_${score.kills}_${score.time}_${score.date}`;
-        if (!seen.has(key)) {
-            seen.add(key);
-            uniqueScores.push(score);
-        }
-    }
-
     // Sort all entries: Wave (desc), Kills (desc), Time (desc)
-    uniqueScores.sort((a, b) => {
+    normalized.sort((a, b) => {
         const waveDiff = (Number(b.wave) || 1) - (Number(a.wave) || 1);
         if (waveDiff !== 0) return waveDiff;
         const killDiff = (Number(b.kills) || 0) - (Number(a.kills) || 0);
@@ -95,8 +85,8 @@ function deduplicateAndSortScores(list) {
         return (Number(b.time) || 0) - (Number(a.time) || 0);
     });
 
-    // Exactly Top 30 total
-    return uniqueScores.slice(0, 30);
+    // Return all entries 1:1 without deduplication
+    return normalized;
 }
 
 let isSyncingHighscores = false;
@@ -124,7 +114,7 @@ async function fetchOnlineHighscores() {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 4000);
-        const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=name,wave,kills,time,difficulty,date,created_at&order=wave.desc,kills.desc,time.desc&limit=30`;
+        const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=name,wave,kills,time,difficulty,date,created_at&order=wave.desc,kills.desc,time.desc`;
         const res = await fetch(url, {
             signal: controller.signal,
             headers: {
@@ -229,13 +219,7 @@ function updateHighscoreUI() {
 
 function checkHighscoreQualification(wave, kills, sec) {
     const w = Number(wave) || 0;
-    if (w <= 0) return false;
-    const list = Storage.data.highscores || [];
-    const currentRun = { wave: w, kills: Number(kills) || 0, time: Number(sec) || 0 };
-
-    if (list.length < 30) return true;
-    const last = list[list.length - 1];
-    return isRunBetter(currentRun, last);
+    return w > 0;
 }
 
 let lastSubmittedRunRecord = null;
