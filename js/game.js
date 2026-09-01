@@ -1373,7 +1373,7 @@
                             const teslaRangeSq = ud.range * ud.range;
                             for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
                                 const z = this.zombies[zi];
-                                if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                                if (z.userData.hp <= 0 || z.userData.isDead || z.userData.isFlying) continue;
                                 const zx = z.position.x;
                                 const zz = z.position.z;
                                 if (Math.abs(zx - tx) > tr || Math.abs(zz - tz) > tr) continue;
@@ -1468,7 +1468,7 @@
 
                     for (let i = this.zombies.length - 1; i >= 0; i--) {
                         const z = this.zombies[i];
-                        if (z.userData.isDead) continue;
+                        if (z.userData.isDead || z.userData.isFlying) continue;
                         const zx = z.position.x;
                         const zz = z.position.z;
                         if (Math.abs(zx - px) > radius || Math.abs(zz - pz) > radius) continue; // Fast AABB cull
@@ -3822,7 +3822,7 @@
 
                 for (let zi = 0; zi < this.zombies.length; zi++) {
                     const z = this.zombies[zi];
-                    if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) continue;
+                    if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead || z.userData.isFlying) continue;
                     const distSq = this.droneGroup.position.distanceToSquared(z.position);
                     if (distSq < minDistSq) {
                         minDistSq = distSq;
@@ -4134,7 +4134,7 @@
 
                     for (let zi = 0; zi < this.zombies.length; zi++) {
                         const z = this.zombies[zi];
-                        if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) continue;
+                        if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead || z.userData.isFlying) continue;
                         
                         const distZToPlayer = playerPos.distanceTo(z.position);
                         if (distZToPlayer > 20.0) continue; // Don't aggro zombies too far from player
@@ -6329,7 +6329,7 @@
                             const AIM_BREAK_RANGE_SQ = 196.0;  // auto-break lock if zombie drifts further
 
                             // Check if locked target is still valid & within break range
-                            if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0 && !this.lockedAimTarget.userData.isDead) {
+                            if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0 && !this.lockedAimTarget.userData.isDead && !this.lockedAimTarget.userData.isFlying) {
                                 const lockedDistSq = this.playerGroup.position.distanceToSquared(this.lockedAimTarget.position);
                                 if (lockedDistSq > AIM_BREAK_RANGE_SQ) {
                                     this.lockedAimTarget = null; // break lock — zombie too far
@@ -6344,7 +6344,7 @@
                                 let minDistSq = AIM_LOCK_RANGE_SQ;
                                 for (let zi = 0; zi < this.zombies.length; zi++) {
                                     const z = this.zombies[zi];
-                                    if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                                    if (z.userData.hp <= 0 || z.userData.isDead || z.userData.isFlying) continue;
                                     const distSq = this.playerGroup.position.distanceToSquared(z.position);
                                     if (distSq < minDistSq) {
                                         minDistSq = distSq;
@@ -6634,7 +6634,12 @@
 
                                         for (let j = 0; j < bucket.length; j++) {
                                             const z = bucket[j];
-                                            if (z.userData.hp <= 0) continue;
+                                            if (z.userData.hp <= 0 || z.userData.isDead) continue;
+
+                                            // Strict Anti-Air isolation: Only MANTIS 35mm AA bullets can hit flying zombies, and AA bullets ONLY hit flying zombies!
+                                            if (z.userData.isFlying && !b.userData.isAntiAirBullet) continue;
+                                            if (!z.userData.isFlying && b.userData.isAntiAirBullet) continue;
+
                                             const dzx = b.position.x - z.position.x;
                                             const dzz = b.position.z - z.position.z;
                                             const hitRad = 1.75 * z.userData.scale;
@@ -6861,7 +6866,7 @@
                                         this.triggerBaseAlarm();
                                     }
 
-                                    if (this.upgrades.base_spikes > 0) {
+                                    if (this.upgrades.base_spikes > 0 && !z.userData.isFlying) {
                                         const spikeDmg = ((this.upgrades.base_spikes * 65) + (z.userData.maxHp * 0.03 * this.upgrades.base_spikes)) * dt;
                                         z.userData.hp -= spikeDmg;
                                         if (z.userData.hp <= 0) this.killZombie(z);
