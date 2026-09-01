@@ -1323,7 +1323,7 @@
                             }
 
                             bullet.position.copy(startPos);
-                            bullet.lookAt(targetPos);
+                            bullet.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
                             bullet.visible = true;
 
                             if (!bullet.userData.dir) bullet.userData.dir = new THREE.Vector3();
@@ -1398,7 +1398,8 @@
                             }
 
                             bullet.position.set(tx, 1.8, tz);
-                            bullet.rotation.y = angle;
+                            bullet.quaternion.identity();
+                            bullet.rotation.set(0, angle, 0);
                             bullet.visible = true;
 
                             if (!bullet.userData.dir) bullet.userData.dir = new THREE.Vector3();
@@ -3675,7 +3676,8 @@
                         bullet.material = bulletMat;
                     }
                     bullet.position.copy(muzzlePos);
-                    bullet.rotation.y = spreadAngle;
+                    bullet.quaternion.identity();
+                    bullet.rotation.set(0, spreadAngle, 0);
                     bullet.visible = true;
 
                     if (!bullet.userData.dir) bullet.userData.dir = new THREE.Vector3();
@@ -3866,7 +3868,8 @@
                         
                         const spread = (s - (shotCount - 1) / 2) * 0.08;
                         const shotAngle = angle + spread;
-                        bullet.rotation.y = shotAngle;
+                        bullet.quaternion.identity();
+                        bullet.rotation.set(0, shotAngle, 0);
 
                         bullet.userData = {
                             dir: new THREE.Vector3(Math.sin(shotAngle), 0, Math.cos(shotAngle)),
@@ -6340,10 +6343,10 @@
                         const hasMovement = (moveX !== 0 || moveZ !== 0);
                         const moveAngle = hasMovement ? Math.atan2(moveX, moveZ) : this.playerGroup.rotation.y;
 
-                        // Smart Aim Assist (Short-range melee defense only: 6 meters max)
+                        // Smart Aim Assist (Balanced lock-on range: 12 meters)
                         if (isFiring && this.zombies.length > 0) {
-                            const AIM_LOCK_RANGE_SQ = 36.0;   // lock-on close-range only (6.0 meters)
-                            const AIM_BREAK_RANGE_SQ = 64.0;  // auto-break lock if zombie drifts beyond 8.0 meters
+                            const AIM_LOCK_RANGE_SQ = 144.0;  // lock-on distance: 12.0 meters
+                            const AIM_BREAK_RANGE_SQ = 225.0; // auto-break lock if zombie drifts beyond 15.0 meters
 
                             // Check if locked target is still valid & within break range
                             if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0 && !this.lockedAimTarget.userData.isDead && !this.lockedAimTarget.userData.isFlying) {
@@ -6706,6 +6709,8 @@
 
                         if (bulletHit || b.userData.life <= 0) {
                             b.visible = false;
+                            b.quaternion.identity();
+                            b.rotation.set(0, 0, 0);
                             this.bulletPool.push(b);
                             // Fast Swap-and-Pop O(1) removal
                             const lastB = this.bullets.pop();
