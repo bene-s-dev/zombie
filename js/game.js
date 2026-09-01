@@ -1225,8 +1225,8 @@
                 if (!this._turretBulletGeo) {
                     this._turretBulletGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.3, 8);
                     this._turretBulletGeo.rotateX(Math.PI / 2);
-                    this._turretBulletMatMG = new THREE.MeshBasicMaterial({ color: 0xfacc15 }); // Gold-Gelb für Waffenstation
-                    this._turretBulletMatGranate = new THREE.MeshBasicMaterial({ color: 0xff5500 }); // Feuriges Orange für Granatwerfer
+                    this._turretBulletMatMG = new THREE.MeshBasicMaterial({ color: 0x38bdf8 }); // Blau für Waffenstation
+                    this._turretBulletMatGranate = new THREE.MeshBasicMaterial({ color: 0xff6600 }); // Orange für Granatwerfer
                 }
 
                 for (let ti = 0; ti < this.turrets.length; ti++) {
@@ -1276,18 +1276,18 @@
                         ud.head.rotation.y = angle;
 
                         if (ud.isAntiAir) {
-                            // MANTIS 35mm C-RAM Rapid-Fire Autocannon Stream (Cyan / High-Energy Sky Blue)
+                            // MANTIS 35mm C-RAM Rapid-Fire Autocannon Stream (Lila / High-Energy Purple)
                             if (typeof audio !== 'undefined' && audio.playMinigunShot) {
                                 audio.playMinigunShot();
                             } else if (typeof audio !== 'undefined' && audio.playShoot) {
                                 audio.playShoot(0.06);
                             }
-                            this.createBloodSparks(new THREE.Vector3(tx, 2.2, tz), 0x00f0ff);
+                            this.createBloodSparks(new THREE.Vector3(tx, 2.2, tz), 0xc084fc);
 
                             if (!this._mantisBulletGeo) {
                                 this._mantisBulletGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.1, 6);
                                 this._mantisBulletGeo.rotateX(Math.PI / 2);
-                                this._mantisBulletMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+                                this._mantisBulletMat = new THREE.MeshBasicMaterial({ color: 0xc084fc });
                             }
 
                             const startPos = new THREE.Vector3(tx, 2.3, tz);
@@ -1368,36 +1368,9 @@
                                 splashRadius: ud.splashRadius || 8.0,
                                 knockback: ud.knockback || 14.0
                             });
-                        } else if (ud.isTesla) {
-                            audio.playTesla();
-                            const teslaRangeSq = ud.range * ud.range;
-                            for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
-                                const z = this.zombies[zi];
-                                if (z.userData.hp <= 0 || z.userData.isDead || z.userData.isFlying) continue;
-                                const zx = z.position.x;
-                                const zz = z.position.z;
-                                if (Math.abs(zx - tx) > tr || Math.abs(zz - tz) > tr) continue;
-                                if ((zx - tx) * (zx - tx) + (zz - tz) * (zz - tz) <= teslaRangeSq) {
-                                    if (z.userData.isShield) {
-                                        this.createBloodSparks(z.position, 0xc084fc);
-                                    } else {
-                                        let teslaDmg = ud.damage;
-                                        if (z.userData.armorThreshold > 0 && teslaDmg < z.userData.armorThreshold) {
-                                             teslaDmg = 0;
-                                        }
-                                        if (teslaDmg > 0) {
-                                            z.userData.hp -= teslaDmg;
-                                            z.userData.speed *= 0.7;
-                                            this.flashZombieHit(z);
-                                            this.createBloodSparks(z.position, 0xc084fc);
-                                            if (z.userData.hp <= 0) this.killZombie(z);
-                                        }
-                                    }
-                                }
-                            }
                         } else {
                             const bulletMat = ud.isExplosive ? this._turretBulletMatGranate : this._turretBulletMatMG;
-                            const sparkColor = ud.isExplosive ? 0xff5500 : 0xfacc15;
+                            const sparkColor = ud.isExplosive ? 0xff6600 : 0x38bdf8;
                             this.createBloodSparks(new THREE.Vector3(tx, 1.8, tz), sparkColor);
                             
                             let bullet = this.bulletPool.pop();
@@ -2255,7 +2228,6 @@
                     isAntiAir: !!spec.isAntiAir,
                     splashRadius: spec.splashRadius,
                     knockback: spec.knockback || 0,
-                    isTesla: spec.isTesla,
                     hp: scaledMaxHp,
                     maxHp: scaledMaxHp,
                     level: 1,
