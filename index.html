@@ -138,6 +138,11 @@
             touch-action: manipulation;
         }
 
+        #hud-money, #shop-money-display, #multi-inspect-money {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+        }
+
         /* Game-Over Querformat Layout */
         @media (orientation: landscape) and (max-height: 500px) {
             #game-over-modal .go-grid {
@@ -422,7 +427,7 @@
                         </div>
                     </div>
                     <div class="flex items-center space-x-2 sm:space-x-3">
-                        <span class="font-mono text-amber-400 font-bold text-xs sm:text-sm bg-slate-950 px-2 py-1 rounded-lg border border-slate-800"><i class="fa-solid fa-coins mr-1 text-amber-400"></i><span id="multi-inspect-money">$0</span></span>
+                        <span class="font-mono tabular-nums text-amber-400 font-bold text-xs sm:text-sm bg-slate-950 px-2 py-1 rounded-lg border border-slate-800 inline-flex items-center min-w-[70px] sm:min-w-[85px] justify-center"><i class="fa-solid fa-coins mr-1 text-amber-400"></i><span id="multi-inspect-money">$0</span></span>
                         <button type="button" onclick="closeMultiInspectModal(event)" class="text-slate-400 hover:text-white p-1 text-2xl cursor-pointer" aria-label="Schließen"><i class="fa-solid fa-xmark pointer-events-none"></i></button>
                     </div>
                 </div>
@@ -716,10 +721,10 @@
                         </button>
                     </div>
 
-                    <!-- Money Badge -->
-                    <div class="bg-slate-950/90 border border-amber-500/60 px-1.5 sm:px-2 rounded-md sm:rounded-lg backdrop-blur-sm shadow flex items-center space-x-1 h-6 sm:h-7 md:h-8 text-amber-400 font-bold text-[8.5px] sm:text-xs font-mono flex-shrink-0">
-                        <i class="fa-solid fa-coins text-amber-400 text-[7.5px] sm:text-[10px]"></i>
-                        <span id="hud-money">$ 0</span>
+                    <!-- Money Badge (Fixed Size, Tabular Nums without jitter) -->
+                    <div class="bg-slate-950/90 border border-amber-500/60 px-1 sm:px-1.5 rounded-md sm:rounded-lg backdrop-blur-sm shadow flex items-center justify-center space-x-1 h-6 sm:h-7 md:h-8 w-[62px] sm:w-[80px] md:w-[92px] text-amber-400 font-bold text-[8.5px] sm:text-xs font-mono flex-shrink-0 select-none">
+                        <i class="fa-solid fa-coins text-amber-400 text-[7.5px] sm:text-[10px] flex-shrink-0"></i>
+                        <span id="hud-money" class="tabular-nums tracking-tight whitespace-nowrap overflow-hidden text-right leading-none">$ 0</span>
                     </div>
 
                     <!-- Shop Button (Single Click: Laden, Double Click: Multi-Upgrade) -->
@@ -910,7 +915,7 @@
                         <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full font-bold uppercase animate-pulse ml-1 sm:ml-2"><i class="fa-solid fa-pause mr-1"></i> Pausiert</span>
                     </div>
                     <div class="flex items-center space-x-3 sm:space-x-4">
-                        <span class="font-mono text-amber-400 font-bold text-sm sm:text-lg"><i class="fa-solid fa-coins mr-1"></i> <span id="shop-money-display">$0</span></span>
+                        <span class="font-mono tabular-nums text-amber-400 font-bold text-sm sm:text-lg inline-flex items-center min-w-[75px] sm:min-w-[95px] justify-end"><i class="fa-solid fa-coins mr-1"></i> <span id="shop-money-display">$0</span></span>
                         <button onclick="toggleShop()" class="text-slate-400 hover:text-white p-1 text-xl sm:text-2xl"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                 </div>
