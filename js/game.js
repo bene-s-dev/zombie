@@ -3625,6 +3625,11 @@
                         this.lockedAimTarget.position.x - this.playerGroup.position.x,
                         this.lockedAimTarget.position.z - this.playerGroup.position.z
                     );
+                } else if (this.pointerWorldPos && !this.isMobile && this.isMouseDown) {
+                    aimAngle = Math.atan2(
+                        this.pointerWorldPos.x - this.playerGroup.position.x,
+                        this.pointerWorldPos.z - this.playerGroup.position.z
+                    );
                 }
 
                 const muzzlePos = this._v1;
@@ -6308,7 +6313,7 @@
                         }
 
                         const shopActive = (typeof isShopOpen !== 'undefined' ? isShopOpen : (window.isShopOpen || false));
-                        const isFiring = !shopActive && (this.keys['Space'] || this.isTouchFiring);
+                        const isFiring = !shopActive && (this.keys['Space'] || this.isTouchFiring || (this.isMouseDown && !this.isHoldSelecting && !this.isPlacementMode));
 
                         // Smart Aim Assist: Lock onto nearest zombie when firing, break lock if out of range
                         if (isFiring && this.zombies.length > 0) {
@@ -6349,6 +6354,14 @@
                                 let diff = targetAimAngle - this.playerGroup.rotation.y;
                                 diff = Math.atan2(Math.sin(diff), Math.cos(diff));
                                 this.playerGroup.rotation.y += diff * 32.0 * dt; // Fast, snappy aim tracking
+                            } else if (this.pointerWorldPos && !this.isMobile && (this.isMouseDown || this.keys['Space'])) {
+                                const mouseAimAngle = Math.atan2(
+                                    this.pointerWorldPos.x - this.playerGroup.position.x,
+                                    this.pointerWorldPos.z - this.playerGroup.position.z
+                                );
+                                let diff = mouseAimAngle - this.playerGroup.rotation.y;
+                                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                                this.playerGroup.rotation.y += diff * 24.0 * dt;
                             } else if (moveX !== 0 || moveZ !== 0) {
                                 // No valid target in range — rotate toward movement direction
                                 const targetAngle = Math.atan2(moveX, moveZ);
@@ -6515,28 +6528,7 @@
                         }
                     }
 
-                    // Re-build Spatial Grid Hash for O(1) Collision Detection (Zero GC Array Reuse)
-                    for (const bucket of this.grid.values()) {
-                        bucket.length = 0;
-                    }
-                    for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
-                        const z = this.zombies[zi];
-                        if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) {
-                            this.killZombie(z);
-                            continue;
-                        }
-                        const gx = Math.floor((z.position.x + 100) / 8);
-                        const gz = Math.floor((z.position.z + 100) / 8);
-                        const key = ((gx & 0xFF) << 8) | (gz & 0xFF);
-                        let bucket = this.grid.get(key);
-                        if (!bucket) {
-                            bucket = [];
-                            this.grid.set(key, bucket);
-                        }
-                        bucket.push(z);
-                    }
-
-                    // Bullet Update & Collision Loop with Spatial Grid Hashing
+                    // Bullet Update & Continuous Swept-Segment Collision (100% Tunnel-Free Precision)
                     for (let i = this.bullets.length - 1; i >= 0; i--) {
                         const b = this.bullets[i];
                         if (!b || !b.userData || !b.userData.dir) {
@@ -6545,7 +6537,14 @@
                             if (i < this.bullets.length) this.bullets[i] = lastB;
                             continue;
                         }
-                        b.position.addScaledVector(b.userData.dir, b.userData.speed * dt);
+
+                        const prevX = b.position.x;
+                        const prevZ = b.position.z;
+                        const moveDist = b.userData.speed * dt;
+                        b.position.x += b.userData.dir.x * moveDist;
+                        b.position.z += b.userData.dir.z * moveDist;
+                        const currX = b.position.x;
+                        const currZ = b.position.z;
                         b.userData.life -= dt;
 
                         if (b.userData.isEnemy && Math.random() < 0.25) {
@@ -6557,8 +6556,8 @@
                         if (b.userData.isEnemy) {
                             for (let wi = 0; wi < this.walls.length; wi++) {
                                 const w = this.walls[wi];
-                                const dwx = b.position.x - w.position.x;
-                                const dwz = b.position.z - w.position.z;
+                                const dwx = currX - w.position.x;
+                                const dwz = currZ - w.position.z;
                                 if (dwx * dwx + dwz * dwz < w.userData.radius * w.userData.radius) {
                                     bulletHit = true;
                                     this.createBloodSparks(b.position, 0x94a3b8);
@@ -6570,8 +6569,8 @@
                         if (!bulletHit) {
                             if (b.userData.isEnemy) {
                                 // Enemy projectile hits player
-                                const dpx = b.position.x - this.playerGroup.position.x;
-                                const dpz = b.position.z - this.playerGroup.position.z;
+                                const dpx = currX - this.playerGroup.position.x;
+                                const dpz = currZ - this.playerGroup.position.z;
                                 if (dpx * dpx + dpz * dpz < 1.69) {
                                     bulletHit = true;
                                     let pDmg = b.userData.damage;
@@ -6590,8 +6589,8 @@
                                     if (this.playerHp <= 0) this.handlePlayerDeath();
                                 }
                                 // Enemy projectile hits base
-                                const dbx = b.position.x - this.baseGroup.position.x;
-                                const dbz = b.position.z - this.baseGroup.position.z;
+                                const dbx = currX - this.baseGroup.position.x;
+                                const dbz = currZ - this.baseGroup.position.z;
                                 if (!this.isBaseInvulnerable && !bulletHit && (dbx * dbx + dbz * dbz < 27.04)) {
                                     bulletHit = true;
                                     let bDmg = b.userData.damage;
@@ -6609,61 +6608,75 @@
                                     if (this.baseHp <= 0) this.handleBaseDeath();
                                 }
                             } else {
-                                // Player/turret bullets hit zombies via Spatial Grid Hashing (Query 3x3 cells)
-                                const bx = Math.floor((b.position.x + 100) / 8);
-                                const bz = Math.floor((b.position.z + 100) / 8);
+                                // Continuous swept-segment collision detection against all active zombies
+                                const segVx = currX - prevX;
+                                const segVz = currZ - prevZ;
+                                const segLenSq = segVx * segVx + segVz * segVz;
 
-                                for (let dx = -1; dx <= 1 && !bulletHit; dx++) {
-                                    for (let dz = -1; dz <= 1 && !bulletHit; dz++) {
-                                        const key = (((bx + dx) & 0xFF) << 8) | ((bz + dz) & 0xFF);
-                                        const bucket = this.grid.get(key);
-                                        if (!bucket) continue;
+                                for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
+                                    const z = this.zombies[zi];
+                                    if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) continue;
 
-                                        for (let j = 0; j < bucket.length; j++) {
-                                            const z = bucket[j];
-                                            if (z.userData.hp <= 0 || z.userData.isDead) continue;
+                                    // Strict Anti-Air isolation: Only MANTIS 35mm AA bullets can hit flying zombies, and AA bullets ONLY hit flying zombies!
+                                    if (z.userData.isFlying && !b.userData.isAntiAirBullet) continue;
+                                    if (!z.userData.isFlying && b.userData.isAntiAirBullet) continue;
 
-                                            // Strict Anti-Air isolation: Only MANTIS 35mm AA bullets can hit flying zombies, and AA bullets ONLY hit flying zombies!
-                                            if (z.userData.isFlying && !b.userData.isAntiAirBullet) continue;
-                                            if (!z.userData.isFlying && b.userData.isAntiAirBullet) continue;
+                                    const zx = z.position.x;
+                                    const zz = z.position.z;
+                                    const hitRad = 2.4 * z.userData.scale;
+                                    const hitRadSq = hitRad * hitRad;
 
-                                            const dzx = b.position.x - z.position.x;
-                                            const dzz = b.position.z - z.position.z;
-                                            const hitRad = 2.2 * z.userData.scale;
+                                    // Fast bounding box cull
+                                    const maxReach = hitRad + moveDist;
+                                    if (Math.abs(zx - currX) > maxReach && Math.abs(zx - prevX) > maxReach) continue;
+                                    if (Math.abs(zz - currZ) > maxReach && Math.abs(zz - prevZ) > maxReach) continue;
 
-                                            if (dzx * dzx + dzz * dzz < hitRad * hitRad) {
-                                                bulletHit = true;
-                                                if (b.userData.isExplosive) {
-                                                    const visRad = b.userData.isTurretBullet ? 5.2 : b.userData.splashRadius;
-                                                    const effRad = b.userData.isTurretBullet ? Math.min(6.0, b.userData.splashRadius || 5.5) : b.userData.splashRadius;
-                                                    this.createExplosion(b.position, effRad, b.userData.damage, visRad);
-                                                } else {
-                                                    let finalDamage = b.userData.damage;
+                                    // Point to continuous bullet trajectory segment distance
+                                    let distSq;
+                                    if (segLenSq < 0.0001) {
+                                        const dx = zx - currX;
+                                        const dz = zz - currZ;
+                                        distSq = dx * dx + dz * dz;
+                                    } else {
+                                        const t = Math.max(0, Math.min(1, ((zx - prevX) * segVx + (zz - prevZ) * segVz) / segLenSq));
+                                        const cx = prevX + t * segVx;
+                                        const cz = prevZ + t * segVz;
+                                        const dx = zx - cx;
+                                        const dz = zz - cz;
+                                        distSq = dx * dx + dz * dz;
+                                    }
 
-                                                    if (b.userData.isTurretBullet) {
-                                                        if (z.userData.isShield) {
-                                                            this.createBloodSparks(b.position, 0x94a3b8);
-                                                            finalDamage = 0;
-                                                        } else if (z.userData.armorThreshold > 0 && finalDamage < z.userData.armorThreshold) {
-                                                            this.createBloodSparks(b.position, 0x38bdf8);
-                                                            finalDamage = 0;
-                                                        }
-                                                    }
+                                    if (distSq <= hitRadSq) {
+                                        bulletHit = true;
+                                        if (b.userData.isExplosive) {
+                                            const visRad = b.userData.isTurretBullet ? 5.2 : b.userData.splashRadius;
+                                            const effRad = b.userData.isTurretBullet ? Math.min(6.0, b.userData.splashRadius || 5.5) : b.userData.splashRadius;
+                                            this.createExplosion(b.position, effRad, b.userData.damage, visRad);
+                                        } else {
+                                            let finalDamage = b.userData.damage;
 
-                                                    if (finalDamage > 0) {
-                                                        z.userData.hp -= finalDamage;
-                                                        z.position.x += b.userData.dir.x * 0.3;
-                                                        z.position.z += b.userData.dir.z * 0.3;
-                                                        this.flashZombieHit(z);
-                                                        this._v2.set(z.position.x, 1.2 * z.userData.scale, z.position.z);
-                                                        this.createBloodSparks(this._v2, 0xef4444);
-                                                        audio.playZombieHit();
-                                                        if (z.userData.hp <= 0) this.killZombie(z);
-                                                    }
+                                            if (b.userData.isTurretBullet) {
+                                                if (z.userData.isShield) {
+                                                    this.createBloodSparks(b.position, 0x94a3b8);
+                                                    finalDamage = 0;
+                                                } else if (z.userData.armorThreshold > 0 && finalDamage < z.userData.armorThreshold) {
+                                                    this.createBloodSparks(b.position, 0x38bdf8);
+                                                    finalDamage = 0;
                                                 }
-                                                break;
+                                            }
+
+                                            if (finalDamage > 0) {
+                                                z.userData.hp -= finalDamage;
+                                                z.position.x += b.userData.dir.x * 0.4;
+                                                z.position.z += b.userData.dir.z * 0.4;
+                                                this.flashZombieHit(z);
+                                                this._v2.set(z.position.x, 1.2 * z.userData.scale, z.position.z);
+                                                this.createBloodSparks(this._v2, 0xef4444);
+                                                if (typeof audio !== 'undefined' && audio.playZombieHit) audio.playZombieHit();
+                                                if (z.userData.hp <= 0) this.killZombie(z);
                                             }
                                         }
+                                        break;
                                     }
                                 }
                             }
