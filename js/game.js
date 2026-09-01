@@ -135,6 +135,14 @@
                 this.cameraLookTarget = new THREE.Vector3(0, 0, 0);
                 this.cameraShakeOffset = new THREE.Vector3(0, 0, 0);
 
+                // Multi-Structure Selection & Hold State
+                this.selectedStructuresList = [];
+                this.selectionRingsGroup = null;
+                this.multiSelectHoloGroup = null;
+                this.holdTimer = null;
+                this.isHoldSelecting = false;
+                this.holdStartPos = null;
+
                 this.initScene();
                 this.initPools();
                 this.updateCameraSettings();
@@ -308,11 +316,41 @@
                             e.preventDefault();
                             this.fireAc130_105mm();
                         }
+                    } else if (e.button === 0 && !this.isPaused && !this.isPlacementMode && !isUiTarget(e)) {
+                        this.holdStartPos = { x: e.clientX, y: e.clientY, time: Date.now() };
+                        if (this.holdTimer) clearTimeout(this.holdTimer);
+                        this.holdTimer = setTimeout(() => {
+                            this.mousePos.x = (e.clientX / window.innerWidth) * 2 - 1;
+                            this.mousePos.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                            this.raycaster.setFromCamera(this.mousePos, this.camera);
+                            const groundHit = new THREE.Vector3();
+                            if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                                this.isHoldSelecting = true;
+                                this.updateMultiSelection(groundHit.x, groundHit.z, 14.0);
+                            }
+                        }, 380);
                     }
                 });
 
                 window.addEventListener('mouseup', () => {
                     this.isMouseDown = false;
+                    if (this.holdTimer) {
+                        clearTimeout(this.holdTimer);
+                        this.holdTimer = null;
+                    }
+                    if (this.isHoldSelecting) {
+                        this.isHoldSelecting = false;
+                        this.hideHoldSelectionPulse();
+                        this.ignoreNextSelectionUntil = Date.now() + 500;
+                        if (this.selectedStructuresList.length > 1) {
+                            this.openMultiInspectModal(this.selectedStructuresList);
+                        } else if (this.selectedStructuresList.length === 1) {
+                            this.inspectStructure(this.selectedStructuresList[0]);
+                            this.clearSelectedStructures();
+                        } else {
+                            this.clearSelectedStructures();
+                        }
+                    }
                 });
 
                 const onPointerMove = (e) => {
@@ -326,6 +364,16 @@
                         if (this.isPlacementMode && this.ghostMesh) {
                             this.updateGhostPosition(intersects.x, intersects.z);
                         }
+                        if (this.isHoldSelecting) {
+                            this.updateMultiSelection(intersects.x, intersects.z, 14.0);
+                        } else if (this.holdTimer && this.holdStartPos) {
+                            const dx = Math.abs(e.clientX - this.holdStartPos.x);
+                            const dy = Math.abs(e.clientY - this.holdStartPos.y);
+                            if (dx > 20 || dy > 20) {
+                                clearTimeout(this.holdTimer);
+                                this.holdTimer = null;
+                            }
+                        }
                         if (this.isAc130Active && (!e.pointerType || e.pointerType === 'mouse')) {
                             this.ac130ScreenAim = {
                                 x: THREE.MathUtils.clamp(e.clientX, 35, window.innerWidth - 35),
@@ -334,6 +382,58 @@
                             this.ac130AimPos.copy(intersects);
                         }
                     }
+                };
+
+                this.findStructureAtScreenPoint = (clientX, clientY) => {
+                    const ndc = new THREE.Vector2(
+                        (clientX / window.innerWidth) * 2 - 1,
+                        -(clientY / window.innerHeight) * 2 + 1
+                    );
+                    this.raycaster.setFromCamera(ndc, this.camera);
+
+                    const allStructures = [...this.turrets, ...this.walls];
+                    if (allStructures.length === 0) return null;
+
+                    // 1. Direct Mesh Raycasting (Check all child meshes)
+                    const clickableMeshes = [];
+                    allStructures.forEach(struct => {
+                        struct.traverse(child => {
+                            if (child.isMesh) clickableMeshes.push(child);
+                        });
+                    });
+
+                    const directIntersects = this.raycaster.intersectObjects(clickableMeshes, true);
+                    if (directIntersects.length > 0) {
+                        for (const hit of directIntersects) {
+                            let curr = hit.object;
+                            while (curr && curr !== this.scene) {
+                                if (allStructures.includes(curr) || (curr.userData && (curr.userData.isTurret || curr.userData.isWall))) {
+                                    return curr;
+                                }
+                                curr = curr.parent;
+                            }
+                        }
+                    }
+
+                    // 2. Ground-plane proximity fallback (essential for touch tap precision)
+                    const groundHit = new THREE.Vector3();
+                    if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                        let closestStruct = null;
+                        let minGroundDistSq = 3.2 * 3.2; // 3.2m tap tolerance radius
+
+                        for (const struct of allStructures) {
+                            const dx = struct.position.x - groundHit.x;
+                            const dz = struct.position.z - groundHit.z;
+                            const distSq = dx * dx + dz * dz;
+                            if (distSq < minGroundDistSq) {
+                                minGroundDistSq = distSq;
+                                closestStruct = struct;
+                            }
+                        }
+                        if (closestStruct) return closestStruct;
+                    }
+
+                    return null;
                 };
 
                 const handleSelection = (clientX, clientY, e) => {
@@ -366,28 +466,9 @@
                         return;
                     }
 
-                    // Touch Raycast mit etwas vergrößerter Trefferzone
-                    this.mousePos.x = (clientX / window.innerWidth) * 2 - 1;
-                    this.mousePos.y = -(clientY / window.innerHeight) * 2 + 1;
-                    this.raycaster.setFromCamera(this.mousePos, this.camera);
-                    
-                    const clickableObjects = [];
-                    this.turrets.forEach(t => t.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
-                    this.walls.forEach(w => w.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
-
-                    const intersects = this.raycaster.intersectObjects(clickableObjects, true);
-                    if (intersects.length > 0) {
-                        let topObj = intersects[0].object;
-                        let depth = 0;
-                        while (topObj && topObj.parent && topObj.parent !== this.scene && depth++ < 15) {
-                            if (topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) break;
-                            topObj = topObj.parent;
-                        }
-                        if (topObj && topObj.userData) {
-                            if (topObj.userData.isTurret || topObj.userData.isWall) {
-                                this.inspectStructure(topObj);
-                            }
-                        }
+                    const struct = this.findStructureAtScreenPoint(clientX, clientY);
+                    if (struct) {
+                        this.inspectStructure(struct);
                     }
                 };
 
@@ -477,6 +558,22 @@
 
                         touchHandled = true;
                         this.gameplayTouchStart = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
+
+                        if (!this.isPaused && !this.isPlacementMode && !this.isAc130Active) {
+                            this.holdStartPos = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
+                            if (this.holdTimer) clearTimeout(this.holdTimer);
+                            this.holdTimer = setTimeout(() => {
+                                this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                                this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                                this.raycaster.setFromCamera(this.mousePos, this.camera);
+                                const groundHit = new THREE.Vector3();
+                                if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                                    this.isHoldSelecting = true;
+                                    this.updateMultiSelection(groundHit.x, groundHit.z, 14.0);
+                                }
+                            }, 380);
+                        }
+
                         const halfWidth = window.innerWidth / 2;
                         const isJoystickSide = Storage.data.swapTouchControls ? (touch.clientX <= halfWidth) : (touch.clientX > halfWidth);
 
@@ -536,6 +633,35 @@
                             }
                         }
                     }
+
+                    if (this.isHoldSelecting) {
+                        for (let i = 0; i < e.changedTouches.length; i++) {
+                            const touch = e.changedTouches[i];
+                            if (this.holdStartPos && touch.identifier === this.holdStartPos.id) {
+                                this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                                this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                                this.raycaster.setFromCamera(this.mousePos, this.camera);
+                                const groundHit = new THREE.Vector3();
+                                if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                                    this.updateMultiSelection(groundHit.x, groundHit.z, 14.0);
+                                }
+                                break;
+                            }
+                        }
+                    } else if (this.holdTimer && this.holdStartPos) {
+                        for (let i = 0; i < e.changedTouches.length; i++) {
+                            const touch = e.changedTouches[i];
+                            if (touch.identifier === this.holdStartPos.id) {
+                                const dx = Math.abs(touch.clientX - this.holdStartPos.x);
+                                const dy = Math.abs(touch.clientY - this.holdStartPos.y);
+                                if (dx > 20 || dy > 20) {
+                                    clearTimeout(this.holdTimer);
+                                    this.holdTimer = null;
+                                }
+                            }
+                        }
+                    }
+
                     if (this.isPaused || this.isGameOver) return;
 
                     // Virtual Joystick or Direct Touch Aim Movement during AC-130 mode
@@ -651,6 +777,26 @@
                             break;
                         }
                     } else if (!this.isPaused && !this.isGameOver) {
+                        if (this.holdTimer) {
+                            clearTimeout(this.holdTimer);
+                            this.holdTimer = null;
+                        }
+                        if (this.isHoldSelecting) {
+                            this.isHoldSelecting = false;
+                            this.hideHoldSelectionPulse();
+                            this.ignoreNextSelectionUntil = Date.now() + 500;
+                            if (this.selectedStructuresList.length > 1) {
+                                this.openMultiInspectModal(this.selectedStructuresList);
+                                return;
+                            } else if (this.selectedStructuresList.length === 1) {
+                                this.inspectStructure(this.selectedStructuresList[0]);
+                                this.clearSelectedStructures();
+                                return;
+                            } else {
+                                this.clearSelectedStructures();
+                            }
+                        }
+
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
                             if (this.ignoreNextSelectionUntil && Date.now() < this.ignoreNextSelectionUntil) continue;
@@ -661,26 +807,12 @@
                                 const dy = Math.abs(touch.clientY - this.gameplayTouchStart.y);
                                 const duration = Date.now() - this.gameplayTouchStart.time;
 
-                                if (dx < 18 && dy < 18 && duration < 320) {
-                                    this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                                    this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                                    this.raycaster.setFromCamera(this.mousePos, this.camera);
-
-                                    const clickableObjects = [];
-                                    this.turrets.forEach(t => t.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
-                                    this.walls.forEach(w => w.traverse(child => { if (child.isMesh) clickableObjects.push(child); }));
-
-                                    const intersects = this.raycaster.intersectObjects(clickableObjects, true);
-                                    if (intersects.length > 0) {
-                                        let topObj = intersects[0].object;
-                                        let depth = 0;
-                                        while (topObj && topObj.parent && topObj.parent !== this.scene && depth++ < 15) {
-                                            topObj = topObj.parent;
-                                        }
-                                        if (topObj && topObj.userData && (topObj.userData.isTurret || topObj.userData.isWall)) {
-                                            this.inspectStructure(topObj);
-                                            break;
-                                        }
+                                if (dx < 22 && dy < 22 && duration < 380) {
+                                    const struct = this.findStructureAtScreenPoint(touch.clientX, touch.clientY);
+                                    if (struct) {
+                                        this.ignoreNextSelectionUntil = Date.now() + 500;
+                                        this.inspectStructure(struct);
+                                        break;
                                     }
                                 }
                             }
@@ -1318,60 +1450,152 @@
 
                 this.pendingPlacement = { kind, specId, cost: spec.cost, spec };
 
-                if (this.ghostMesh) this.scene.remove(this.ghostMesh);
+                if (this.ghostMesh) {
+                    this.scene.remove(this.ghostMesh);
+                    this.ghostMesh = null;
+                }
 
                 this.ghostMesh = new THREE.Group();
                 const materials = [];
 
                 if (kind === 'turret') {
-                    const radius = spec.radius || (spec.id === 'drone_hangar' ? 1.8 : 1.2);
-                    const ringGeo = new THREE.RingGeometry(radius * 0.8, radius, 32);
-                    ringGeo.rotateX(-Math.PI / 2);
-                    const ringMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
-                    const ring = new THREE.Mesh(ringGeo, ringMat);
-                    ring.position.y = 0.05;
-                    this.ghostMesh.add(ring);
+                    const radius = spec.radius || (spec.id === 'drone_hangar' ? 2.2 : (spec.id === 'light_mast' ? 1.4 : 1.6));
+                    const range = spec.range || 20;
 
+                    // 1. Firing Range Projection Ring
+                    const rangeGeo = new THREE.RingGeometry(Math.max(1, range - 0.35), range + 0.35, 64);
+                    rangeGeo.rotateX(-Math.PI / 2);
+                    const rangeMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.45, depthWrite: false });
+                    const rangeRing = new THREE.Mesh(rangeGeo, rangeMat);
+                    rangeRing.position.y = 0.08;
+                    rangeRing.renderOrder = 997;
+                    this.ghostMesh.add(rangeRing);
+
+                    // 2. Glowing Base Footprint Disk
+                    const diskGeo = new THREE.CircleGeometry(radius, 32);
+                    diskGeo.rotateX(-Math.PI / 2);
+                    const diskMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false });
+                    const disk = new THREE.Mesh(diskGeo, diskMat);
+                    disk.position.y = 0.10;
+                    disk.renderOrder = 998;
+                    this.ghostMesh.add(disk);
+
+                    // 3. Crisp Footprint Border Ring
+                    const borderGeo = new THREE.RingGeometry(radius * 0.92, radius * 1.05, 32);
+                    borderGeo.rotateX(-Math.PI / 2);
+                    const borderMat = new THREE.MeshBasicMaterial({ color: 0x4ade80, side: THREE.DoubleSide, transparent: true, opacity: 0.95, depthWrite: false });
+                    const border = new THREE.Mesh(borderGeo, borderMat);
+                    border.position.y = 0.12;
+                    border.renderOrder = 999;
+                    this.ghostMesh.add(border);
+
+                    // 4. Vertical Holo-Beacon Column
+                    const beamGeo = new THREE.CylinderGeometry(0.15, radius * 0.75, 4.5, 16, 1, true);
+                    const beamMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false });
+                    const beam = new THREE.Mesh(beamGeo, beamMat);
+                    beam.position.y = 2.25;
+                    beam.renderOrder = 1000;
+                    this.ghostMesh.add(beam);
+
+                    // 5. Solid + Wireframe 3D Holo Structure
                     let bodyGeo;
+                    let bodyY = 0.8;
                     if (spec.id === 'drone_hangar') {
-                        bodyGeo = new THREE.CylinderGeometry(1.6, 1.8, 0.45, 8);
+                        bodyGeo = new THREE.CylinderGeometry(1.6, 2.0, 0.7, 12);
+                        bodyY = 0.35;
                     } else if (spec.id === 'light_mast') {
-                        bodyGeo = new THREE.CylinderGeometry(0.18, 0.6, 4.6, 8);
+                        bodyGeo = new THREE.CylinderGeometry(0.2, 0.6, 4.8, 8);
+                        bodyY = 2.4;
                     } else {
-                        bodyGeo = new THREE.CylinderGeometry(1.1, 1.4, 1.2, 8);
+                        bodyGeo = new THREE.CylinderGeometry(1.0, 1.4, 1.6, 12);
+                        bodyY = 0.8;
                     }
-                    const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.5 });
-                    const body = new THREE.Mesh(bodyGeo, bodyMat);
-                    body.position.y = spec.id === 'drone_hangar' ? 0.25 : (spec.id === 'light_mast' ? 2.3 : 0.6);
-                    this.ghostMesh.add(body);
 
-                    materials.push(ringMat, bodyMat);
-                    this.ghostMesh.userData = { materials, isValid: true, radius, kind: 'turret' };
+                    const solidMat = new THREE.MeshStandardMaterial({
+                        color: 0x22c55e,
+                        transparent: true,
+                        opacity: 0.70,
+                        roughness: 0.2,
+                        metalness: 0.1,
+                        emissive: 0x15803d,
+                        emissiveIntensity: 0.6,
+                        depthWrite: false
+                    });
+                    const solidMesh = new THREE.Mesh(bodyGeo, solidMat);
+                    solidMesh.position.y = bodyY;
+                    solidMesh.renderOrder = 1001;
+                    this.ghostMesh.add(solidMesh);
+
+                    const wireMat = new THREE.MeshBasicMaterial({ color: 0x86efac, wireframe: true, transparent: true, opacity: 0.95, depthWrite: false });
+                    const wireMesh = new THREE.Mesh(bodyGeo, wireMat);
+                    wireMesh.position.y = bodyY;
+                    wireMesh.renderOrder = 1002;
+                    this.ghostMesh.add(wireMesh);
+
+                    materials.push(rangeMat, diskMat, borderMat, beamMat, solidMat, wireMat);
+                    this.ghostMesh.userData = { materials, solidMat, isValid: true, radius, kind: 'turret' };
                 } else {
                     let wWidth = 3.6, wHeight = 1.8, wDepth = 1.0;
                     if (spec.id === 'concrete') { wWidth = 4.2; wHeight = 2.2; wDepth = 1.2; }
                     if (spec.id === 'laser_wall') { wWidth = 4.5; wHeight = 2.5; wDepth = 0.8; }
 
-                    const boxGeo = new THREE.BoxGeometry(wWidth, wHeight, wDepth);
-                    const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.6 });
-                    const body = new THREE.Mesh(boxGeo, bodyMat);
-                    body.position.y = wHeight / 2;
-                    this.ghostMesh.add(body);
-
-                    const outlineMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.3 });
-                    const basePlate = new THREE.Mesh(new THREE.PlaneGeometry(wWidth + 0.4, wDepth + 0.4), outlineMat);
-                    basePlate.rotation.x = -Math.PI / 2;
-                    basePlate.position.y = 0.05;
+                    // 1. Base Plate Footprint
+                    const baseGeo = new THREE.PlaneGeometry(wWidth + 0.6, wDepth + 0.6);
+                    baseGeo.rotateX(-Math.PI / 2);
+                    const baseMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false });
+                    const basePlate = new THREE.Mesh(baseGeo, baseMat);
+                    basePlate.position.y = 0.10;
+                    basePlate.renderOrder = 998;
                     this.ghostMesh.add(basePlate);
 
-                    materials.push(bodyMat, outlineMat);
-                    this.ghostMesh.userData = { materials, isValid: true, radius: spec.radius || (wWidth / 2), kind: 'wall' };
+                    // 2. Footprint Border
+                    const borderGeo = new THREE.PlaneGeometry(wWidth + 0.8, wDepth + 0.8);
+                    borderGeo.rotateX(-Math.PI / 2);
+                    const borderMat = new THREE.MeshBasicMaterial({ color: 0x4ade80, wireframe: true, transparent: true, opacity: 0.95, depthWrite: false });
+                    const border = new THREE.Mesh(borderGeo, borderMat);
+                    border.position.y = 0.12;
+                    border.renderOrder = 999;
+                    this.ghostMesh.add(border);
+
+                    // 3. Solid Translucent Wall Box
+                    const boxGeo = new THREE.BoxGeometry(wWidth, wHeight, wDepth);
+                    const solidMat = new THREE.MeshStandardMaterial({
+                        color: 0x22c55e,
+                        transparent: true,
+                        opacity: 0.70,
+                        roughness: 0.2,
+                        metalness: 0.1,
+                        emissive: 0x15803d,
+                        emissiveIntensity: 0.6,
+                        depthWrite: false
+                    });
+                    const solidMesh = new THREE.Mesh(boxGeo, solidMat);
+                    solidMesh.position.y = wHeight / 2;
+                    solidMesh.renderOrder = 1001;
+                    this.ghostMesh.add(solidMesh);
+
+                    const wireMat = new THREE.MeshBasicMaterial({ color: 0x86efac, wireframe: true, transparent: true, opacity: 0.95, depthWrite: false });
+                    const wireMesh = new THREE.Mesh(boxGeo, wireMat);
+                    wireMesh.position.y = wHeight / 2;
+                    wireMesh.renderOrder = 1002;
+                    this.ghostMesh.add(wireMesh);
+
+                    materials.push(baseMat, borderMat, solidMat, wireMat);
+                    this.ghostMesh.userData = { materials, solidMat, isValid: true, radius: spec.radius || (wWidth / 2), kind: 'wall' };
                 }
 
                 this.scene.add(this.ghostMesh);
 
-                const initX = (this.playerGroup && Math.abs(this.playerGroup.position.x) > 3) ? this.playerGroup.position.x + 3.2 : 11.5;
-                const initZ = (this.playerGroup && Math.abs(this.playerGroup.position.z) > 3) ? this.playerGroup.position.z + 3.2 : 11.5;
+                // Initialize directly in front of the player
+                let initX = 0, initZ = 0;
+                if (this.playerGroup) {
+                    const fAngle = (this.playerMesh && this.playerMesh.rotation) ? this.playerMesh.rotation.y : 0;
+                    initX = this.playerGroup.position.x + Math.sin(fAngle) * 4.2;
+                    initZ = this.playerGroup.position.z + Math.cos(fAngle) * 4.2;
+                } else {
+                    initX = 10; initZ = 10;
+                }
+
                 if (!this.pointerWorldPos) this.pointerWorldPos = new THREE.Vector3();
                 this.pointerWorldPos.set(initX, 0, initZ);
                 this.updateGhostPosition(initX, initZ);
@@ -1422,8 +1646,14 @@
 
                 this.ghostMesh.userData.isValid = isValid;
                 const colorHex = isValid ? 0x22c55e : 0xef4444;
+                const emissiveHex = isValid ? 0x15803d : 0x991b1b;
                 if (this.ghostMesh.userData.materials) {
-                    this.ghostMesh.userData.materials.forEach(m => m.color.setHex(colorHex));
+                    this.ghostMesh.userData.materials.forEach(m => {
+                        m.color.setHex(colorHex);
+                    });
+                }
+                if (this.ghostMesh.userData.solidMat) {
+                    this.ghostMesh.userData.solidMat.emissive.setHex(emissiveHex);
                 }
             }
 
@@ -2303,8 +2533,8 @@
                     const upgCost = Math.round(ud.totalInvested * 0.80);
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
 
-                    document.getElementById('inspect-upgrade-text').innerText = `Upgrade ($${upgCost})`;
-                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Reparieren';
+                    document.getElementById('inspect-upgrade-text').innerText = `Upgrade (${formatMoney(upgCost)})`;
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren (${formatMoney(repairCost)})` : 'Reparieren';
 
                     const canUpgrade = this.money >= upgCost;
                     upgradeBtn.disabled = !canUpgrade;
@@ -2330,8 +2560,8 @@
                     const upgCost = Math.round(ud.totalInvested * 0.80);
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
 
-                    document.getElementById('inspect-upgrade-text').innerText = `Upgrade ($${upgCost})`;
-                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Reparieren';
+                    document.getElementById('inspect-upgrade-text').innerText = `Upgrade (${formatMoney(upgCost)})`;
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren (${formatMoney(repairCost)})` : 'Reparieren';
 
                     const canUpgrade = this.money >= upgCost;
                     upgradeBtn.disabled = !canUpgrade;
@@ -2354,7 +2584,7 @@
                         <div>• Endboss-Schutz: <strong class="text-rose-400">${ud.typeId === 'laser_wall' ? 'Hoch' : 'Mittel'}</strong></div>
                     `;
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.6);
-                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren ($${repairCost})` : 'Reparieren';
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren (${formatMoney(repairCost)})` : 'Reparieren';
                     upgradeBtn.classList.add('hidden');
 
                     const canRepair = repairCost > 0 && this.money >= repairCost;
@@ -2365,9 +2595,266 @@
                 }
 
                 const sellRefund = Math.round(ud.totalInvested * 0.7);
-                document.getElementById('inspect-sell-text').innerText = `Verkaufen (+$${sellRefund})`;
+                document.getElementById('inspect-sell-text').innerText = `Verkaufen (+${formatMoney(sellRefund)})`;
 
                 modal.classList.remove('hidden');
+            }
+
+            showHoldSelectionPulse(groundX, groundZ, radius = 14) {
+                if (!this.multiSelectHoloGroup) return;
+                this.multiSelectHoloGroup.visible = true;
+
+                while (this.multiSelectHoloGroup.children.length > 0) {
+                    const c = this.multiSelectHoloGroup.children[0];
+                    this.multiSelectHoloGroup.remove(c);
+                    if (c.geometry) c.geometry.dispose();
+                }
+
+                // 1. Ground Disk
+                const diskGeo = new THREE.CircleGeometry(radius, 32);
+                diskGeo.rotateX(-Math.PI / 2);
+                const diskMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+                const disk = new THREE.Mesh(diskGeo, diskMat);
+                disk.position.set(groundX, 0.08, groundZ);
+                disk.renderOrder = 996;
+                this.multiSelectHoloGroup.add(disk);
+
+                // 2. Glowing Outer Ring
+                const ringGeo = new THREE.RingGeometry(Math.max(1, radius - 0.45), radius + 0.45, 48);
+                ringGeo.rotateX(-Math.PI / 2);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.position.set(groundX, 0.10, groundZ);
+                ring.renderOrder = 997;
+                this.multiSelectHoloGroup.add(ring);
+
+                // 3. Central Beacon Beam
+                const beamGeo = new THREE.CylinderGeometry(0.2, 0.8, 5.5, 16, 1, true);
+                const beamMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false });
+                const beam = new THREE.Mesh(beamGeo, beamMat);
+                beam.position.set(groundX, 2.75, groundZ);
+                beam.renderOrder = 998;
+                this.multiSelectHoloGroup.add(beam);
+            }
+
+            hideHoldSelectionPulse() {
+                if (this.multiSelectHoloGroup) {
+                    this.multiSelectHoloGroup.visible = false;
+                }
+            }
+
+            updateMultiSelection(groundX, groundZ, radius = 14) {
+                this.showHoldSelectionPulse(groundX, groundZ, radius);
+
+                const allStructures = [...this.turrets, ...this.walls];
+                const found = [];
+                const rSq = radius * radius;
+
+                for (const struct of allStructures) {
+                    const dx = struct.position.x - groundX;
+                    const dz = struct.position.z - groundZ;
+                    if (dx * dx + dz * dz <= rSq) {
+                        found.push(struct);
+                    }
+                }
+
+                this.selectedStructuresList = found;
+                this.updateSelectionRings();
+            }
+
+            updateSelectionRings() {
+                if (!this.selectionRingsGroup) return;
+
+                while (this.selectionRingsGroup.children.length > 0) {
+                    const c = this.selectionRingsGroup.children[0];
+                    this.selectionRingsGroup.remove(c);
+                    if (c.geometry) c.geometry.dispose();
+                }
+
+                for (const struct of this.selectedStructuresList) {
+                    const r = (struct.userData && struct.userData.radius) ? struct.userData.radius : 1.5;
+                    const ringGeo = new THREE.RingGeometry(r * 0.95, r * 1.25, 32);
+                    ringGeo.rotateX(-Math.PI / 2);
+                    const ringMat = new THREE.MeshBasicMaterial({
+                        color: 0xf59e0b,
+                        transparent: true,
+                        opacity: 0.95,
+                        side: THREE.DoubleSide,
+                        depthWrite: false
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.position.set(struct.position.x, 0.12, struct.position.z);
+                    ring.renderOrder = 999;
+                    this.selectionRingsGroup.add(ring);
+                }
+            }
+
+            clearSelectedStructures() {
+                this.selectedStructuresList = [];
+                if (this.selectionRingsGroup) {
+                    while (this.selectionRingsGroup.children.length > 0) {
+                        const c = this.selectionRingsGroup.children[0];
+                        this.selectionRingsGroup.remove(c);
+                        if (c.geometry) c.geometry.dispose();
+                    }
+                }
+                this.hideHoldSelectionPulse();
+            }
+
+            openMultiInspectModal(structuresList) {
+                if (!structuresList || structuresList.length === 0) return;
+                this.selectedStructuresList = structuresList;
+                this.isPaused = true;
+
+                const modal = document.getElementById('multi-inspect-modal');
+                const sub = document.getElementById('multi-inspect-subtitle');
+                const breakdown = document.getElementById('multi-inspect-breakdown');
+                const upgBtn = document.getElementById('multi-inspect-upgrade-btn');
+                const repBtn = document.getElementById('multi-inspect-repair-btn');
+                const upgText = document.getElementById('multi-inspect-upgrade-text');
+                const repText = document.getElementById('multi-inspect-repair-text');
+
+                if (sub) sub.innerText = `${structuresList.length} STRUKTUREN GEWÄHLT`;
+
+                let totalUpgCost = 0;
+                let totalRepCost = 0;
+                let upgCount = 0;
+                let repCount = 0;
+                const countsByName = {};
+
+                for (const s of structuresList) {
+                    const ud = s.userData || {};
+                    const name = ud.name || 'Verteidigung';
+                    countsByName[name] = (countsByName[name] || 0) + 1;
+
+                    // Upgrade cost
+                    if (ud.isTurret && !ud.isHangar && ud.totalInvested) {
+                        const cost = Math.round(ud.totalInvested * 0.80);
+                        totalUpgCost += cost;
+                        upgCount++;
+                    }
+
+                    // Repair cost
+                    if (ud.hp < ud.maxHp && ud.totalInvested) {
+                        const rCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * (ud.isWall ? 0.6 : 0.5));
+                        if (rCost > 0) {
+                            totalRepCost += rCost;
+                            repCount++;
+                        }
+                    }
+                }
+
+                const summaryLines = Object.entries(countsByName)
+                    .map(([name, count]) => `<div>• <strong class="text-amber-300">${count}x</strong> ${name}</div>`)
+                    .join('');
+
+                if (breakdown) {
+                    breakdown.innerHTML = `
+                        <div class="space-y-1.5">
+                            <div class="text-white font-bold pb-1 border-b border-slate-800 flex justify-between">
+                                <span>Auswahl-Übersicht:</span>
+                                <span class="text-amber-400 font-bold">${structuresList.length} Einheiten</span>
+                            </div>
+                            <div class="space-y-0.5 text-slate-300 text-[11px]">${summaryLines}</div>
+                            <div class="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
+                                <div class="flex justify-between text-slate-400">
+                                    <span>Upgrades verfügbar (${upgCount} Türme):</span>
+                                    <strong class="text-amber-400">${formatMoney(totalUpgCost)}</strong>
+                                </div>
+                                <div class="flex justify-between text-slate-400">
+                                    <span>Reparaturen nötig (${repCount} beschädigt):</span>
+                                    <strong class="text-emerald-400">${formatMoney(totalRepCost)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const canUpg = totalUpgCost > 0 && this.money >= 1;
+                const canRep = totalRepCost > 0 && this.money >= 1;
+
+                if (upgBtn) {
+                    upgBtn.disabled = !canUpg;
+                    if (upgText) upgText.innerText = totalUpgCost > 0 ? `Alle Upgraden (${formatMoney(totalUpgCost)})` : 'Keine Upgrades';
+                }
+                if (repBtn) {
+                    repBtn.disabled = !canRep;
+                    if (repText) repText.innerText = totalRepCost > 0 ? `Alle Reparieren (${formatMoney(totalRepCost)})` : 'Voll Intakt';
+                }
+
+                if (modal) modal.classList.remove('hidden');
+            }
+
+            upgradeAllSelectedStructures() {
+                if (!this.selectedStructuresList || this.selectedStructuresList.length === 0) return;
+                let upgradedCount = 0;
+
+                for (const struct of this.selectedStructuresList) {
+                    const ud = struct.userData;
+                    if (!ud || !ud.isTurret || ud.isHangar || !ud.totalInvested) continue;
+
+                    const cost = Math.round(ud.totalInvested * 0.80);
+                    if (this.money >= cost) {
+                        this.money -= cost;
+                        if (typeof applyTurretLevelUpgrades === 'function') {
+                            applyTurretLevelUpgrades(struct, ud.level + 1);
+                        } else {
+                            ud.level++;
+                            ud.maxHp = Math.round(ud.maxHp * 1.35);
+                            ud.hp = ud.maxHp;
+                            if (ud.damage) ud.damage = Math.round(ud.damage * 1.35);
+                            if (ud.range) ud.range = Math.round(ud.range * 1.06);
+                        }
+                        ud.totalInvested += cost;
+                        this.createBloodSparks(struct.position, 0xfacc15);
+                        upgradedCount++;
+                    }
+                }
+
+                if (upgradedCount > 0) {
+                    if (typeof audio !== 'undefined' && audio.playCash) audio.playCash();
+                    this.syncHUD();
+                    if (typeof showPurchaseToast === 'function') {
+                        showPurchaseToast(`⚡ ${upgradedCount} Türme erfolgreich aufgewertet!`);
+                    }
+                    this.openMultiInspectModal(this.selectedStructuresList);
+                }
+            }
+
+            repairAllSelectedStructures() {
+                if (!this.selectedStructuresList || this.selectedStructuresList.length === 0) return;
+                let repairedCount = 0;
+
+                for (const struct of this.selectedStructuresList) {
+                    const ud = struct.userData;
+                    if (!ud || !ud.totalInvested) continue;
+
+                    if (ud.hp < ud.maxHp) {
+                        const rCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * (ud.isWall ? 0.6 : 0.5));
+                        if (rCost > 0 && this.money >= rCost) {
+                            this.money -= rCost;
+                            ud.hp = ud.maxHp;
+                            this.createBloodSparks(struct.position, 0x22c55e);
+                            repairedCount++;
+                        }
+                    }
+                }
+
+                if (repairedCount > 0) {
+                    if (typeof audio !== 'undefined' && audio.playCash) audio.playCash();
+                    this.syncHUD();
+                    if (typeof showPurchaseToast === 'function') {
+                        showPurchaseToast(`🔧 ${repairedCount} Strukturen vollständig repariert!`);
+                    }
+                    this.openMultiInspectModal(this.selectedStructuresList);
+                }
+            }
+
+            closeMultiInspectModal() {
+                const modal = document.getElementById('multi-inspect-modal');
+                if (modal) modal.classList.add('hidden');
+                this.clearSelectedStructures();
+                this.isPaused = false;
             }
 
             destroyWall(wallGroup) {
@@ -6052,10 +6539,11 @@
                 // 5. Money
                 if (this._cacheMoney !== this.money) {
                     this._cacheMoney = this.money;
+                    const formatted = formatMoney(this.money);
                     const el1 = document.getElementById('hud-money');
-                    if (el1) el1.innerText = `$ ${this.money}`;
+                    if (el1) el1.innerText = formatted;
                     const el2 = document.getElementById('shop-money-display');
-                    if (el2) el2.innerText = `$ ${this.money}`;
+                    if (el2) el2.innerText = formatted;
                 }
 
                 // 6. Wave Title & Zombies Left
@@ -6494,6 +6982,13 @@
 
                 this.raycaster = new THREE.Raycaster();
                 this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+                // Multi-Selection Visual Layers
+                this.selectionRingsGroup = new THREE.Group();
+                this.scene.add(this.selectionRingsGroup);
+
+                this.multiSelectHoloGroup = new THREE.Group();
+                this.scene.add(this.multiSelectHoloGroup);
             }
 
             initPools() {

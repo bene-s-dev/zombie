@@ -275,13 +275,13 @@ updateTacticalExtrasHUD();
                     <div class="flex items-center space-x-2">
                         ${isUnlocked ? `
                             <button onclick="upgradeWeapon('${w.id}')" ${canAffordUpgrade ? '' : 'disabled'} class="px-3 py-2 ${canAffordUpgrade ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px] transition">
-                                <i class="fa-solid fa-arrow-up"></i><span>+$${upgradeCost}</span>
+                                <i class="fa-solid fa-arrow-up"></i><span>+${formatMoney(upgradeCost)}</span>
                             </button>
                             <button onclick="equipWeapon('${w.id}')" class="px-3 py-2 ${isEquipped ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50 cursor-default' : 'bg-slate-800 hover:bg-slate-700 text-white cursor-pointer'} rounded-lg text-xs font-bold min-h-[36px]">
                                 ${isEquipped ? 'Aktiv' : 'Wählen'}
                             </button>
                         ` : `
-                            <button onclick="buyWeapon('${w.id}')" ${canAffordBuy ? '' : 'disabled'} class="px-4 py-2 ${canAffordBuy ? 'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-lg text-xs font-bold min-h-[36px] transition">$${w.cost}</button>
+                            <button onclick="buyWeapon('${w.id}')" ${canAffordBuy ? '' : 'disabled'} class="px-4 py-2 ${canAffordBuy ? 'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-lg text-xs font-bold min-h-[36px] transition">${formatMoney(w.cost)}</button>
                         `}
                     </div>
                 `;
@@ -311,7 +311,7 @@ updateTacticalExtrasHUD();
                         </div>
                         <button onclick="startBuildPlacement('turret', '${t.id}')" ${canAfford ? '' : 'disabled'} class="px-4 py-2 ${canAfford ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-lg text-xs font-bold flex items-center space-x-1 min-h-[36px] flex-shrink-0 transition">
                             <i class="fa-solid fa-hammer text-xs"></i>
-                            <span>Bauen $${t.cost}</span>
+                            <span>Bauen ${formatMoney(t.cost)}</span>
                         </button>
                     `;
                     turretsContainer.appendChild(card);
@@ -404,7 +404,7 @@ updateTacticalExtrasHUD();
                             <div class="text-[11px] text-slate-400 mt-1 leading-snug">${descText}</div>
                         </div>
                         <button onclick="buyUpgrade('${key}')" ${isDisabled ? 'disabled' : ''} class="px-3.5 py-2 ${isDisabled ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50' : 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-950/40 cursor-pointer'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 transition">
-                            ${isMax ? 'MAX' : '$' + cost}
+                            ${isMax ? 'MAX' : formatMoney(cost)}
                         </button>
                     `;
                     return card;
@@ -425,7 +425,7 @@ updateTacticalExtrasHUD();
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1">Stellt volle Spieler-HP wieder her.</div>
                         </div>
-                        <button onclick="healPlayer()" ${canHeal ? '' : 'disabled'} class="px-3.5 py-2 ${canHeal ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 transition">$80</button>
+                        <button onclick="healPlayer()" ${canHeal ? '' : 'disabled'} class="px-3.5 py-2 ${canHeal ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 transition">$ 80</button>
                     `;
                     upgradesContainer.appendChild(healCard);
 
@@ -450,7 +450,7 @@ updateTacticalExtrasHUD();
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1">Stellt Basis-Gesundheit im Notfall wieder her.</div>
                         </div>
-                        <button onclick="repairBase()" ${canRepair ? '' : 'disabled'} class="px-3.5 py-2 ${canRepair ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 transition">$120</button>
+                        <button onclick="repairBase()" ${canRepair ? '' : 'disabled'} class="px-3.5 py-2 ${canRepair ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold min-h-[36px] flex-shrink-0 transition">$ 120</button>
                     `;
                     upgradesContainer.appendChild(repairCard);
 
@@ -641,6 +641,28 @@ updateTacticalExtrasHUD();
             gameInstance.scene.remove(struct);
             gameInstance.syncHUD();
             closeInspectModal();
+        }
+
+        function closeMultiInspectModal(event) {
+            if (event && event.stopPropagation) event.stopPropagation();
+            if (gameInstance) {
+                gameInstance.closeMultiInspectModal();
+            } else {
+                const modal = document.getElementById('multi-inspect-modal');
+                if (modal) modal.classList.add('hidden');
+            }
+        }
+
+        function upgradeAllSelectedStructures() {
+            if (gameInstance && typeof gameInstance.upgradeAllSelectedStructures === 'function') {
+                gameInstance.upgradeAllSelectedStructures();
+            }
+        }
+
+        function repairAllSelectedStructures() {
+            if (gameInstance && typeof gameInstance.repairAllSelectedStructures === 'function') {
+                gameInstance.repairAllSelectedStructures();
+            }
         }
 
         let isStockMarketOpen = false;

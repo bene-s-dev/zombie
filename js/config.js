@@ -2,6 +2,34 @@ const SUPABASE_URL = 'https://jyoxxkngxxfmiskfxndp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5b3h4a25neHhmbWlza2Z4bmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5Mjg4NTQsImV4cCI6MjEwMTUwNDg1NH0.g6iDSYtD9rCU8SMKdpqg8OTIK8VYueYbbXvQe2ouwXg';
 const SUPABASE_TABLE = 'zombie_highscores';
 
+function formatCompactNumber(num) {
+    const n = Number(num) || 0;
+    const abs = Math.abs(n);
+    if (abs < 1000) {
+        return Math.floor(n).toLocaleString('de-DE');
+    }
+    const suffixes = [
+        { val: 1e18, symbol: ' Qi' },
+        { val: 1e15, symbol: ' Qa' },
+        { val: 1e12, symbol: ' T' },
+        { val: 1e9,  symbol: ' B' },
+        { val: 1e6,  symbol: ' M' },
+        { val: 1e3,  symbol: ' K' }
+    ];
+    for (const s of suffixes) {
+        if (abs >= s.val) {
+            const formatted = (n / s.val).toFixed(2).replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1');
+            return formatted + s.symbol;
+        }
+    }
+    return Math.floor(n).toLocaleString('de-DE');
+}
+
+function formatMoney(amount) {
+    if (amount === undefined || amount === null || isNaN(amount)) return '$ 0';
+    return '$ ' + formatCompactNumber(amount);
+}
+
 const WEAPONS = {
     pistol: { id: 'pistol', name: 'Pistole', cost: 0, level: 1, maxLevel: Infinity, damage: 38, firerate: 200, speed: 52, spread: 0.03, count: 1, isExplosive: false, color: 0xfacc15 },
     smg: { id: 'smg', name: 'Maschinenpistole MP5', cost: 200, level: 1, maxLevel: Infinity, damage: 25, firerate: 100, speed: 54, spread: 0.07, count: 1, isExplosive: false, color: 0xeab308 },
