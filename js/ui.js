@@ -1710,7 +1710,7 @@ updateTacticalExtrasHUD();
             if (statusEl && text) statusEl.innerText = text;
         }
 
-        function triggerFullscreen() {
+        function toggleFullscreen() {
             try {
                 const el = document.documentElement;
                 const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
@@ -1726,11 +1726,50 @@ updateTacticalExtrasHUD();
                     } else if (el.msRequestFullscreen) {
                         el.msRequestFullscreen().catch(() => {});
                     }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(() => {});
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen().catch(() => {});
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen().catch(() => {});
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen().catch(() => {});
+                    }
                 }
-                window.scrollTo(0, 0);
-                setTimeout(() => window.scrollTo(0, 0), 80);
+                updateFullscreenUI();
             } catch(e) {}
         }
+
+        function triggerFullscreen() {
+            try {
+                const el = document.documentElement;
+                const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+                if (!isFs) {
+                    if (el.requestFullscreen) {
+                        el.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+                    } else if (el.webkitRequestFullscreen) {
+                        el.webkitRequestFullscreen().catch(() => {});
+                    }
+                }
+                updateFullscreenUI();
+            } catch(e) {}
+        }
+
+        function updateFullscreenUI() {
+            const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+            const btn = document.getElementById('menu-fs-btn');
+            if (btn) {
+                btn.innerHTML = isFs 
+                    ? `<i class="fa-solid fa-compress text-sm text-amber-400"></i>`
+                    : `<i class="fa-solid fa-expand text-sm"></i>`;
+                btn.title = isFs ? "Vollbild beenden" : "Vollbild umschalten";
+            }
+        }
+        document.addEventListener('fullscreenchange', updateFullscreenUI);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+        document.addEventListener('mozfullscreenchange', updateFullscreenUI);
+        document.addEventListener('MSFullscreenChange', updateFullscreenUI);
 
         async function loadAndStartGame(sessionToRestore = null) {
             triggerFullscreen();
@@ -1868,7 +1907,7 @@ updateTacticalExtrasHUD();
             updateMainMenuResumeButton();
         }
 
-        // Universal Fast Multi-touch Pointer Trigger for all interactive buttons and HUD elements
+        // Universal Fast Multi-touch Pointer Trigger for in-game interactive buttons and HUD elements
         (function setupFastMultitouchButtons() {
             let lastTriggerTime = 0;
             let lastTriggerTarget = null;
@@ -1876,6 +1915,11 @@ updateTacticalExtrasHUD();
             const handleFastTrigger = (e) => {
                 const btn = e.target.closest('button, [role="button"], .shop-tab-btn, .shop-buy-btn, [data-fast-touch]');
                 if (!btn) return;
+
+                // Never intercept main menu buttons to prevent accidental game starts when tapping fullscreen / navigation
+                if (btn.closest('#main-menu')) {
+                    return;
+                }
 
                 // Do not intercept or debounce AC-130 fire touch button or other continuous hold buttons
                 if (btn.id === 'ac130-btn-fire-touch' || btn.getAttribute('data-no-fast-touch') === 'true') {
