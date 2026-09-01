@@ -104,7 +104,7 @@ const TURRET_TYPES = {
         hp: 450,
         maxHp: 450,
         isLightMast: true,
-        desc: 'Taktischer Lichtmastanhänger mit 360° Hochleistungs-LED-Flutlicht. Erleuchtet nachts das Gefechtsfeld taghell!'
+        desc: 'Taktischer Lichtmast mit 360° Hochleistungs-LED-Flutlicht. Erleuchtet das Gefechtsfeld taghell und bremst nachts geblendete Zombies auf Normaltempo ab!'
     },
     drone_hangar: {
         id: 'drone_hangar',

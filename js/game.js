@@ -2758,7 +2758,7 @@
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• Beleuchtung: <strong class="text-amber-300">360° Rundum-LED-Flutlicht</strong></div>
                         <div>• Leuchtradius: <strong class="text-sky-400">${ud.range}m</strong></div>
-                        <div>• Lichttechnik: <strong class="text-emerald-400">High-Power SMD-LEDs</strong></div>
+                        <div>• Taktischer Effekt: <strong class="text-amber-300">Bremst Zombies nachts auf Normaltempo</strong></div>
                         <div>• Nacht-Sensor: <strong class="text-emerald-400">Automatische Aktivierung</strong></div>
                     `;
                     const upgCost = Math.round(ud.totalInvested * 0.80);

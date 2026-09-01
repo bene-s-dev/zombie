@@ -299,7 +299,7 @@ updateTacticalExtrasHUD();
                     if (t.isHangar) {
                         statsLine = `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Global (Unbegrenzte Reichweite) | Reparatur ~225 HP/s</div>`;
                     } else if (t.isLightMast) {
-                        statsLine = `<div class="text-[10px] text-amber-300 font-mono mt-0.5"><i class="fa-solid fa-lightbulb mr-1"></i>360° Rundum-LED-Flutlicht | Leuchtradius: ${t.range}m | Nacht-Beleuchtung</div>`;
+                        statsLine = `<div class="text-[10px] text-amber-300 font-mono mt-0.5"><i class="fa-solid fa-lightbulb mr-1"></i>360° Rundum-LED-Flutlicht | Radius: ${t.range}m | Bremst Zombies nachts auf Normaltempo</div>`;
                     } else if (t.isArtillery) {
                         statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5"><i class="fa-solid fa-rocket mr-1"></i>Dmg: ${t.damage} | Steilbogen: ${t.range}m | Kadenz: ${t.firerate}ms | Pushback</div>`;
                     } else if (t.isAntiAir) {
