@@ -931,6 +931,45 @@ updateTacticalExtrasHUD();
             }
         }
 
+        let shopButtonTimer = null;
+        let shopButtonClickCount = 0;
+
+        function handleShopButtonPress(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+
+            // If shop is already open, immediate toggle / close
+            if (isShopOpen) {
+                if (shopButtonTimer) {
+                    clearTimeout(shopButtonTimer);
+                    shopButtonTimer = null;
+                }
+                shopButtonClickCount = 0;
+                toggleShop(false);
+                return;
+            }
+
+            shopButtonClickCount++;
+
+            if (shopButtonClickCount === 1) {
+                if (shopButtonTimer) clearTimeout(shopButtonTimer);
+                shopButtonTimer = setTimeout(() => {
+                    shopButtonClickCount = 0;
+                    shopButtonTimer = null;
+                    toggleShop(true);
+                }, 260);
+            } else if (shopButtonClickCount >= 2) {
+                if (shopButtonTimer) {
+                    clearTimeout(shopButtonTimer);
+                    shopButtonTimer = null;
+                }
+                shopButtonClickCount = 0;
+                openAllStructuresMultiUpgrade();
+            }
+        }
+
         function toggleShop(explicitState) {
             isShopOpen = explicitState !== undefined ? explicitState : !isShopOpen;
             const shopModal = document.getElementById('shop-modal');
@@ -1996,8 +2035,8 @@ updateTacticalExtrasHUD();
                     return;
                 }
 
-                // Do not intercept or debounce AC-130 fire touch button or other continuous hold buttons
-                if (btn.id === 'ac130-btn-fire-touch' || btn.getAttribute('data-no-fast-touch') === 'true') {
+                // Do not intercept or debounce AC-130 fire touch button, shop double-tap button, or other continuous hold buttons
+                if (btn.id === 'ac130-btn-fire-touch' || btn.id === 'hud-shop-btn' || btn.getAttribute('data-no-fast-touch') === 'true') {
                     return;
                 }
 

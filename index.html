@@ -722,8 +722,8 @@
                         <span id="hud-money">$ 0</span>
                     </div>
 
-                    <!-- Shop Button -->
-                    <button id="hud-shop-btn" onclick="toggleShop()" style="touch-action: manipulation;" class="bg-slate-950/90 hover:bg-slate-900 active:bg-slate-950 text-red-400 border border-red-500/60 rounded-md sm:rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 cursor-pointer flex-shrink-0" title="Laden öffnen [B]">
+                    <!-- Shop Button (Single Click: Laden, Double Click: Multi-Upgrade) -->
+                    <button id="hud-shop-btn" onclick="handleShopButtonPress(event)" style="touch-action: manipulation;" class="bg-slate-950/90 hover:bg-slate-900 active:bg-slate-950 text-red-400 border border-red-500/60 rounded-md sm:rounded-lg shadow backdrop-blur-sm transition active:scale-95 flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 cursor-pointer flex-shrink-0" title="Laden öffnen [B] | 2x Tippen: Multi-Upgrade">
                         <i class="fa-solid fa-store text-[10px] sm:text-xs"></i>
                     </button>
 
