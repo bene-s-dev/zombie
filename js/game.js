@@ -1223,8 +1223,7 @@
                 const now = performance.now();
 
                 if (!this._turretBulletGeo) {
-                    this._turretBulletGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.3, 8);
-                    this._turretBulletGeo.rotateX(Math.PI / 2);
+                    this._turretBulletGeo = new THREE.BoxGeometry(0.16, 0.16, 1.4);
                     this._turretBulletMatMG = new THREE.MeshBasicMaterial({ color: 0x38bdf8 }); // Blau für Waffenstation
                     this._turretBulletMatGranate = new THREE.MeshBasicMaterial({ color: 0xff6600 }); // Orange für Granatwerfer
                 }
@@ -1299,8 +1298,7 @@
                             this.createBloodSparks(new THREE.Vector3(tx, 2.2, tz), 0xc084fc);
 
                             if (!this._mantisBulletGeo) {
-                                this._mantisBulletGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.1, 6);
-                                this._mantisBulletGeo.rotateX(Math.PI / 2);
+                                this._mantisBulletGeo = new THREE.BoxGeometry(0.14, 0.14, 1.2);
                                 this._mantisBulletMat = new THREE.MeshBasicMaterial({ color: 0xc084fc });
                             }
 
@@ -1353,7 +1351,7 @@
 
                             if (!this._artilleryRocketGeo) {
                                 this._artilleryRocketGeo = new THREE.CylinderGeometry(0.18, 0.14, 1.4, 8);
-                                this._artilleryRocketGeo.rotateX(Math.PI / 2);
+                                this._artilleryRocketGeo.rotateX(-Math.PI / 2);
                                 this._artilleryRocketMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
                             }
 
@@ -1361,9 +1359,9 @@
                             if (!rocket) {
                                 rocket = new THREE.Mesh(this._artilleryRocketGeo, this._artilleryRocketMat);
                                 const warheadGeo = new THREE.ConeGeometry(0.18, 0.45, 8);
-                                warheadGeo.rotateX(Math.PI / 2);
+                                warheadGeo.rotateX(-Math.PI / 2);
                                 const warhead = new THREE.Mesh(warheadGeo, new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-                                warhead.position.z = 0.90;
+                                warhead.position.z = -0.90;
                                 rocket.add(warhead);
                                 this.scene.add(rocket);
                             }
@@ -3623,8 +3621,7 @@
                 if (isCrit) weaponDmg *= 2.0;
 
                 if (!this._playerBulletGeo) {
-                    this._playerBulletGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 8);
-                    this._playerBulletGeo.rotateX(Math.PI / 2);
+                    this._playerBulletGeo = new THREE.BoxGeometry(0.16, 0.16, 1.4);
                     this._playerBulletMatCache = {};
                 }
 

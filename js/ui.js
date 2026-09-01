@@ -183,8 +183,7 @@ updateTacticalExtrasHUD();
             }
         }
 
-        const SHARED_BULLET_GEO = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 6);
-        SHARED_BULLET_GEO.rotateX(Math.PI / 2);
+        const SHARED_BULLET_GEO = new THREE.BoxGeometry(0.16, 0.16, 1.4);
 
         const SHARED_PARTICLE_GEO = new THREE.BoxGeometry(0.15, 0.15, 0.15);
 
