@@ -2903,50 +2903,93 @@
                 const baseScale = Math.min(1.7, 1.0 + (dogLvl - 1) * 0.04);
                 this.dogGroup.scale.set(baseScale, baseScale, baseScale);
 
-                // 1. Target Selection (Scan for living zombies within aggro range)
-                const aggroRange = 16.0 + Math.min(28, dogLvl * 1.4);
-                const aggroRangeSq = aggroRange * aggroRange;
-                let targetZombie = null;
-                let minZombieDistSq = aggroRangeSq;
+                // Helper for angle wrapping without 360-degree spinning
+                const smoothRotateY = (currentRot, targetAngle, lerpFactor) => {
+                    let diff = (targetAngle - currentRot + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+                    return currentRot + diff * Math.min(1.0, lerpFactor);
+                };
 
-                for (let zi = 0; zi < this.zombies.length; zi++) {
-                    const z = this.zombies[zi];
-                    if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) continue;
-                    
-                    const distToDogSq = dogPos.distanceToSquared(z.position);
-                    const distToPlayerSq = playerPos.distanceToSquared(z.position);
+                const distToPlayer = dogPos.distanceTo(playerPos);
 
-                    const weightedDistSq = Math.min(distToDogSq, distToPlayerSq * 1.1);
-                    if (weightedDistSq < minZombieDistSq) {
-                        minZombieDistSq = weightedDistSq;
-                        targetZombie = z;
+                // Initialize state helpers if missing
+                if (!this.dogState) this.dogState = 'follow';
+                if (this.dogTargetLockTime === undefined) this.dogTargetLockTime = 0;
+
+                // 1. LEASH & RETURN HYSTERESIS
+                // Max chase distance from player: 22m. If exceeded, force RETURN until within 6m.
+                if (distToPlayer > 22.0) {
+                    this.dogState = 'return';
+                    this.dogTargetZombie = null;
+                }
+
+                if (this.dogState === 'return') {
+                    if (distToPlayer <= 6.0) {
+                        this.dogState = 'follow';
                     }
                 }
 
-                // If player is too far away (>26m), leash back to player
-                const distToPlayer = dogPos.distanceTo(playerPos);
-                if (distToPlayer > 26.0) {
-                    targetZombie = null;
+                // 2. TARGET SELECTION (Only when not in forced return)
+                let currentTarget = this.dogTargetZombie;
+                const isTargetValid = currentTarget && 
+                    currentTarget.userData && 
+                    currentTarget.userData.hp > 0 && 
+                    !currentTarget.userData.isDead && 
+                    playerPos.distanceTo(currentTarget.position) <= 22.0;
+
+                if (!isTargetValid) {
+                    currentTarget = null;
+                    this.dogTargetZombie = null;
                 }
 
-                this.dogTargetZombie = targetZombie;
+                // If in follow mode and lock expired, scan for nearest threatening zombie
+                if (this.dogState !== 'return' && (!currentTarget || now >= this.dogTargetLockTime)) {
+                    const aggroRange = 16.0 + Math.min(6.0, dogLvl * 0.4);
+                    const aggroRangeSq = aggroRange * aggroRange;
+                    let bestZombie = null;
+                    let bestScoreSq = aggroRangeSq;
 
-                // 2. State & Movement
+                    for (let zi = 0; zi < this.zombies.length; zi++) {
+                        const z = this.zombies[zi];
+                        if (!z || !z.userData || z.userData.hp <= 0 || z.userData.isDead) continue;
+                        
+                        const distZToPlayer = playerPos.distanceTo(z.position);
+                        if (distZToPlayer > 20.0) continue; // Don't aggro zombies too far from player
+
+                        const distToDogSq = dogPos.distanceToSquared(z.position);
+                        const distToPlayerSq = distZToPlayer * distZToPlayer;
+                        const scoreSq = distToDogSq * 0.7 + distToPlayerSq * 0.3;
+
+                        if (scoreSq < bestScoreSq) {
+                            bestScoreSq = scoreSq;
+                            bestZombie = z;
+                        }
+                    }
+
+                    if (bestZombie) {
+                        currentTarget = bestZombie;
+                        this.dogTargetZombie = bestZombie;
+                        this.dogTargetLockTime = now + 1600; // Commit to this target for 1.6s
+                        this.dogState = 'chase';
+                    } else {
+                        this.dogTargetZombie = null;
+                        if (this.dogState === 'chase') this.dogState = 'follow';
+                    }
+                }
+
+                // 3. TARGET POSITION & MOVEMENT
                 let targetX = playerPos.x;
                 let targetZ = playerPos.z;
                 let isMoving = false;
-                let moveSpeed = 6.8 + (this.upgrades.player_speed || 0) * 0.8;
+                let moveSpeed = 7.5 + (this.upgrades.player_speed || 0) * 0.9;
 
                 if (this.dogLungeTimer > 0) {
                     this.dogLungeTimer -= dt;
-                } else if (targetZombie) {
-                    // COMBAT SPRINT MODE
-                    this.dogState = 'chase';
-                    targetX = targetZombie.position.x;
-                    targetZ = targetZombie.position.z;
-                    moveSpeed = Math.min(22, 9.2 + (dogLvl * 0.75));
+                } else if (this.dogState === 'chase' && currentTarget) {
+                    targetX = currentTarget.position.x;
+                    targetZ = currentTarget.position.z;
+                    moveSpeed = Math.min(22, 9.5 + (dogLvl * 0.75));
 
-                    const distToZombie = dogPos.distanceTo(targetZombie.position);
+                    const distToZombie = dogPos.distanceTo(currentTarget.position);
 
                     // BITE ATTACK RANGE CHECK (~2.1 - 3.2 units)
                     const biteRange = 2.1 + Math.min(1.2, dogLvl * 0.06);
@@ -2956,23 +2999,20 @@
                             this.lastDogBite = now;
                             this.dogLungeTimer = 0.22;
                             
-                            // Visual bite leap
-                            this.dogGroup.position.y = 0.45;
-
                             // Scaled base damage + percentage execute bonus for late-game waves
                             const baseDogDmg = Math.round(55 * Math.pow(1.08, dogLvl - 1) + (dogLvl * 40));
-                            const percentBonus = Math.min(targetZombie.userData.maxHp * 0.035, 150 * dogLvl);
+                            const percentBonus = Math.min(currentTarget.userData.maxHp * 0.035, 150 * dogLvl);
                             const isCrit = Math.random() < Math.min(0.50, 0.15 + (dogLvl * 0.01));
                             const finalDamage = Math.round(isCrit ? (baseDogDmg + percentBonus) * 2.2 : (baseDogDmg + percentBonus));
 
-                            targetZombie.userData.hp -= finalDamage;
+                            currentTarget.userData.hp -= finalDamage;
                             
                             // Level 3+ Cleave / Area Bite to surrounding zombies (3.5m radius)
                             if (dogLvl >= 3 && this.zombies.length > 1) {
                                 const cleaveRadiusSq = 12.25;
                                 for (let zi = 0; zi < this.zombies.length; zi++) {
                                     const otherZ = this.zombies[zi];
-                                    if (!otherZ || otherZ === targetZombie || otherZ.userData.hp <= 0 || otherZ.userData.isDead) continue;
+                                    if (!otherZ || otherZ === currentTarget || otherZ.userData.hp <= 0 || otherZ.userData.isDead) continue;
                                     if (dogPos.distanceToSquared(otherZ.position) <= cleaveRadiusSq) {
                                         const cleaveDmg = Math.round(finalDamage * 0.45);
                                         otherZ.userData.hp -= cleaveDmg;
@@ -2983,19 +3023,19 @@
                             }
 
                             // Knockback zombie
-                            const knockAngle = Math.atan2(targetZombie.position.x - dogPos.x, targetZombie.position.z - dogPos.z);
+                            const knockAngle = Math.atan2(currentTarget.position.x - dogPos.x, currentTarget.position.z - dogPos.z);
                             const knockbackForce = 0.4 + Math.min(1.2, dogLvl * 0.08);
-                            targetZombie.position.x += Math.sin(knockAngle) * knockbackForce;
-                            targetZombie.position.z += Math.cos(knockAngle) * knockbackForce;
+                            currentTarget.position.x += Math.sin(knockAngle) * knockbackForce;
+                            currentTarget.position.z += Math.cos(knockAngle) * knockbackForce;
 
                             // Level 2+ Slow / Bleed
-                            if (dogLvl >= 2 && targetZombie.userData.speed) {
-                                targetZombie.userData.speed = Math.max(0.015, targetZombie.userData.speed * (0.85 - Math.min(0.4, dogLvl * 0.02)));
+                            if (dogLvl >= 2 && currentTarget.userData.speed) {
+                                currentTarget.userData.speed = Math.max(0.015, currentTarget.userData.speed * (0.85 - Math.min(0.4, dogLvl * 0.02)));
                             }
 
                             // Flash and particles
-                            this.flashZombieHit(targetZombie);
-                            this._v2.set(targetZombie.position.x, 0.8 * targetZombie.userData.scale, targetZombie.position.z);
+                            this.flashZombieHit(currentTarget);
+                            this._v2.set(currentTarget.position.x, 0.8 * currentTarget.userData.scale, currentTarget.position.z);
                             this.createBloodSparks(this._v2, 0xef4444);
 
                             // Sound
@@ -3004,19 +3044,22 @@
                                 audio.playDogBark();
                             }
 
-                            if (targetZombie.userData.hp <= 0) {
-                                this.killZombie(targetZombie);
+                            if (currentTarget.userData.hp <= 0) {
+                                this.killZombie(currentTarget);
+                                this.dogTargetZombie = null;
                             }
                         }
                     }
                 } else {
-                    // FOLLOW PLAYER COMPANION MODE
-                    this.dogState = 'follow';
-                    const flankAngle = performance.now() * 0.0008;
-                    const offsetX = Math.cos(flankAngle) * 1.8 - Math.sin(flankAngle) * 0.6;
-                    const offsetZ = Math.sin(flankAngle) * 1.8 + Math.cos(flankAngle) * 0.6;
-                    targetX = playerPos.x + offsetX;
-                    targetZ = playerPos.z + offsetZ;
+                    // FOLLOW / RETURN COMPANION MODE (Smooth heel positioning)
+                    const pRot = this.playerMesh ? this.playerMesh.rotation.y : 0;
+                    const flankOffsetX = Math.sin(pRot + 2.5) * 1.7;
+                    const flankOffsetZ = Math.cos(pRot + 2.5) * 1.7;
+                    targetX = playerPos.x + flankOffsetX;
+                    targetZ = playerPos.z + flankOffsetZ;
+                    if (this.dogState === 'return') {
+                        moveSpeed = Math.min(24, moveSpeed * 1.5);
+                    }
                 }
 
                 // Move toward target position
@@ -3024,7 +3067,7 @@
                 const dz = targetZ - dogPos.z;
                 const distToTarget = Math.sqrt(dx * dx + dz * dz);
 
-                const stopDist = (this.dogState === 'chase') ? 1.4 : 0.6;
+                const stopDist = (this.dogState === 'chase') ? 1.4 : 0.8;
 
                 if (distToTarget > stopDist) {
                     isMoving = true;
@@ -3033,10 +3076,10 @@
                     dogPos.z += (dz / distToTarget) * moveStep;
 
                     const moveAngle = Math.atan2(dx, dz);
-                    this.dogGroup.rotation.y = THREE.MathUtils.lerp(this.dogGroup.rotation.y, moveAngle, 0.2);
-                } else if (targetZombie) {
-                    const faceAngle = Math.atan2(targetZombie.position.x - dogPos.x, targetZombie.position.z - dogPos.z);
-                    this.dogGroup.rotation.y = THREE.MathUtils.lerp(this.dogGroup.rotation.y, faceAngle, 0.3);
+                    this.dogGroup.rotation.y = smoothRotateY(this.dogGroup.rotation.y, moveAngle, 0.25);
+                } else if (currentTarget) {
+                    const faceAngle = Math.atan2(currentTarget.position.x - dogPos.x, currentTarget.position.z - dogPos.z);
+                    this.dogGroup.rotation.y = smoothRotateY(this.dogGroup.rotation.y, faceAngle, 0.35);
                 }
 
                 // Y-position / Ground clamping & Lunge physics
@@ -3047,7 +3090,7 @@
                     this.dogGroup.position.y = THREE.MathUtils.lerp(this.dogGroup.position.y, 0, 0.2);
                 }
 
-                // 3. Dynamic Skeletal Animations
+                // 4. Dynamic Skeletal Animations
                 if (isMoving) {
                     const animSpeed = moveSpeed * 1.8;
                     this.dogWalkPhase += dt * animSpeed;
