@@ -1225,8 +1225,8 @@
                 if (!this._turretBulletGeo) {
                     this._turretBulletGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.3, 8);
                     this._turretBulletGeo.rotateX(Math.PI / 2);
-                    this._turretBulletMatNormal = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-                    this._turretBulletMatExplosive = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+                    this._turretBulletMatMG = new THREE.MeshBasicMaterial({ color: 0xfacc15 }); // Gold-Gelb für Waffenstation
+                    this._turretBulletMatGranate = new THREE.MeshBasicMaterial({ color: 0xff5500 }); // Feuriges Orange für Granatwerfer
                 }
 
                 for (let ti = 0; ti < this.turrets.length; ti++) {
@@ -1276,18 +1276,18 @@
                         ud.head.rotation.y = angle;
 
                         if (ud.isAntiAir) {
-                            // MANTIS 35mm C-RAM Rapid-Fire Autocannon Stream
+                            // MANTIS 35mm C-RAM Rapid-Fire Autocannon Stream (Cyan / High-Energy Sky Blue)
                             if (typeof audio !== 'undefined' && audio.playMinigunShot) {
                                 audio.playMinigunShot();
                             } else if (typeof audio !== 'undefined' && audio.playShoot) {
                                 audio.playShoot(0.06);
                             }
-                            this.createBloodSparks(new THREE.Vector3(tx, 2.2, tz), 0x38bdf8);
+                            this.createBloodSparks(new THREE.Vector3(tx, 2.2, tz), 0x00f0ff);
 
                             if (!this._mantisBulletGeo) {
                                 this._mantisBulletGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.1, 6);
                                 this._mantisBulletGeo.rotateX(Math.PI / 2);
-                                this._mantisBulletMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                                this._mantisBulletMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
                             }
 
                             const startPos = new THREE.Vector3(tx, 2.3, tz);
@@ -1324,9 +1324,9 @@
 
                             this.bullets.push(bullet);
                         } else if (ud.isArtillery) {
-                            // Heavy Artillery Ballistic Mortar Launch
+                            // Heavy Artillery Ballistic Mortar Launch (Crimson Warhead & Fiery Glow)
                             if (typeof audio !== 'undefined' && audio.playRocket) audio.playRocket();
-                            this.createBloodSparks(new THREE.Vector3(tx, 2.5, tz), 0xf59e0b);
+                            this.createBloodSparks(new THREE.Vector3(tx, 2.5, tz), 0xef4444);
 
                             const startX = tx;
                             const startY = 2.4;
@@ -1340,7 +1340,7 @@
                             if (!this._artilleryRocketGeo) {
                                 this._artilleryRocketGeo = new THREE.CylinderGeometry(0.18, 0.14, 1.4, 8);
                                 this._artilleryRocketGeo.rotateX(Math.PI / 2);
-                                this._artilleryRocketMat = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.8, roughness: 0.3 });
+                                this._artilleryRocketMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
                             }
 
                             let rocket = this.artilleryPool ? this.artilleryPool.pop() : null;
@@ -1383,7 +1383,7 @@
                                     } else {
                                         let teslaDmg = ud.damage;
                                         if (z.userData.armorThreshold > 0 && teslaDmg < z.userData.armorThreshold) {
-                                            teslaDmg = 0;
+                                             teslaDmg = 0;
                                         }
                                         if (teslaDmg > 0) {
                                             z.userData.hp -= teslaDmg;
@@ -1396,7 +1396,9 @@
                                 }
                             }
                         } else {
-                            const bulletMat = ud.isExplosive ? this._turretBulletMatExplosive : this._turretBulletMatNormal;
+                            const bulletMat = ud.isExplosive ? this._turretBulletMatGranate : this._turretBulletMatMG;
+                            const sparkColor = ud.isExplosive ? 0xff5500 : 0xfacc15;
+                            this.createBloodSparks(new THREE.Vector3(tx, 1.8, tz), sparkColor);
                             
                             let bullet = this.bulletPool.pop();
                             if (!bullet) {
