@@ -317,18 +317,35 @@
                             this.fireAc130_105mm();
                         }
                     } else if (e.button === 0 && !this.isPaused && !this.isPlacementMode && !isUiTarget(e)) {
-                        this.holdStartPos = { x: e.clientX, y: e.clientY, time: Date.now() };
+                        this.mousePos.x = (e.clientX / window.innerWidth) * 2 - 1;
+                        this.mousePos.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                        this.raycaster.setFromCamera(this.mousePos, this.camera);
+                        const groundHit = new THREE.Vector3();
+                        if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                            this.holdStartPos = {
+                                screenX: e.clientX,
+                                screenY: e.clientY,
+                                groundX: groundHit.x,
+                                groundZ: groundHit.z,
+                                time: Date.now()
+                            };
+                        } else {
+                            this.holdStartPos = {
+                                screenX: e.clientX,
+                                screenY: e.clientY,
+                                groundX: 0,
+                                groundZ: 0,
+                                time: Date.now()
+                            };
+                        }
+
                         if (this.holdTimer) clearTimeout(this.holdTimer);
                         this.holdTimer = setTimeout(() => {
-                            this.mousePos.x = (e.clientX / window.innerWidth) * 2 - 1;
-                            this.mousePos.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                            this.raycaster.setFromCamera(this.mousePos, this.camera);
-                            const groundHit = new THREE.Vector3();
-                            if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                            if (this.holdStartPos) {
                                 this.isHoldSelecting = true;
-                                this.updateMultiSelection(groundHit.x, groundHit.z, 14.0);
+                                this.updateMultiSelection(this.holdStartPos.groundX, this.holdStartPos.groundZ, 12.0);
                             }
-                        }, 380);
+                        }, 280);
                     }
                 });
 
@@ -342,14 +359,18 @@
                         this.isHoldSelecting = false;
                         this.hideHoldSelectionPulse();
                         this.ignoreNextSelectionUntil = Date.now() + 500;
-                        if (this.selectedStructuresList.length > 1) {
+                        const count = this.selectedStructuresList.length;
+                        if (count > 1) {
                             this.openMultiInspectModal(this.selectedStructuresList);
-                        } else if (this.selectedStructuresList.length === 1) {
+                        } else if (count === 1) {
                             this.inspectStructure(this.selectedStructuresList[0]);
                             this.clearSelectedStructures();
                         } else {
                             this.clearSelectedStructures();
                         }
+                        this.holdStartPos = null;
+                    } else {
+                        this.holdStartPos = null;
                     }
                 });
 
@@ -364,15 +385,16 @@
                         if (this.isPlacementMode && this.ghostMesh) {
                             this.updateGhostPosition(intersects.x, intersects.z);
                         }
-                        if (this.isHoldSelecting) {
-                            this.updateMultiSelection(intersects.x, intersects.z, 14.0);
-                        } else if (this.holdTimer && this.holdStartPos) {
-                            const dx = Math.abs(e.clientX - this.holdStartPos.x);
-                            const dy = Math.abs(e.clientY - this.holdStartPos.y);
-                            if (dx > 20 || dy > 20) {
-                                clearTimeout(this.holdTimer);
-                                this.holdTimer = null;
+                        if (this.isMouseDown && this.holdStartPos && !this.isPlacementMode && !this.isPaused) {
+                            const dx = Math.abs(e.clientX - this.holdStartPos.screenX);
+                            const dy = Math.abs(e.clientY - this.holdStartPos.screenY);
+                            if (dx > 10 || dy > 10) {
+                                this.isHoldSelecting = true;
+                                if (this.holdTimer) { clearTimeout(this.holdTimer); this.holdTimer = null; }
+                                this.updateDragBoxSelection(this.holdStartPos.groundX, this.holdStartPos.groundZ, intersects.x, intersects.z);
                             }
+                        } else if (this.isHoldSelecting && this.holdStartPos) {
+                            this.updateDragBoxSelection(this.holdStartPos.groundX, this.holdStartPos.groundZ, intersects.x, intersects.z);
                         }
                         if (this.isAc130Active && (!e.pointerType || e.pointerType === 'mouse')) {
                             this.ac130ScreenAim = {
@@ -560,18 +582,37 @@
                         this.gameplayTouchStart = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
 
                         if (!this.isPaused && !this.isPlacementMode && !this.isAc130Active) {
-                            this.holdStartPos = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
+                            this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                            this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                            this.raycaster.setFromCamera(this.mousePos, this.camera);
+                            const groundHit = new THREE.Vector3();
+                            if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                                this.holdStartPos = {
+                                    screenX: touch.clientX,
+                                    screenY: touch.clientY,
+                                    groundX: groundHit.x,
+                                    groundZ: groundHit.z,
+                                    time: Date.now(),
+                                    id: touch.identifier
+                                };
+                            } else {
+                                this.holdStartPos = {
+                                    screenX: touch.clientX,
+                                    screenY: touch.clientY,
+                                    groundX: 0,
+                                    groundZ: 0,
+                                    time: Date.now(),
+                                    id: touch.identifier
+                                };
+                            }
+
                             if (this.holdTimer) clearTimeout(this.holdTimer);
                             this.holdTimer = setTimeout(() => {
-                                this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                                this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                                this.raycaster.setFromCamera(this.mousePos, this.camera);
-                                const groundHit = new THREE.Vector3();
-                                if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                                if (this.holdStartPos) {
                                     this.isHoldSelecting = true;
-                                    this.updateMultiSelection(groundHit.x, groundHit.z, 14.0);
+                                    this.updateMultiSelection(this.holdStartPos.groundX, this.holdStartPos.groundZ, 12.0);
                                 }
-                            }, 380);
+                            }, 280);
                         }
 
                         const halfWidth = window.innerWidth / 2;
@@ -634,30 +675,24 @@
                         }
                     }
 
-                    if (this.isHoldSelecting) {
-                        for (let i = 0; i < e.changedTouches.length; i++) {
-                            const touch = e.changedTouches[i];
-                            if (this.holdStartPos && touch.identifier === this.holdStartPos.id) {
-                                this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                                this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                                this.raycaster.setFromCamera(this.mousePos, this.camera);
-                                const groundHit = new THREE.Vector3();
-                                if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
-                                    this.updateMultiSelection(groundHit.x, groundHit.z, 14.0);
-                                }
-                                break;
-                            }
-                        }
-                    } else if (this.holdTimer && this.holdStartPos) {
+                    if (this.holdStartPos && !this.isPlacementMode && !this.isPaused) {
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
                             if (touch.identifier === this.holdStartPos.id) {
-                                const dx = Math.abs(touch.clientX - this.holdStartPos.x);
-                                const dy = Math.abs(touch.clientY - this.holdStartPos.y);
-                                if (dx > 20 || dy > 20) {
-                                    clearTimeout(this.holdTimer);
-                                    this.holdTimer = null;
+                                const dx = Math.abs(touch.clientX - this.holdStartPos.screenX);
+                                const dy = Math.abs(touch.clientY - this.holdStartPos.screenY);
+                                if (dx > 12 || dy > 12) {
+                                    this.isHoldSelecting = true;
+                                    if (this.holdTimer) { clearTimeout(this.holdTimer); this.holdTimer = null; }
+                                    this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                                    this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                                    this.raycaster.setFromCamera(this.mousePos, this.camera);
+                                    const groundHit = new THREE.Vector3();
+                                    if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
+                                        this.updateDragBoxSelection(this.holdStartPos.groundX, this.holdStartPos.groundZ, groundHit.x, groundHit.z);
+                                    }
                                 }
+                                break;
                             }
                         }
                     }
@@ -2598,6 +2633,81 @@
                 document.getElementById('inspect-sell-text').innerText = `Verkaufen (+${formatMoney(sellRefund)})`;
 
                 modal.classList.remove('hidden');
+            }
+
+            showDragBoxVisual(startX, startZ, endX, endZ) {
+                if (!this.multiSelectHoloGroup) return;
+                this.multiSelectHoloGroup.visible = true;
+
+                while (this.multiSelectHoloGroup.children.length > 0) {
+                    const c = this.multiSelectHoloGroup.children[0];
+                    this.multiSelectHoloGroup.remove(c);
+                    if (c.geometry) c.geometry.dispose();
+                }
+
+                const minX = Math.min(startX, endX);
+                const maxX = Math.max(startX, endX);
+                const minZ = Math.min(startZ, endZ);
+                const maxZ = Math.max(startZ, endZ);
+
+                const width = Math.max(1.2, maxX - minX);
+                const depth = Math.max(1.2, maxZ - minZ);
+                const centerX = (minX + maxX) / 2;
+                const centerZ = (minZ + maxZ) / 2;
+
+                // 1. Semi-transparent Ground Quad
+                const planeGeo = new THREE.PlaneGeometry(width, depth);
+                planeGeo.rotateX(-Math.PI / 2);
+                const planeMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+                const plane = new THREE.Mesh(planeGeo, planeMat);
+                plane.position.set(centerX, 0.08, centerZ);
+                plane.renderOrder = 996;
+                this.multiSelectHoloGroup.add(plane);
+
+                // 2. Glowing Amber Wireframe Border
+                const borderGeo = new THREE.PlaneGeometry(width + 0.2, depth + 0.2);
+                borderGeo.rotateX(-Math.PI / 2);
+                const borderMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, wireframe: true, transparent: true, opacity: 0.90, depthWrite: false });
+                const border = new THREE.Mesh(borderGeo, borderMat);
+                border.position.set(centerX, 0.10, centerZ);
+                border.renderOrder = 997;
+                this.multiSelectHoloGroup.add(border);
+
+                // 3. Corner Beacons
+                const corners = [
+                    [minX, minZ], [maxX, minZ], [minX, maxZ], [maxX, maxZ]
+                ];
+                for (const [cx, cz] of corners) {
+                    const cGeo = new THREE.CylinderGeometry(0.12, 0.35, 3.5, 8, 1, true);
+                    const cMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false });
+                    const cMesh = new THREE.Mesh(cGeo, cMat);
+                    cMesh.position.set(cx, 1.75, cz);
+                    cMesh.renderOrder = 998;
+                    this.multiSelectHoloGroup.add(cMesh);
+                }
+            }
+
+            updateDragBoxSelection(startX, startZ, endX, endZ) {
+                this.showDragBoxVisual(startX, startZ, endX, endZ);
+
+                const minX = Math.min(startX, endX) - 1.2;
+                const maxX = Math.max(startX, endX) + 1.2;
+                const minZ = Math.min(startZ, endZ) - 1.2;
+                const maxZ = Math.max(startZ, endZ) + 1.2;
+
+                const allStructures = [...this.turrets, ...this.walls];
+                const found = [];
+
+                for (const struct of allStructures) {
+                    const sx = struct.position.x;
+                    const sz = struct.position.z;
+                    if (sx >= minX && sx <= maxX && sz >= minZ && sz <= maxZ) {
+                        found.push(struct);
+                    }
+                }
+
+                this.selectedStructuresList = found;
+                this.updateSelectionRings();
             }
 
             showHoldSelectionPulse(groundX, groundZ, radius = 14) {
