@@ -1232,15 +1232,90 @@
                     const turret = this.turrets[ti];
                     const ud = turret.userData;
                     if (ud.isHangar || ud.isLightMast || ud.firerate <= 0 || ud.damage <= 0) continue;
+
+                    const tx = turret.position.x;
+                    const tz = turret.position.z;
+                    const minR = ud.minRange || 0;
+                    const minRSq = minR * minR;
+
+                    // Active 4-Rocket Salvo in progress for Raketenwerfer
+                    if (ud.isArtillery && ud.burstRemaining > 0) {
+                        const BURST_INTERVAL = 140; // 140ms between each rocket in the 4-missile salvo
+                        if (now >= (ud.lastBurstShot || 0) + BURST_INTERVAL) {
+                            ud.lastBurstShot = now;
+                            ud.burstRemaining--;
+
+                            // Pick target for this specific rocket in the salvo
+                            let rocketTarget = null;
+                            let minD = ud.range * ud.range;
+                            for (let zi = 0; zi < this.zombies.length; zi++) {
+                                const z = this.zombies[zi];
+                                if (z.userData.hp <= 0 || z.userData.isDead || z.userData.isFlying) continue;
+                                const d = (z.position.x - tx) * (z.position.x - tx) + (z.position.z - tz) * (z.position.z - tz);
+                                if (d < minRSq || d > minD) continue;
+                                minD = d;
+                                rocketTarget = z;
+                            }
+
+                            if (rocketTarget) {
+                                if (typeof audio !== 'undefined' && audio.playRocket) audio.playRocket();
+
+                                const tubeIndex = 3 - ud.burstRemaining; // 0, 1, 2, 3
+                                const tubeOffsets = [[-0.35, 0.25], [0.35, 0.25], [-0.35, -0.25], [0.35, -0.25]];
+                                const [offX, offZ] = tubeOffsets[tubeIndex] || [0, 0];
+
+                                const startX = tx + offX;
+                                const startY = 2.4;
+                                const startZ = tz + offZ;
+                                const targetZombie = rocketTarget;
+                                const targetX = targetZombie.position.x;
+                                const targetZ = targetZombie.position.z;
+                                const dist = Math.hypot(targetX - startX, targetZ - startZ);
+                                const flightDuration = Math.max(1.15, Math.min(1.85, 0.95 + dist * 0.018));
+                                const cruiseAltitude = Math.max(18, 14 + dist * 0.32);
+
+                                if (!this._artilleryRocketGeo) {
+                                    this._artilleryRocketGeo = new THREE.CylinderGeometry(0.18, 0.14, 1.4, 8);
+                                    this._artilleryRocketGeo.rotateX(-Math.PI / 2);
+                                    this._artilleryRocketMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
+                                }
+
+                                let rocket = this.artilleryPool ? this.artilleryPool.pop() : null;
+                                if (!rocket) {
+                                    rocket = new THREE.Mesh(this._artilleryRocketGeo, this._artilleryRocketMat);
+                                    const warheadGeo = new THREE.ConeGeometry(0.18, 0.45, 8);
+                                    warheadGeo.rotateX(-Math.PI / 2);
+                                    const warhead = new THREE.Mesh(warheadGeo, new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+                                    warhead.position.z = -0.90;
+                                    rocket.add(warhead);
+                                    this.scene.add(rocket);
+                                }
+                                rocket.position.set(startX, startY, startZ);
+                                rocket.visible = true;
+
+                                if (!this.ballisticRockets) this.ballisticRockets = [];
+                                this.ballisticRockets.push({
+                                    mesh: rocket,
+                                    startX, startY, startZ,
+                                    targetZombie,
+                                    targetX, targetZ,
+                                    cruiseAltitude,
+                                    duration: flightDuration,
+                                    elapsed: 0,
+                                    damage: ud.damage,
+                                    splashRadius: ud.splashRadius || 8.0,
+                                    knockback: ud.knockback || 14.0
+                                });
+                            }
+                        }
+                        continue;
+                    }
+
                     if (now < ud.lastFired + ud.firerate) continue;
 
                     let closestZombie = null;
                     let minDistSq = ud.range * ud.range;
-                    const tx = turret.position.x;
-                    const tz = turret.position.z;
                     const tr = ud.range;
-                    const minR = ud.minRange || 0;
-                    const minRSq = minR * minR;
 
                     for (let zi = 0; zi < this.zombies.length; zi++) {
                         const z = this.zombies[zi];
@@ -1267,6 +1342,13 @@
 
                     if (closestZombie) {
                         ud.lastFired = now;
+
+                        if (ud.isArtillery) {
+                            // Trigger 4-rocket salvo
+                            ud.burstRemaining = 4;
+                            ud.lastBurstShot = 0; // Trigger first missile immediately
+                            continue;
+                        }
 
                         // Predictive lead aiming so bullets hit moving zombies reliably
                         const targetDist = Math.hypot(closestZombie.position.x - tx, closestZombie.position.z - tz);
@@ -1334,52 +1416,6 @@
                             bullet.userData.life = 0.85;
 
                             this.bullets.push(bullet);
-                        } else if (ud.isArtillery) {
-                            // Heavy Guided Missile (VLS Vertical Launch + Terminal Homing)
-                            if (typeof audio !== 'undefined' && audio.playRocket) audio.playRocket();
-
-                            const startX = tx;
-                            const startY = 2.4;
-                            const startZ = tz;
-                            const targetZombie = closestZombie;
-                            const targetX = targetZombie.position.x;
-                            const targetZ = targetZombie.position.z;
-                            const dist = Math.hypot(targetX - startX, targetZ - startZ);
-                            const flightDuration = Math.max(1.15, Math.min(1.85, 0.95 + dist * 0.018));
-                            const cruiseAltitude = Math.max(18, 14 + dist * 0.32);
-
-                            if (!this._artilleryRocketGeo) {
-                                this._artilleryRocketGeo = new THREE.CylinderGeometry(0.18, 0.14, 1.4, 8);
-                                this._artilleryRocketGeo.rotateX(-Math.PI / 2);
-                                this._artilleryRocketMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
-                            }
-
-                            let rocket = this.artilleryPool ? this.artilleryPool.pop() : null;
-                            if (!rocket) {
-                                rocket = new THREE.Mesh(this._artilleryRocketGeo, this._artilleryRocketMat);
-                                const warheadGeo = new THREE.ConeGeometry(0.18, 0.45, 8);
-                                warheadGeo.rotateX(-Math.PI / 2);
-                                const warhead = new THREE.Mesh(warheadGeo, new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-                                warhead.position.z = -0.90;
-                                rocket.add(warhead);
-                                this.scene.add(rocket);
-                            }
-                            rocket.position.set(startX, startY, startZ);
-                            rocket.visible = true;
-
-                            if (!this.ballisticRockets) this.ballisticRockets = [];
-                            this.ballisticRockets.push({
-                                mesh: rocket,
-                                startX, startY, startZ,
-                                targetZombie,
-                                targetX, targetZ,
-                                cruiseAltitude,
-                                duration: flightDuration,
-                                elapsed: 0,
-                                damage: ud.damage,
-                                splashRadius: ud.splashRadius || 8.0,
-                                knockback: ud.knockback || 14.0
-                            });
                         } else {
                             const bulletMat = ud.isExplosive ? this._turretBulletMatGranate : this._turretBulletMatMG;
                             

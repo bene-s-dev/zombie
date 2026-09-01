@@ -88,14 +88,14 @@ const TURRET_TYPES = {
         range: 48,
         minRange: 7,
         damage: 680,
-        firerate: 3200,
+        firerate: 12800,
         isExplosive: true,
         isArtillery: true,
         splashRadius: 8.0,
         knockback: 14.0,
         hp: 800,
         maxHp: 800,
-        desc: 'Schwerer Raketenwerfer mit Steilbogeneinschlag & Druckwelle. Pushback: Extrem (14.0m).' 
+        desc: 'Schwerer Raketenwerfer: Feuert nach 4-facher Ladezeit eine 4er-Salve Lenkraketen mit Steilbogeneinschlag & Druckwelle. Pushback: Extrem (14.0m).' 
     },
     light_mast: {
         id: 'light_mast',
