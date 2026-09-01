@@ -972,6 +972,7 @@
                 }
 
                 zombieGroup.userData = {
+                    ...zombieGroup.userData,
                     type: type,
                     hp: hp,
                     maxHp: hp,
@@ -1345,8 +1346,9 @@
                             let rocket = this.artilleryPool ? this.artilleryPool.pop() : null;
                             if (!rocket) {
                                 rocket = new THREE.Mesh(this._artilleryRocketGeo, this._artilleryRocketMat);
-                                const warhead = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.45, 8), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-                                warhead.rotateX(Math.PI / 2);
+                                const warheadGeo = new THREE.ConeGeometry(0.18, 0.45, 8);
+                                warheadGeo.rotateX(Math.PI / 2);
+                                const warhead = new THREE.Mesh(warheadGeo, new THREE.MeshStandardMaterial({ color: 0xef4444 }));
                                 warhead.position.z = 0.90;
                                 rocket.add(warhead);
                                 this.scene.add(rocket);
@@ -3703,11 +3705,11 @@
             }
 
             createBloodSparks(pos, colorHex) {
-                // Hard cap: never exceed 90 particles to prevent draw call explosion
-                const MAX_PARTICLES = 90;
+                // Hard cap: never exceed 45 particles to maintain 60 FPS
+                const MAX_PARTICLES = 45;
                 if (this.particles.length >= MAX_PARTICLES) return;
 
-                const particleCount = Math.min(3, MAX_PARTICLES - this.particles.length);
+                const particleCount = this.particles.length > 25 ? 1 : 2;
 
                 if (!this._sparkMatCache) this._sparkMatCache = {};
                 const colorKey = colorHex.toString(16);
@@ -3729,11 +3731,12 @@
                     }
                     p.position.copy(pos);
                     p.visible = true;
-                    p.scale.setScalar(0.7 + Math.random() * 0.7);
+                    const sc = 0.7 + Math.random() * 0.7;
+                    p.scale.set(sc, sc, sc);
                     p.userData.velX = (Math.random() - 0.5) * 8.5;
                     p.userData.velY = Math.random() * 5.0 + 2.0;
                     p.userData.velZ = (Math.random() - 0.5) * 8.5;
-                    p.userData.life = 0.32;
+                    p.userData.life = 0.25;
                     this.particles.push(p);
                 }
             }
@@ -5888,39 +5891,10 @@
                     }
                 }
 
-                // Active Surface-to-Air (SAM) Anti-Air Interceptor Missiles Update
-                if (this.samMissiles && this.samMissiles.length > 0) {
-                    for (let si = this.samMissiles.length - 1; si >= 0; si--) {
-                        const m = this.samMissiles[si];
-                        const target = m.target;
-                        const targetPos = (target && target.userData && target.userData.hp > 0 && !target.userData.isDead) 
-                            ? target.position 
-                            : (m.lastTargetPos || new THREE.Vector3(m.mesh.position.x, 3.2, m.mesh.position.z));
-                        m.lastTargetPos = targetPos.clone();
+                // Update Turret Targeting & Firing in sync with frame loop
+                this.updateTurrets();
 
-                        const curPos = m.mesh.position;
-                        const distToTarget = curPos.distanceTo(targetPos);
-
-                        if (distToTarget <= 1.4 || !target || target.userData.hp <= 0 || target.userData.isDead) {
-                            // Direct Airburst Anti-Air Detonation!
-                            this.createExplosion(curPos, 4.2, m.damage, 4.2, false, false, 0);
-                            this.createBloodSparks(curPos, 0x38bdf8);
-                            this.scene.remove(m.mesh);
-                            this.samMissiles.splice(si, 1);
-                        } else {
-                            const dir = targetPos.clone().sub(curPos).normalize();
-                            m.mesh.position.addScaledVector(dir, m.speed * dt);
-                            m.mesh.lookAt(targetPos);
-
-                            // Jet / Missile Exhaust Spark
-                            if (Math.random() < 0.75) {
-                                this.createBloodSparks(m.mesh.position, 0x38bdf8);
-                            }
-                        }
-                    }
-                }
-
-                // Rotating Radar Scanner Dishes on Anti-Air Turrets
+                // Rotating Radar Scanner / EOS Sensor on Anti-Air Turrets
                 if (this.turrets && this.turrets.length > 0) {
                     for (let ti = 0; ti < this.turrets.length; ti++) {
                         const t = this.turrets[ti];
@@ -6235,10 +6209,9 @@
                     this.lastFrameTime = now;
                     return;
                 }
-                this._pausedFrameRendered = false;
-
-                // Hard-coded 30 FPS Cap: Keeps mobile phones cool and preserves battery
-                const minFrameTime = 1000 / 30; // ~33.33ms
+                // Adaptive FPS Cap: 60 FPS on Desktop for silky smoothness, 30 FPS on mobile to preserve battery
+                const targetFPS = (this.isMobile || window.innerWidth < 768) ? 30 : 60;
+                const minFrameTime = 1000 / targetFPS;
                 const elapsedSinceLastRender = now - (this._lastRenderTime || 0);
                 if (elapsedSinceLastRender < minFrameTime - 1.5) {
                     return;
@@ -6247,6 +6220,7 @@
 
                 const dt = Math.min((now - (this.lastFrameTime || now)) / 1000, 0.1) * (this.gameSpeed || 1);
                 this.lastFrameTime = now;
+                const nowSec = now * 0.001;
                 this._frameCount++;
 
                 if (this.baseRadarGroup) this.baseRadarGroup.rotation.y += (dt * 1.5);
@@ -6794,7 +6768,7 @@
 
                         const stepSize = z.userData.speed * zombieSpeedMult * (dt * 60);
                         const zRadius = 0.4 * z.userData.scale;
-
+                        const skipPathingThisFrame = (isMob || this.zombies.length > 25) && (this._frameCount + zi) % 2 !== 0 && z.userData.lastChosenAngle !== undefined;
                         let chosenAngle = null;
                         let hitWallTarget = null;
 
@@ -6803,13 +6777,12 @@
                             chosenAngle = directAngle;
                             z.userData.lastChosenAngle = directAngle;
 
-                            const timeNow = performance.now() * 0.001;
-                            const flap = Math.sin(timeNow * 18 + (z.userData.flySeed || 0));
+                            const flap = Math.sin(nowSec * 18 + (z.userData.flySeed || 0));
                             if (z.userData.wingL) z.userData.wingL.rotation.z = flap * 0.55;
                             if (z.userData.wingR) z.userData.wingR.rotation.z = -flap * 0.55;
 
                             // Smooth aerial hovering altitude
-                            const targetY = 3.2 + Math.sin(timeNow * 3.5 + (z.userData.flySeed || 0)) * 0.55;
+                            const targetY = 3.2 + Math.sin(nowSec * 3.5 + (z.userData.flySeed || 0)) * 0.55;
                             z.position.y += (targetY - z.position.y) * 0.1;
                         } else if (skipPathingThisFrame) {
                             chosenAngle = z.userData.lastChosenAngle;
@@ -6901,7 +6874,7 @@
                                 z.position.x = nextX;
                                 z.position.z = nextZ;
 
-                                if (this.environmentObstacles) {
+                                if (!z.userData.isFlying && this.environmentObstacles) {
                                     for (let oi = 0; oi < this.environmentObstacles.length; oi++) {
                                         const obs = this.environmentObstacles[oi];
                                         const ox = z.position.x - obs.x;
@@ -6962,11 +6935,16 @@
                         }
 
                         // Zombies attack nearby turrets! Bosses have larger attack range & smash power
+                        const zCurX = z.position.x;
+                        const zCurZ = z.position.z;
                         for (let k = this.turrets.length - 1; k >= 0; k--) {
                             const t = this.turrets[k];
                             if (t.userData.isIndestructible) continue; // Unzerstörbarer Hangar wird nicht von Zombies beschädigt
+                            if (Math.abs(zCurX - t.position.x) > 3.0 || Math.abs(zCurZ - t.position.z) > 3.0) continue; // Fast AABB cull
                             const attackRange = 1.8 * (z.userData.type === 'boss' ? (z.userData.scale || 2.4) : 1.0);
-                            if (z.position.distanceToSquared(t.position) < attackRange * attackRange) {
+                            const dtx = zCurX - t.position.x;
+                            const dtz = zCurZ - t.position.z;
+                            if (dtx * dtx + dtz * dtz < attackRange * attackRange) {
                                 const turretDmg = z.userData.type === 'boss' ? 240 * z.userData.dmgMult : 28 * z.userData.dmgMult;
                                 t.userData.hp -= turretDmg * dt;
                                 this.createBloodSparks(t.position, z.userData.type === 'boss' ? 0xef4444 : 0xf59e0b);
