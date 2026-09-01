@@ -1641,14 +1641,16 @@ updateTacticalExtrasHUD();
 
         function updateMainMenuResumeButton() {
             const btn = document.getElementById('resume-game-btn');
-            const textEl = document.getElementById('resume-game-btn-text');
-            if (!btn || !textEl) return;
+            const wavePill = document.getElementById('resume-wave-pill');
+            const timePill = document.getElementById('resume-time-pill');
+            if (!btn) return;
 
             const session = Storage.loadSession();
             if (session && session.currentWave && (session.baseHp > 0 || (session.baseLives !== undefined && session.baseLives > 0)) && (session.playerHp > 0 || (session.playerLives !== undefined && session.playerLives > 0))) {
                 const m = Math.floor((session.gameSeconds || 0) / 60).toString().padStart(2, '0');
                 const s = ((session.gameSeconds || 0) % 60).toString().padStart(2, '0');
-                textEl.innerText = `SPIEL FORTSETZEN (WELLE ${session.currentWave} • ${m}:${s})`;
+                if (wavePill) wavePill.innerText = `WELLE ${session.currentWave}`;
+                if (timePill) timePill.innerText = `${m}:${s} MIN`;
                 btn.classList.remove('hidden');
             } else {
                 btn.classList.add('hidden');
