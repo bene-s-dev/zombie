@@ -409,38 +409,51 @@
 
         <!-- ================= MULTI-STRUCTURE INSPECT / MASS UPGRADE MODAL ================= -->
         <div id="multi-inspect-modal" onclick="if(event.target === this) closeMultiInspectModal(event)" class="hidden absolute inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md safe-area-padding">
-            <div class="bg-slate-900 border border-amber-500/50 w-full max-w-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-3.5 text-center max-h-[92dvh] overflow-y-auto custom-scroll">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div class="bg-slate-900 border border-amber-500/50 w-full max-w-xl rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-2xl space-y-2.5 text-center max-h-[92dvh] flex flex-col overflow-hidden">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2.5 flex-shrink-0">
                     <div class="flex items-center space-x-2.5 text-left">
-                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-                            <i class="fa-solid fa-layer-group text-lg"></i>
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0">
+                            <i class="fa-solid fa-layer-group text-base sm:text-lg"></i>
                         </div>
                         <div>
-                            <h3 class="font-teko text-2xl sm:text-3xl font-bold text-white leading-none">MULTI-UPGRADE</h3>
-                            <span id="multi-inspect-subtitle" class="text-xs text-amber-400 font-mono font-bold">0 STRUKTUREN GEWÄHLT</span>
+                            <h3 class="font-teko text-2xl sm:text-3xl font-bold text-white leading-none">TURM-MANAGEMENT</h3>
+                            <span id="multi-inspect-subtitle" class="text-xs text-amber-400 font-mono font-bold">0 TÜRME GEWÄHLT</span>
                         </div>
                     </div>
-                    <button type="button" onclick="closeMultiInspectModal(event)" class="text-slate-400 hover:text-white p-2 text-2xl cursor-pointer" aria-label="Schließen"><i class="fa-solid fa-xmark pointer-events-none"></i></button>
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <span class="font-mono text-amber-400 font-bold text-xs sm:text-sm bg-slate-950 px-2 py-1 rounded-lg border border-slate-800"><i class="fa-solid fa-coins mr-1 text-amber-400"></i><span id="multi-inspect-money">$0</span></span>
+                        <button type="button" onclick="closeMultiInspectModal(event)" class="text-slate-400 hover:text-white p-1 text-2xl cursor-pointer" aria-label="Schließen"><i class="fa-solid fa-xmark pointer-events-none"></i></button>
+                    </div>
                 </div>
 
-                <div id="multi-inspect-breakdown" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1.5 text-left font-mono">
-                    <!-- Dynamische Auflistung aller gewählten Türme & Barrikaden -->
+                <!-- Turret Type Filter Tabs -->
+                <div id="multi-inspect-type-filters" class="flex items-center space-x-1.5 overflow-x-auto custom-scroll pb-1 flex-shrink-0">
+                    <!-- Dynamisch erzeugte Filter-Buttons -->
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 pt-1">
-                    <button type="button" id="multi-inspect-upgrade-btn" onclick="upgradeAllSelectedStructures()" class="py-3.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:from-amber-700 active:to-orange-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg active:scale-98 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fa-solid fa-arrow-up-right-dots text-sm"></i>
-                        <span id="multi-inspect-upgrade-text">Alle Upgraden ($ 0)</span>
+                <!-- Level Groups Container (Scrollable) -->
+                <div id="multi-inspect-breakdown" class="flex-1 overflow-y-auto custom-scroll space-y-2 text-left pr-1 min-h-[140px]">
+                    <!-- Dynamische Auflistung nach Level-Gruppen -->
+                </div>
+
+                <!-- Master Actions (Bottom Bar) -->
+                <div class="pt-2 border-t border-slate-800/80 flex-shrink-0 space-y-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="multi-inspect-upgrade-btn" onclick="upgradeAllSelectedStructures()" class="py-2.5 sm:py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:from-amber-700 active:to-orange-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg active:scale-98 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-arrow-up-right-dots text-xs sm:text-sm"></i>
+                            <span id="multi-inspect-upgrade-text">Alle Upgraden ($ 0)</span>
+                        </button>
+                        <button type="button" id="multi-inspect-repair-btn" onclick="repairAllSelectedStructures()" class="py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:from-emerald-700 active:to-teal-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg active:scale-98 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-wrench text-xs sm:text-sm"></i>
+                            <span id="multi-inspect-repair-text">Alle Reparieren ($ 0)</span>
+                        </button>
+                    </div>
+
+                    <button type="button" onclick="closeMultiInspectModal(event)" class="w-full py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer">
+                        Schließen & Auswahl aufheben
                     </button>
-                    <button type="button" id="multi-inspect-repair-btn" onclick="repairAllSelectedStructures()" class="py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:from-emerald-700 active:to-teal-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg active:scale-98 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fa-solid fa-wrench text-sm"></i>
-                        <span id="multi-inspect-repair-text">Alle Reparieren ($ 0)</span>
-                    </button>
                 </div>
-
-                <button type="button" onclick="closeMultiInspectModal(event)" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer">
-                    Auswahl aufheben
-                </button>
             </div>
         </div>
 

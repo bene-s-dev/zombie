@@ -1618,6 +1618,9 @@
                 if (this.ghostMesh.userData.solidMat) {
                     this.ghostMesh.userData.solidMat.emissive.setHex(emissiveHex);
                 }
+                if (this.renderer && this.scene && this.camera) {
+                    this.renderer.render(this.scene, this.camera);
+                }
             }
 
             confirmPlacement() {
@@ -2743,91 +2746,294 @@
                 if (!structuresList || structuresList.length === 0) return;
                 this.selectedStructuresList = structuresList;
                 this.isPaused = true;
+                if (!this.multiInspectFilter) this.multiInspectFilter = 'all';
+
+                this.renderMultiInspectContent();
 
                 const modal = document.getElementById('multi-inspect-modal');
+                if (modal) modal.classList.remove('hidden');
+            }
+
+            setMultiInspectFilter(filterId) {
+                this.multiInspectFilter = filterId;
+                this.renderMultiInspectContent();
+            }
+
+            renderMultiInspectContent() {
+                const structuresList = this.selectedStructuresList || [];
                 const sub = document.getElementById('multi-inspect-subtitle');
+                const moneyEl = document.getElementById('multi-inspect-money');
+                const filterContainer = document.getElementById('multi-inspect-type-filters');
                 const breakdown = document.getElementById('multi-inspect-breakdown');
                 const upgBtn = document.getElementById('multi-inspect-upgrade-btn');
                 const repBtn = document.getElementById('multi-inspect-repair-btn');
                 const upgText = document.getElementById('multi-inspect-upgrade-text');
                 const repText = document.getElementById('multi-inspect-repair-text');
 
+                if (moneyEl) moneyEl.innerText = formatMoney(this.money);
                 if (sub) sub.innerText = `${structuresList.length} ${structuresList.length === 1 ? 'TURM GEWÄHLT' : 'TÜRME GEWÄHLT'}`;
 
-                let totalUpgCost = 0;
-                let totalRepCost = 0;
-                let upgCount = 0;
-                let repCount = 0;
-                const countsByName = {};
+                // 1. Group structures by type for filter pills
+                const typeCounts = { all: structuresList.length };
+                const typeNames = { all: 'Alle' };
+                const typesAvailable = ['all'];
 
                 for (const s of structuresList) {
                     const ud = s.userData || {};
-                    const name = ud.name || 'Verteidigung';
-                    countsByName[name] = (countsByName[name] || 0) + 1;
+                    const typeKey = ud.specId || ud.name || 'turret';
+                    if (!typeCounts[typeKey]) {
+                        typeCounts[typeKey] = 0;
+                        typeNames[typeKey] = ud.name || typeKey;
+                        typesAvailable.push(typeKey);
+                    }
+                    typeCounts[typeKey]++;
+                }
 
-                    // Upgrade cost
+                if (!typesAvailable.includes(this.multiInspectFilter)) {
+                    this.multiInspectFilter = 'all';
+                }
+
+                // Render Filter Tabs
+                if (filterContainer) {
+                    filterContainer.innerHTML = '';
+                    typesAvailable.forEach(typeKey => {
+                        const count = typeCounts[typeKey];
+                        const isActive = this.multiInspectFilter === typeKey;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.onclick = () => this.setMultiInspectFilter(typeKey);
+                        btn.className = `px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition flex items-center space-x-1 flex-shrink-0 cursor-pointer ${
+                            isActive
+                                ? 'bg-amber-600 text-white shadow-md shadow-amber-950/40 border border-amber-500/60'
+                                : 'bg-slate-950/90 text-slate-400 hover:text-slate-200 border border-slate-800 hover:bg-slate-800'
+                        }`;
+                        btn.innerHTML = `<span>${typeNames[typeKey]}</span><span class="font-mono text-[9px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-amber-800 text-white' : 'bg-slate-800 text-amber-400'}">${count}</span>`;
+                        filterContainer.appendChild(btn);
+                    });
+                }
+
+                // 2. Filter structures based on active filter
+                const filtered = (this.multiInspectFilter === 'all')
+                    ? structuresList
+                    : structuresList.filter(s => {
+                        const ud = s.userData || {};
+                        return (ud.specId === this.multiInspectFilter || ud.name === this.multiInspectFilter);
+                    });
+
+                // 3. Group filtered turrets by Level
+                const groups = {};
+                let totalFilterUpgCost = 0;
+                let totalFilterRepCost = 0;
+
+                for (const s of filtered) {
+                    const ud = s.userData || {};
+                    const lvl = ud.level || 1;
+                    const typeKey = ud.specId || ud.name || 'turret';
+                    const groupKey = `${typeKey}_lvl_${lvl}`;
+
+                    if (!groups[groupKey]) {
+                        groups[groupKey] = {
+                            typeKey,
+                            typeName: ud.name || 'Turm',
+                            level: lvl,
+                            isHangar: !!ud.isHangar,
+                            isLightMast: !!ud.isLightMast,
+                            structures: [],
+                            upgradeCostPerUnit: 0,
+                            totalGroupUpgCost: 0,
+                            totalGroupRepCost: 0,
+                            repCount: 0
+                        };
+                    }
+
+                    const g = groups[groupKey];
+                    g.structures.push(s);
+
+                    // Upgrade cost per unit
                     if (ud.isTurret && !ud.isHangar && ud.totalInvested) {
-                        const cost = Math.round(ud.totalInvested * 0.80);
-                        totalUpgCost += cost;
-                        upgCount++;
+                        const upgCost = Math.round(ud.totalInvested * 0.80);
+                        g.upgradeCostPerUnit = upgCost;
+                        g.totalGroupUpgCost += upgCost;
+                        totalFilterUpgCost += upgCost;
                     }
 
                     // Repair cost
                     if (ud.hp < ud.maxHp && ud.totalInvested) {
-                        const rCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * (ud.isWall ? 0.6 : 0.5));
+                        const rCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
                         if (rCost > 0) {
-                            totalRepCost += rCost;
-                            repCount++;
+                            g.totalGroupRepCost += rCost;
+                            g.repCount++;
+                            totalFilterRepCost += rCost;
                         }
                     }
                 }
 
-                const summaryLines = Object.entries(countsByName)
-                    .map(([name, count]) => `<div>• <strong class="text-amber-300">${count}x</strong> ${name}</div>`)
-                    .join('');
-
+                // Render Level Cards
                 if (breakdown) {
-                    breakdown.innerHTML = `
-                        <div class="space-y-1.5">
-                            <div class="text-white font-bold pb-1 border-b border-slate-800 flex justify-between">
-                                <span>Auswahl-Übersicht:</span>
-                                <span class="text-amber-400 font-bold">${structuresList.length} Einheiten</span>
-                            </div>
-                            <div class="space-y-0.5 text-slate-300 text-[11px]">${summaryLines}</div>
-                            <div class="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
-                                <div class="flex justify-between text-slate-400">
-                                    <span>Upgrades verfügbar (${upgCount} Türme):</span>
-                                    <strong class="text-amber-400">${formatMoney(totalUpgCost)}</strong>
+                    breakdown.innerHTML = '';
+                    const groupList = Object.values(groups).sort((a, b) => {
+                        if (a.typeName !== b.typeName) return a.typeName.localeCompare(b.typeName);
+                        return a.level - b.level;
+                    });
+
+                    if (groupList.length === 0) {
+                        breakdown.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs">Keine Türme in dieser Kategorie gefunden.</div>`;
+                    } else {
+                        groupList.forEach(g => {
+                            const count = g.structures.length;
+                            const canUpg = !g.isHangar && g.totalGroupUpgCost > 0;
+                            const canAffordUpg = canUpg && this.money >= g.totalGroupUpgCost;
+                            const canAffordRep = g.totalGroupRepCost > 0 && this.money >= g.totalGroupRepCost;
+
+                            const card = document.createElement('div');
+                            card.className = "bg-slate-950 border border-slate-800/90 rounded-2xl p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:border-slate-700 transition";
+
+                            let rightActions = '';
+                            if (canUpg) {
+                                rightActions += `
+                                    <button type="button" onclick="upgradeTurretGroup('${g.typeKey}', ${g.level})" ${canAffordUpg ? '' : 'disabled'} class="flex-1 sm:flex-initial px-3 py-1.5 ${canAffordUpg ? 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white shadow-md shadow-amber-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1 min-h-[34px]">
+                                        <i class="fa-solid fa-arrow-up text-[10px]"></i>
+                                        <span>${count}x Lvl ${g.level + 1} (${formatMoney(g.totalGroupUpgCost)})</span>
+                                    </button>
+                                `;
+                            } else if (g.isHangar) {
+                                rightActions += `<span class="px-2.5 py-1 bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 rounded-xl text-[10px] font-mono font-bold">UNZERSTÖRBAR</span>`;
+                            } else {
+                                rightActions += `<span class="px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-[10px] font-mono">MAX LEVEL</span>`;
+                            }
+
+                            if (g.repCount > 0) {
+                                rightActions += `
+                                    <button type="button" onclick="repairTurretGroup('${g.typeKey}', ${g.level})" ${canAffordRep ? '' : 'disabled'} class="px-2.5 py-1.5 ${canAffordRep ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed'} rounded-xl text-xs font-bold transition flex items-center space-x-1 min-h-[34px]" title="${g.repCount} beschädigte Einheiten dieser Stufe reparieren">
+                                        <i class="fa-solid fa-wrench text-[10px]"></i>
+                                        <span>${formatMoney(g.totalGroupRepCost)}</span>
+                                    </button>
+                                `;
+                            }
+
+                            card.innerHTML = `
+                                <div class="flex items-center space-x-2.5 sm:space-x-3">
+                                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center font-mono font-bold text-amber-400 text-xs flex-shrink-0">
+                                        L${g.level}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="flex items-center space-x-1.5">
+                                            <span class="font-bold text-white text-xs sm:text-sm truncate">${g.typeName}</span>
+                                            <span class="bg-slate-800 text-amber-300 font-mono text-[10px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">${count}x</span>
+                                        </div>
+                                        <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 flex flex-wrap gap-x-2">
+                                            <span>Einzel: <strong class="text-amber-300">${g.upgradeCostPerUnit > 0 ? formatMoney(g.upgradeCostPerUnit) : '—'}</strong></span>
+                                            ${g.repCount > 0 ? `<span class="text-rose-400 font-bold"><i class="fa-solid fa-wrench mr-0.5"></i>${g.repCount} beschädigt</span>` : `<span class="text-emerald-400"><i class="fa-solid fa-shield mr-0.5"></i>100% HP</span>`}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between text-slate-400">
-                                    <span>Reparaturen nötig (${repCount} beschädigt):</span>
-                                    <strong class="text-emerald-400">${formatMoney(totalRepCost)}</strong>
+                                <div class="flex items-center space-x-1.5 flex-shrink-0">
+                                    ${rightActions}
                                 </div>
-                            </div>
-                        </div>
-                    `;
+                            `;
+                            breakdown.appendChild(card);
+                        });
+                    }
                 }
 
-                const canUpg = totalUpgCost > 0 && this.money >= 1;
-                const canRep = totalRepCost > 0 && this.money >= 1;
+                // 4. Update Bottom Master Buttons
+                const canFilterUpg = totalFilterUpgCost > 0 && this.money >= 1;
+                const canFilterRep = totalFilterRepCost > 0 && this.money >= 1;
 
                 if (upgBtn) {
-                    upgBtn.disabled = !canUpg;
-                    if (upgText) upgText.innerText = totalUpgCost > 0 ? `Alle Upgraden (${formatMoney(totalUpgCost)})` : 'Keine Upgrades';
+                    upgBtn.disabled = !canFilterUpg;
+                    if (upgText) {
+                        const filterLabel = this.multiInspectFilter === 'all' ? 'Alle' : typeNames[this.multiInspectFilter] || 'Alle';
+                        upgText.innerText = totalFilterUpgCost > 0 ? `${filterLabel} Upgraden (${formatMoney(totalFilterUpgCost)})` : 'Keine Upgrades';
+                    }
                 }
                 if (repBtn) {
-                    repBtn.disabled = !canRep;
-                    if (repText) repText.innerText = totalRepCost > 0 ? `Alle Reparieren (${formatMoney(totalRepCost)})` : 'Voll Intakt';
+                    repBtn.disabled = !canFilterRep;
+                    if (repText) repText.innerText = totalFilterRepCost > 0 ? `Alle Reparieren (${formatMoney(totalFilterRepCost)})` : 'Voll Intakt';
+                }
+            }
+
+            upgradeTurretGroup(typeKey, level) {
+                const list = (this.selectedStructuresList || []).filter(s => {
+                    const ud = s.userData || {};
+                    const matchType = (typeKey === 'all' || ud.specId === typeKey || ud.name === typeKey);
+                    return matchType && (ud.level || 1) === level && ud.isTurret && !ud.isHangar && ud.totalInvested;
+                });
+
+                let count = 0;
+                for (const struct of list) {
+                    const ud = struct.userData;
+                    const cost = Math.round(ud.totalInvested * 0.80);
+                    if (this.money >= cost) {
+                        this.money -= cost;
+                        if (typeof applyTurretLevelUpgrades === 'function') {
+                            applyTurretLevelUpgrades(struct, ud.level + 1);
+                        } else {
+                            ud.level++;
+                            ud.maxHp = Math.round(ud.maxHp * 1.35);
+                            ud.hp = ud.maxHp;
+                            if (ud.damage) ud.damage = Math.round(ud.damage * 1.35);
+                            if (ud.range) ud.range = Math.round(ud.range * 1.06);
+                        }
+                        ud.totalInvested += cost;
+                        this.createBloodSparks(struct.position, 0xfacc15);
+                        count++;
+                    }
                 }
 
-                if (modal) modal.classList.remove('hidden');
+                if (count > 0) {
+                    if (typeof audio !== 'undefined' && audio.playCash) audio.playCash();
+                    this.syncHUD();
+                    if (typeof showPurchaseToast === 'function') {
+                        showPurchaseToast(`⚡ ${count}x Stufe ${level} Türme erfolgreich aufgewertet!`);
+                    }
+                }
+                this.renderMultiInspectContent();
+            }
+
+            repairTurretGroup(typeKey, level) {
+                const list = (this.selectedStructuresList || []).filter(s => {
+                    const ud = s.userData || {};
+                    const matchType = (typeKey === 'all' || ud.specId === typeKey || ud.name === typeKey);
+                    return matchType && (ud.level || 1) === level && ud.hp < ud.maxHp && ud.totalInvested;
+                });
+
+                let count = 0;
+                for (const struct of list) {
+                    const ud = struct.userData;
+                    const rCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
+                    if (rCost > 0 && this.money >= rCost) {
+                        this.money -= rCost;
+                        ud.hp = ud.maxHp;
+                        this.createBloodSparks(struct.position, 0x22c55e);
+                        count++;
+                    }
+                }
+
+                if (count > 0) {
+                    if (typeof audio !== 'undefined' && audio.playCash) audio.playCash();
+                    this.syncHUD();
+                    if (typeof showPurchaseToast === 'function') {
+                        showPurchaseToast(`🔧 ${count}x Stufe ${level} Türme repariert!`);
+                    }
+                }
+                this.renderMultiInspectContent();
             }
 
             upgradeAllSelectedStructures() {
-                if (!this.selectedStructuresList || this.selectedStructuresList.length === 0) return;
+                const targetList = (this.multiInspectFilter && this.multiInspectFilter !== 'all')
+                    ? (this.selectedStructuresList || []).filter(s => {
+                        const ud = s.userData || {};
+                        return (ud.specId === this.multiInspectFilter || ud.name === this.multiInspectFilter);
+                    })
+                    : (this.selectedStructuresList || []);
+
                 let upgradedCount = 0;
 
-                for (const struct of this.selectedStructuresList) {
+                // Sort by lowest level first to give best strategic efficiency
+                const sorted = [...targetList].sort((a, b) => ((a.userData?.level || 1) - (b.userData?.level || 1)));
+
+                for (const struct of sorted) {
                     const ud = struct.userData;
                     if (!ud || !ud.isTurret || ud.isHangar || !ud.totalInvested) continue;
 
@@ -2855,20 +3061,26 @@
                     if (typeof showPurchaseToast === 'function') {
                         showPurchaseToast(`⚡ ${upgradedCount} Türme erfolgreich aufgewertet!`);
                     }
-                    this.openMultiInspectModal(this.selectedStructuresList);
                 }
+                this.renderMultiInspectContent();
             }
 
             repairAllSelectedStructures() {
-                if (!this.selectedStructuresList || this.selectedStructuresList.length === 0) return;
+                const targetList = (this.multiInspectFilter && this.multiInspectFilter !== 'all')
+                    ? (this.selectedStructuresList || []).filter(s => {
+                        const ud = s.userData || {};
+                        return (ud.specId === this.multiInspectFilter || ud.name === this.multiInspectFilter);
+                    })
+                    : (this.selectedStructuresList || []);
+
                 let repairedCount = 0;
 
-                for (const struct of this.selectedStructuresList) {
+                for (const struct of targetList) {
                     const ud = struct.userData;
                     if (!ud || !ud.totalInvested) continue;
 
                     if (ud.hp < ud.maxHp) {
-                        const rCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * (ud.isWall ? 0.6 : 0.5));
+                        const rCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
                         if (rCost > 0 && this.money >= rCost) {
                             this.money -= rCost;
                             ud.hp = ud.maxHp;
@@ -2882,10 +3094,10 @@
                     if (typeof audio !== 'undefined' && audio.playCash) audio.playCash();
                     this.syncHUD();
                     if (typeof showPurchaseToast === 'function') {
-                        showPurchaseToast(`🔧 ${repairedCount} Strukturen vollständig repariert!`);
+                        showPurchaseToast(`🔧 ${repairedCount} Türme vollständig repariert!`);
                     }
-                    this.openMultiInspectModal(this.selectedStructuresList);
                 }
+                this.renderMultiInspectContent();
             }
 
             closeMultiInspectModal() {
@@ -5469,6 +5681,13 @@
                 if (document.hidden) return;
 
                 const now = performance.now();
+
+                // If in placement mode, continuously render the holographic preview and placement ghost in real time!
+                if (this.isPlacementMode) {
+                    this.renderer.render(this.scene, this.camera);
+                    this.lastFrameTime = now;
+                    return;
+                }
 
                 // If paused (e.g. in shop, pause menu, intel modal), render only ONCE to save GPU/battery
                 if (this.isPaused) {

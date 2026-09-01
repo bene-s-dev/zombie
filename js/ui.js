@@ -665,6 +665,24 @@ updateTacticalExtrasHUD();
             }
         }
 
+        function upgradeTurretGroup(typeKey, level) {
+            if (gameInstance && typeof gameInstance.upgradeTurretGroup === 'function') {
+                gameInstance.upgradeTurretGroup(typeKey, level);
+            }
+        }
+
+        function repairTurretGroup(typeKey, level) {
+            if (gameInstance && typeof gameInstance.repairTurretGroup === 'function') {
+                gameInstance.repairTurretGroup(typeKey, level);
+            }
+        }
+
+        function setMultiInspectFilter(filterId) {
+            if (gameInstance && typeof gameInstance.setMultiInspectFilter === 'function') {
+                gameInstance.setMultiInspectFilter(filterId);
+            }
+        }
+
         function openAllStructuresMultiUpgrade() {
             if (!gameInstance) return;
             const all = [...(gameInstance.turrets || [])];
