@@ -47,7 +47,7 @@
                 this.baseLives = 3;
                 this.isBaseInvulnerable = false;
                 this.currentWave = 1;
-                this.zombiesLeftToSpawn = 20;
+                this.zombiesLeftToSpawn = 12;
                 this.gameSeconds = 0;
                 this.totalKills = 0;
 
@@ -858,8 +858,8 @@
                 const isBossWave = (this.currentWave % 7 === 0) && (this.zombiesLeftToSpawn === 0);
 
                 let type = 'normal';
-                let hp = (28 + Math.pow(this.currentWave - 1, 1.25) * 12) * waveHpScale;
-                let speed = 0.062 + Math.min(0.045, (this.currentWave - 1) * 0.004);
+                let hp = (22 + Math.pow(this.currentWave - 1, 1.25) * 10) * waveHpScale;
+                let speed = 0.048 + Math.min(0.045, (this.currentWave - 1) * 0.0035);
                 let scale = 1.0;
                 let color = 0x16a34a;
                 let reward = 24;
@@ -3618,19 +3618,27 @@
                 }
                 const bulletMat = this._playerBulletMatCache[colorHex];
 
+                // Direct aim calculation: if locked on target, aim straight at it
+                let aimAngle = baseAngle;
+                if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0 && !this.lockedAimTarget.userData.isDead) {
+                    aimAngle = Math.atan2(
+                        this.lockedAimTarget.position.x - this.playerGroup.position.x,
+                        this.lockedAimTarget.position.z - this.playerGroup.position.z
+                    );
+                }
+
                 const muzzlePos = this._v1;
 
                 for (let i = 0; i < this.currentWeapon.count; i++) {
-                    const spreadAngle = baseAngle + (Math.random() - 0.5) * this.currentWeapon.spread;
+                    const spreadAngle = aimAngle + (Math.random() - 0.5) * (this.currentWeapon.spread || 0);
 
-                    if (this.gunMesh) {
-                        this.gunMesh.getWorldPosition(muzzlePos);
-                        muzzlePos.x += Math.sin(spreadAngle) * 0.9;
-                        muzzlePos.z += Math.cos(spreadAngle) * 0.9;
-                    } else {
-                        muzzlePos.copy(this.playerGroup.position);
-                        muzzlePos.y = 1.45;
-                    }
+                    // Clean forward spawn origin without parallax offset
+                    const spawnDist = 0.65;
+                    muzzlePos.set(
+                        this.playerGroup.position.x + Math.sin(spreadAngle) * spawnDist,
+                        1.35,
+                        this.playerGroup.position.z + Math.cos(spreadAngle) * spawnDist
+                    );
 
                     let bullet = this.bulletPool.pop();
                     if (!bullet) {
@@ -6304,8 +6312,8 @@
 
                         // Smart Aim Assist: Lock onto nearest zombie when firing, break lock if out of range
                         if (isFiring && this.zombies.length > 0) {
-                            const AIM_LOCK_RANGE_SQ = 100.0;   // lock-on max distance (10 meters)
-                            const AIM_BREAK_RANGE_SQ = 196.0;  // auto-break lock if zombie drifts further
+                            const AIM_LOCK_RANGE_SQ = 324.0;   // lock-on max distance (18 meters)
+                            const AIM_BREAK_RANGE_SQ = 576.0;  // auto-break lock if zombie drifts further (24 meters)
 
                             // Check if locked target is still valid & within break range
                             if (this.lockedAimTarget && this.lockedAimTarget.userData && this.lockedAimTarget.userData.hp > 0 && !this.lockedAimTarget.userData.isDead && !this.lockedAimTarget.userData.isFlying) {
@@ -6340,13 +6348,13 @@
                                 );
                                 let diff = targetAimAngle - this.playerGroup.rotation.y;
                                 diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                                this.playerGroup.rotation.y += diff * 18.0 * dt;
+                                this.playerGroup.rotation.y += diff * 32.0 * dt; // Fast, snappy aim tracking
                             } else if (moveX !== 0 || moveZ !== 0) {
                                 // No valid target in range — rotate toward movement direction
                                 const targetAngle = Math.atan2(moveX, moveZ);
                                 let diff = targetAngle - this.playerGroup.rotation.y;
                                 diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                                this.playerGroup.rotation.y += diff * 12.0 * dt;
+                                this.playerGroup.rotation.y += diff * 16.0 * dt;
                             }
                         } else {
                             this.lockedAimTarget = null;
@@ -6354,7 +6362,7 @@
                                 const targetAngle = Math.atan2(moveX, moveZ);
                                 let diff = targetAngle - this.playerGroup.rotation.y;
                                 diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                                this.playerGroup.rotation.y += diff * 12.0 * dt;
+                                this.playerGroup.rotation.y += diff * 16.0 * dt;
                             }
                         }
 
@@ -6621,7 +6629,7 @@
 
                                             const dzx = b.position.x - z.position.x;
                                             const dzz = b.position.z - z.position.z;
-                                            const hitRad = 1.75 * z.userData.scale;
+                                            const hitRad = 2.2 * z.userData.scale;
 
                                             if (dzx * dzx + dzz * dzz < hitRad * hitRad) {
                                                 bulletHit = true;
@@ -7533,7 +7541,7 @@
                 setTimeout(() => {
                     if (this.isGameOver) return;
                     this.currentWave++;
-                    this.zombiesLeftToSpawn = Math.round(20 + (this.currentWave - 1) * 4.5);
+                    this.zombiesLeftToSpawn = Math.round(12 + (this.currentWave - 1) * 3.5);
                     this.money += 180 + (this.currentWave * 40);
 
                     // Automatic Survivor Max-HP Progression (+15 Max-HP per wave)
@@ -7571,7 +7579,7 @@
                 this.playerHp = Math.min(this.maxPlayerHp, this.playerHp + 30);
                 this.updateStockPrices(true);
 
-                const newZombiesCount = Math.round(20 + (this.currentWave - 1) * 4.5);
+                const newZombiesCount = Math.round(12 + (this.currentWave - 1) * 3.5);
                 this.zombiesLeftToSpawn += newZombiesCount;
 
                 const bonusMoney = 180 + (this.currentWave * 40);

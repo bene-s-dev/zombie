@@ -31,8 +31,8 @@ function formatMoney(amount) {
 }
 
 const WEAPONS = {
-    pistol: { id: 'pistol', name: 'Pistole', cost: 0, level: 1, maxLevel: Infinity, damage: 38, firerate: 200, speed: 52, spread: 0.03, count: 1, isExplosive: false, color: 0xfacc15 },
-    smg: { id: 'smg', name: 'Maschinenpistole MP5', cost: 200, level: 1, maxLevel: Infinity, damage: 25, firerate: 100, speed: 54, spread: 0.07, count: 1, isExplosive: false, color: 0xeab308 },
+    pistol: { id: 'pistol', name: 'Pistole', cost: 0, level: 1, maxLevel: Infinity, damage: 52, firerate: 160, speed: 70, spread: 0.00, count: 1, isExplosive: false, color: 0xfacc15 },
+    smg: { id: 'smg', name: 'Maschinenpistole MP5', cost: 200, level: 1, maxLevel: Infinity, damage: 28, firerate: 90, speed: 68, spread: 0.04, count: 1, isExplosive: false, color: 0xeab308 },
     shotgun: { id: 'shotgun', name: 'Schrotflinte', cost: 350, level: 1, maxLevel: Infinity, damage: 26, firerate: 600, speed: 46, spread: 0.25, count: 7, isExplosive: false, color: 0xf97316 },
     rifle: { id: 'rifle', name: 'Sturmgewehr AK-47', cost: 650, level: 1, maxLevel: Infinity, damage: 52, firerate: 125, speed: 60, spread: 0.04, count: 1, isExplosive: false, color: 0xef4444 },
     sniper: { id: 'sniper', name: 'Scharfschützengewehr', cost: 900, level: 1, maxLevel: Infinity, damage: 280, firerate: 800, speed: 85, spread: 0.005, count: 1, isExplosive: false, color: 0x38bdf8 },
