@@ -42,11 +42,61 @@ const WEAPONS = {
 };
 
 const TURRET_TYPES = {
-    mg: { id: 'mg', name: 'Maschinengewehr-Turm', cost: 450, range: 27, damage: 26, firerate: 260, hp: 500, maxHp: 500, desc: 'Schnellfeuer-Turm. Feuert kontinuierlich auf nahe Feinde!' },
-    rocket: { id: 'rocket', name: 'Raketen-Flak-Turm', cost: 1600, range: 36, damage: 260, firerate: 1300, isExplosive: true, splashRadius: 5.5, hp: 650, maxHp: 650, desc: 'Fernkampf-Flak. Massiver punktueller Explosionsschaden!' },
+    mg: { 
+        id: 'mg', 
+        name: 'Autonome Waffenstation (RWS .50 BMG)', 
+        cost: 450, 
+        range: 27, 
+        damage: 26, 
+        firerate: 260, 
+        hp: 500, 
+        maxHp: 500, 
+        desc: 'Ferngesteuerte Waffenstation (Remote Weapon Station). Kontinuierliches Sperrfeuer gegen heranrückende Infanterie!' 
+    },
+    rocket: { 
+        id: 'rocket', 
+        name: 'Schwere Boden-Raketenstation (BGM Strike)', 
+        cost: 1600, 
+        range: 36, 
+        damage: 260, 
+        firerate: 1300, 
+        isExplosive: true, 
+        splashRadius: 5.5, 
+        hp: 650, 
+        maxHp: 650, 
+        desc: 'Schweres Boden-Boden-Raketensystem. Massiver punktueller Explosionsschaden gegen Bodenziele & Mutanten!' 
+    },
+    anti_air: {
+        id: 'anti_air',
+        name: 'Flugabwehrsystem MANTIS (35mm C-RAM)',
+        cost: 1200,
+        range: 42,
+        damage: 42,
+        firerate: 110,
+        isAntiAir: true,
+        hp: 600,
+        maxHp: 600,
+        desc: 'Vollautomatisches 35mm Schnellfeuer-Flugabwehrsystem (C-RAM MANTIS). Zersiebt fliegende Mutanten im rasanten Schnellfeuer mit AHEAD-Luftraum-Munition!'
+    },
+    artillery: {
+        id: 'artillery',
+        name: 'Schwere Raketenartillerie (MLRS MARS II)',
+        cost: 2800,
+        range: 48,
+        minRange: 7,
+        damage: 680,
+        firerate: 3200,
+        isExplosive: true,
+        isArtillery: true,
+        splashRadius: 8.0,
+        knockback: 14.0,
+        hp: 800,
+        maxHp: 800,
+        desc: 'Mehrfachraketenwerfer-System (Multiple Launch Rocket System). Steilbogeneinschlag mit verheerendem Flächenschaden & Druckwelle!'
+    },
     light_mast: {
         id: 'light_mast',
-        name: 'Katastrophenschutz-Lichtmast',
+        name: 'Mobiles Beleuchtungsmodul (LiMa THW)',
         cost: 120,
         range: 34,
         damage: 0,
@@ -54,11 +104,11 @@ const TURRET_TYPES = {
         hp: 450,
         maxHp: 450,
         isLightMast: true,
-        desc: 'Mobiler Katastrophen-Lichtmast mit 360° Hochleistungs-LED-Flutlicht. Erleuchtet nachts das Umfeld taghell!'
+        desc: 'Taktischer Lichtmastanhänger mit 360° Hochleistungs-LED-Flutlicht. Erleuchtet nachts das Gefechtsfeld taghell!'
     },
     drone_hangar: {
         id: 'drone_hangar',
-        name: 'Reparatur-Drohnen-Hangar',
+        name: 'Autonome Instandsetzungs-Drohnenbasis (UAV Logistics)',
         cost: 8000,
         range: Infinity,
         damage: 0,
@@ -67,7 +117,7 @@ const TURRET_TYPES = {
         maxHp: 99999,
         isIndestructible: true,
         isHangar: true,
-        desc: 'Unzerstörbare High-Tech Drohnenstation. Sendet permanent ein Geschwader autonomer Reparatur-Drohnen aus, die kontinuierlich alle beschädigten Verteidigungsanlagen auf der gesamten Karte ohne Reichweitenbegrenzung reparieren!'
+        desc: 'Taktische UAV-Drohnenbasis. Sendet permanent ein Geschwader autonomer Reparatur-Drohnen zur feldmäßigen Instandsetzung aller Verteidigungsanlagen aus!'
     }
 };
 

@@ -878,7 +878,7 @@
                 } else {
                     const rnd = Math.random();
                     // SPACED OUT PROGRESSION: 1 new zombie type every 2 waves!
-                    if (this.currentWave >= 2 && rnd < 0.22) {
+                    if (this.currentWave >= 2 && rnd < 0.20) {
                         type = 'runner';
                         hp = 38 * waveHpScale;
                         speed = 0.10 * this.diffMult;
@@ -886,7 +886,7 @@
                         color = 0xeab308;
                         reward = 28;
                         dmgMult = 0.8 * waveDmgScale;
-                    } else if (this.currentWave >= 4 && rnd < 0.38) {
+                    } else if (this.currentWave >= 4 && rnd < 0.35) {
                         type = 'crawler';
                         hp = 22 * waveHpScale;
                         speed = 0.115 * this.diffMult;
@@ -894,7 +894,15 @@
                         color = 0x451a03;
                         reward = 20;
                         dmgMult = 0.7 * waveDmgScale;
-                    } else if (this.currentWave >= 6 && rnd < 0.50) {
+                    } else if (this.currentWave >= 5 && rnd < 0.48) {
+                        type = 'bat';
+                        hp = 42 * waveHpScale;
+                        speed = 0.096 * this.diffMult;
+                        scale = 0.92;
+                        color = 0x4c1d95; // Deep Mutant Bat Violet
+                        reward = 36;
+                        dmgMult = 1.0 * waveDmgScale;
+                    } else if (this.currentWave >= 6 && rnd < 0.58) {
                         type = 'shield';
                         hp = 75 * waveHpScale;
                         speed = 0.058 * this.diffMult;
@@ -902,7 +910,7 @@
                         color = 0x0284c7;
                         reward = 42;
                         dmgMult = 1.2 * waveDmgScale;
-                    } else if (this.currentWave >= 8 && rnd < 0.62) {
+                    } else if (this.currentWave >= 8 && rnd < 0.68) {
                         type = 'exploder';
                         hp = 42 * waveHpScale;
                         speed = 0.09 * this.diffMult;
@@ -910,7 +918,7 @@
                         color = 0xf97316;
                         reward = 38;
                         dmgMult = 1.0 * waveDmgScale;
-                    } else if (this.currentWave >= 10 && rnd < 0.72) {
+                    } else if (this.currentWave >= 10 && rnd < 0.78) {
                         type = 'spitter';
                         hp = 65 * waveHpScale;
                         speed = 0.052 * this.diffMult;
@@ -918,7 +926,7 @@
                         color = 0x84cc16;
                         reward = 50;
                         dmgMult = 1.1 * waveDmgScale;
-                    } else if (this.currentWave >= 12 && rnd < 0.82) {
+                    } else if (this.currentWave >= 12 && rnd < 0.86) {
                         type = 'tank';
                         hp = 220 * waveHpScale;
                         speed = 0.04 * this.diffMult;
@@ -927,7 +935,7 @@
                         reward = 65;
                         dmgMult = 2.0 * waveDmgScale;
                         armorThreshold = 32;
-                    } else if (this.currentWave >= 14 && rnd < 0.92) {
+                    } else if (this.currentWave >= 14 && rnd < 0.94) {
                         type = 'summoner';
                         hp = 160 * waveHpScale;
                         speed = 0.042 * this.diffMult;
@@ -953,13 +961,13 @@
                 let zombieGroup = null;
                 if (this.zombiePool && this.zombiePool[type] && this.zombiePool[type].length > 0) {
                     zombieGroup = this.zombiePool[type].pop();
-                    zombieGroup.position.set(x, 0, z);
+                    zombieGroup.position.set(x, type === 'bat' ? 3.4 : 0, z);
                     zombieGroup.rotation.set(0, 0, 0);
                     zombieGroup.visible = true;
                     if (!zombieGroup.parent) this.scene.add(zombieGroup);
                 } else {
                     zombieGroup = this.createZombieMesh(type, scale, color);
-                    zombieGroup.position.set(x, 0, z);
+                    zombieGroup.position.set(x, type === 'bat' ? 3.4 : 0, z);
                     this.scene.add(zombieGroup);
                 }
 
@@ -973,6 +981,8 @@
                     dmgMult: dmgMult,
                     armorThreshold: armorThreshold,
                     isShield: (type === 'shield'),
+                    isFlying: (type === 'bat'),
+                    flySeed: Math.random() * 100,
                     walkCycle: Math.random() * Math.PI * 2,
                     bodyMaterials: zombieGroup.userData.bodyMaterials || []
                 };
@@ -1007,7 +1017,65 @@
                 if (!this._unitBoxGeo) this._unitBoxGeo = new THREE.BoxGeometry(1, 1, 1);
                 if (!this._unitSphereGeo) this._unitSphereGeo = new THREE.SphereGeometry(1, 8, 8);
 
-                if (type === 'crawler' || type === 'minion_crawler') {
+                if (type === 'bat') {
+                    // 3D Mutant-Bat (Fledermaus / Flugzombie)
+                    const batTorso = new THREE.Mesh(this._unitBoxGeo, bodyMat);
+                    batTorso.scale.set(0.55 * scale, 0.65 * scale, 0.45 * scale);
+                    batTorso.position.y = 0;
+                    zombieGroup.add(batTorso);
+
+                    const batHead = new THREE.Mesh(this._unitBoxGeo, bodyMat);
+                    batHead.scale.set(0.42 * scale, 0.38 * scale, 0.42 * scale);
+                    batHead.position.set(0, 0.35 * scale, 0.18 * scale);
+                    zombieGroup.add(batHead);
+
+                    // Pointy bat ears
+                    const earGeo = new THREE.ConeGeometry(0.11 * scale, 0.28 * scale, 4);
+                    const earL = new THREE.Mesh(earGeo, bodyMat);
+                    earL.position.set(-0.16 * scale, 0.62 * scale, 0.12 * scale);
+                    earL.rotation.z = 0.28;
+                    const earR = new THREE.Mesh(earGeo, bodyMat);
+                    earR.position.set(0.16 * scale, 0.62 * scale, 0.12 * scale);
+                    earR.rotation.z = -0.28;
+                    zombieGroup.add(earL);
+                    zombieGroup.add(earR);
+
+                    // Red glowing bat eyes
+                    const eye1 = new THREE.Mesh(this._unitBoxGeo, eyeMat);
+                    eye1.scale.set(0.09 * scale, 0.09 * scale, 0.09 * scale);
+                    eye1.position.set(-0.11 * scale, 0.38 * scale, 0.38 * scale);
+                    zombieGroup.add(eye1);
+
+                    const eye2 = new THREE.Mesh(this._unitBoxGeo, eyeMat);
+                    eye2.scale.set(0.09 * scale, 0.09 * scale, 0.09 * scale);
+                    eye2.position.set(0.11 * scale, 0.38 * scale, 0.38 * scale);
+                    zombieGroup.add(eye2);
+
+                    // Articulated Wings with Pivot Groups
+                    const wingMat = new THREE.MeshLambertMaterial({ color: 0x2e1065, side: THREE.DoubleSide });
+                    bodyMaterials.push(wingMat);
+
+                    // Left Wing Pivot & Mesh
+                    const wingLPivot = new THREE.Group();
+                    wingLPivot.position.set(-0.25 * scale, 0.10 * scale, 0);
+                    const wingLMesh = new THREE.Mesh(this._unitBoxGeo, wingMat);
+                    wingLMesh.scale.set(1.15 * scale, 0.04 * scale, 0.75 * scale);
+                    wingLMesh.position.set(-0.58 * scale, 0, 0);
+                    wingLPivot.add(wingLMesh);
+                    zombieGroup.add(wingLPivot);
+
+                    // Right Wing Pivot & Mesh
+                    const wingRPivot = new THREE.Group();
+                    wingRPivot.position.set(0.25 * scale, 0.10 * scale, 0);
+                    const wingRMesh = new THREE.Mesh(this._unitBoxGeo, wingMat);
+                    wingRMesh.scale.set(1.15 * scale, 0.04 * scale, 0.75 * scale);
+                    wingRMesh.position.set(0.58 * scale, 0, 0);
+                    wingRPivot.add(wingRMesh);
+                    zombieGroup.add(wingRPivot);
+
+                    zombieGroup.userData.wingL = wingLPivot;
+                    zombieGroup.userData.wingR = wingRPivot;
+                } else if (type === 'crawler' || type === 'minion_crawler') {
                     const torso = new THREE.Mesh(this._unitBoxGeo, bodyMat);
                     torso.scale.set(0.7 * scale, 0.4 * scale, 0.8 * scale);
                     torso.position.y = 0.25 * scale;
@@ -1171,15 +1239,26 @@
                     const tx = turret.position.x;
                     const tz = turret.position.z;
                     const tr = ud.range;
+                    const minR = ud.minRange || 0;
+                    const minRSq = minR * minR;
 
                     for (let zi = 0; zi < this.zombies.length; zi++) {
                         const z = this.zombies[zi];
                         if (z.userData.hp <= 0 || z.userData.isDead) continue;
+
+                        // EXCLUSIVE ANTI-AIR RULE:
+                        // Ground turrets CANNOT target flying zombies!
+                        if (!ud.isAntiAir && z.userData.isFlying) continue;
+                        // Anti-Air turrets target ONLY flying zombies!
+                        if (ud.isAntiAir && !z.userData.isFlying) continue;
+
                         const zx = z.position.x;
                         const zz = z.position.z;
                         if (Math.abs(zx - tx) > tr || Math.abs(zz - tz) > tr) continue; // Fast AABB box cull
 
                         const distSq = (zx - tx) * (zx - tx) + (zz - tz) * (zz - tz);
+                        if (distSq < minRSq) continue; // Respect minimum artillery range
+
                         if (distSq < minDistSq) {
                             minDistSq = distSq;
                             closestZombie = z;
@@ -1195,7 +1274,99 @@
                         );
                         ud.head.rotation.y = angle;
 
-                        if (ud.isTesla) {
+                        if (ud.isAntiAir) {
+                            // MANTIS 35mm C-RAM Rapid-Fire Autocannon Stream
+                            if (typeof audio !== 'undefined' && audio.playMinigunShot) {
+                                audio.playMinigunShot();
+                            } else if (typeof audio !== 'undefined' && audio.playShoot) {
+                                audio.playShoot(0.06);
+                            }
+                            this.createBloodSparks(new THREE.Vector3(tx, 2.2, tz), 0x38bdf8);
+
+                            if (!this._mantisBulletGeo) {
+                                this._mantisBulletGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.1, 6);
+                                this._mantisBulletGeo.rotateX(Math.PI / 2);
+                                this._mantisBulletMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                            }
+
+                            const startPos = new THREE.Vector3(tx, 2.3, tz);
+                            const targetPos = closestZombie.position.clone();
+                            targetPos.x += (Math.random() - 0.5) * 0.25;
+                            targetPos.y += (Math.random() - 0.5) * 0.25;
+                            targetPos.z += (Math.random() - 0.5) * 0.25;
+
+                            const dir = targetPos.clone().sub(startPos).normalize();
+
+                            let bullet = this.bulletPool.pop();
+                            if (!bullet) {
+                                bullet = new THREE.Mesh(this._mantisBulletGeo, this._mantisBulletMat);
+                                bullet.userData = { dir: new THREE.Vector3() };
+                                this.scene.add(bullet);
+                            } else {
+                                bullet.geometry = this._mantisBulletGeo;
+                                bullet.material = this._mantisBulletMat;
+                            }
+
+                            bullet.position.copy(startPos);
+                            bullet.lookAt(targetPos);
+                            bullet.visible = true;
+
+                            if (!bullet.userData.dir) bullet.userData.dir = new THREE.Vector3();
+                            bullet.userData.dir.copy(dir);
+                            bullet.userData.speed = 110; // High-velocity 35mm kinetic Flak
+                            bullet.userData.damage = ud.damage;
+                            bullet.userData.isExplosive = false;
+                            bullet.userData.isTurretBullet = true;
+                            bullet.userData.isAntiAirBullet = true;
+                            bullet.userData.isEnemy = false;
+                            bullet.userData.life = 0.85;
+
+                            this.bullets.push(bullet);
+                        } else if (ud.isArtillery) {
+                            // Heavy Artillery Ballistic Mortar Launch
+                            if (typeof audio !== 'undefined' && audio.playRocket) audio.playRocket();
+                            this.createBloodSparks(new THREE.Vector3(tx, 2.5, tz), 0xf59e0b);
+
+                            const startX = tx;
+                            const startY = 2.4;
+                            const startZ = tz;
+                            const targetX = closestZombie.position.x;
+                            const targetZ = closestZombie.position.z;
+                            const dist = Math.hypot(targetX - startX, targetZ - startZ);
+                            const flightDuration = Math.max(0.95, Math.min(1.45, 0.75 + dist * 0.015));
+                            const apex = 14 + dist * 0.28;
+
+                            if (!this._artilleryRocketGeo) {
+                                this._artilleryRocketGeo = new THREE.CylinderGeometry(0.18, 0.14, 1.4, 8);
+                                this._artilleryRocketGeo.rotateX(Math.PI / 2);
+                                this._artilleryRocketMat = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.8, roughness: 0.3 });
+                            }
+
+                            let rocket = this.artilleryPool ? this.artilleryPool.pop() : null;
+                            if (!rocket) {
+                                rocket = new THREE.Mesh(this._artilleryRocketGeo, this._artilleryRocketMat);
+                                const warhead = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.45, 8), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+                                warhead.rotateX(Math.PI / 2);
+                                warhead.position.z = 0.90;
+                                rocket.add(warhead);
+                                this.scene.add(rocket);
+                            }
+                            rocket.position.set(startX, startY, startZ);
+                            rocket.visible = true;
+
+                            if (!this.ballisticRockets) this.ballisticRockets = [];
+                            this.ballisticRockets.push({
+                                mesh: rocket,
+                                startX, startY, startZ,
+                                targetX, targetZ,
+                                apex,
+                                duration: flightDuration,
+                                elapsed: 0,
+                                damage: ud.damage,
+                                splashRadius: ud.splashRadius || 8.0,
+                                knockback: ud.knockback || 14.0
+                            });
+                        } else if (ud.isTesla) {
                             audio.playTesla();
                             const teslaRangeSq = ud.range * ud.range;
                             for (let zi = this.zombies.length - 1; zi >= 0; zi--) {
@@ -1255,10 +1426,11 @@
                             else audio.playPistol();
                         }
                     }
+                    }
                 }
             }
 
-            createExplosion(pos, radius, damage, visualRadius = null, isHeavyBomb = false, damageFriendly = false) {
+            createExplosion(pos, radius, damage, visualRadius = null, isHeavyBomb = false, damageFriendly = false, knockbackForce = 0) {
                 if (isHeavyBomb || radius >= 10) {
                     audio.playHeavyBomb();
                 } else {
@@ -1306,6 +1478,15 @@
                             const falloff = 1 - (dist / radius) * 0.5;
                             z.userData.hp -= damage * falloff;
                             this.flashZombieHit(z);
+
+                            if (knockbackForce > 0) {
+                                const nx = dist > 0.001 ? (zx - px) / dist : (Math.random() - 0.5);
+                                const nz = dist > 0.001 ? (zz - pz) / dist : (Math.random() - 0.5);
+                                const force = knockbackForce * falloff;
+                                z.position.x += nx * force;
+                                z.position.z += nz * force;
+                            }
+
                             if (z.userData.hp <= 0) this.killZombie(z);
                         }
                     }
@@ -1928,6 +2109,8 @@
                 if (spec.id === 'cannon') headColor = 0xd97706;
                 if (spec.id === 'tesla') headColor = 0xa855f7;
                 if (spec.id === 'rocket') headColor = 0xef4444;
+                if (spec.id === 'artillery') headColor = 0xd97706;
+                if (spec.id === 'anti_air') headColor = 0x0284c7;
 
                 const headMat = new THREE.MeshStandardMaterial({ color: headColor, metalness: 0.9, roughness: 0.2 });
                 const headMesh = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.75, 1.2), headMat);
@@ -1939,6 +2122,81 @@
                     const coil = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 12), new THREE.MeshBasicMaterial({ color: 0xc084fc }));
                     coil.position.set(0, 0.4, 0);
                     headGroup.add(coil);
+                } else if (spec.id === 'anti_air') {
+                    // MANTIS 35mm C-RAM Rapid-Fire Air Defense Autocannon
+                    const mantisGroup = new THREE.Group();
+                    mantisGroup.position.set(0, 0.35, 0);
+
+                    // 35mm Revolver Cannon Main Housing
+                    const housingMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.2 });
+                    const housing = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 1.2), housingMat);
+                    mantisGroup.add(housing);
+
+                    // 35mm Heavy Autocannon Barrel pointing upwards ~45 deg
+                    const barrelMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.95 });
+                    const barrelGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.7, 8);
+                    barrelGeo.rotateX(Math.PI / 2);
+                    const barrelMesh = new THREE.Mesh(barrelGeo, barrelMat);
+                    barrelMesh.position.set(0, 0.22, 0.75);
+                    barrelMesh.rotation.x = -0.52; // Angled upwards ~30-45 deg
+                    mantisGroup.add(barrelMesh);
+
+                    // Perforated Muzzle Brake at barrel tip
+                    const brakeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9 });
+                    const brakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.35, 8), brakeMat);
+                    brakeMesh.rotateX(Math.PI / 2);
+                    brakeMesh.position.set(0, 0.65, 1.45);
+                    brakeMesh.rotation.x = -0.52;
+                    mantisGroup.add(brakeMesh);
+
+                    // Electro-Optical Sensor / Target Tracking Radar Sphere
+                    const eosGroup = new THREE.Group();
+                    eosGroup.position.set(0.48, 0.45, 0);
+
+                    const eosDomeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.85, roughness: 0.15 });
+                    const eosDome = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12), eosDomeMat);
+                    const eosLens = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.15, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+                    eosLens.rotateX(Math.PI / 2);
+                    eosLens.position.set(0, 0, 0.22);
+                    eosGroup.add(eosDome);
+                    eosGroup.add(eosLens);
+                    mantisGroup.add(eosGroup);
+
+                    // Side Ammo Feed Box
+                    const ammoBoxMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
+                    const ammoBox = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.8), ammoBoxMat);
+                    ammoBox.position.set(-0.55, 0.05, -0.1);
+                    mantisGroup.add(ammoBox);
+
+                    headGroup.add(mantisGroup);
+                    turretGroup.userData.radarDish = eosGroup;
+                } else if (spec.id === 'artillery') {
+                    // Heavy Artillery Multi-Rocket Pod (Steep Launch Mortar Box)
+                    const podGroup = new THREE.Group();
+                    podGroup.position.set(0, 0.35, 0.1);
+                    podGroup.rotation.x = -0.78; // Tilted upwards ~45-55 deg
+
+                    const podMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85, roughness: 0.25 });
+                    const podBody = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.75, 1.4), podMat);
+                    podBody.castShadow = true;
+                    podGroup.add(podBody);
+
+                    // 4 Launch Tubes
+                    const tubeGeo = new THREE.CylinderGeometry(0.14, 0.14, 1.45, 8);
+                    tubeGeo.rotateX(Math.PI / 2);
+                    [[-0.32, 0.18], [0.32, 0.18], [-0.32, -0.18], [0.32, -0.18]].forEach(([tx, ty]) => {
+                        const tube = new THREE.Mesh(tubeGeo, barrelMat);
+                        tube.position.set(tx, ty, 0.05);
+                        podGroup.add(tube);
+                    });
+
+                    // Warning Accent Trim
+                    const stripeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.5 });
+                    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.15, 1.2), stripeMat);
+                    stripe.position.y = 0.38;
+                    podGroup.add(stripe);
+
+                    headGroup.add(podGroup);
                 } else if (spec.id === 'rocket') {
                     const launcher = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 0.9), barrelMat);
                     launcher.position.set(0, 0.2, 0.5);
@@ -1984,10 +2242,14 @@
                     head: headGroup,
                     hitBox: hitBox,
                     range: spec.range,
+                    minRange: spec.minRange || 0,
                     damage: spec.damage,
                     firerate: spec.firerate,
                     isExplosive: spec.isExplosive,
+                    isArtillery: !!spec.isArtillery,
+                    isAntiAir: !!spec.isAntiAir,
                     splashRadius: spec.splashRadius,
+                    knockback: spec.knockback || 0,
                     isTesla: spec.isTesla,
                     hp: scaledMaxHp,
                     maxHp: scaledMaxHp,
@@ -2495,6 +2757,62 @@
                         <div>• Leuchtradius: <strong class="text-sky-400">${ud.range}m</strong></div>
                         <div>• Lichttechnik: <strong class="text-emerald-400">High-Power SMD-LEDs</strong></div>
                         <div>• Nacht-Sensor: <strong class="text-emerald-400">Automatische Aktivierung</strong></div>
+                    `;
+                    const upgCost = Math.round(ud.totalInvested * 0.80);
+                    const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
+
+                    document.getElementById('inspect-upgrade-text').innerText = `Upgrade (${formatMoney(upgCost)})`;
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren (${formatMoney(repairCost)})` : 'Reparieren';
+
+                    const canUpgrade = this.money >= upgCost;
+                    upgradeBtn.disabled = !canUpgrade;
+                    upgradeBtn.className = `py-3 ${canUpgrade ? 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white cursor-pointer shadow-md shadow-amber-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
+                    const canRepair = repairCost > 0 && this.money >= repairCost;
+                    repairBtn.disabled = !canRepair;
+                    repairBtn.className = `py-3 ${canRepair ? 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white cursor-pointer shadow-md shadow-emerald-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
+                } else if (ud.isAntiAir) {
+                    if (hangarBox) hangarBox.classList.add('hidden');
+                    if (stdActions) stdActions.classList.remove('hidden');
+
+                    subtitle.innerText = `Lvl ${ud.level} Flugabwehrsystem MANTIS (35mm C-RAM)`;
+                    stats.innerHTML = `
+                        <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
+                        <div>• 35mm Flak-Schaden: <strong class="text-amber-400">${Math.round(ud.damage)} pro Schuss</strong></div>
+                        <div>• Flugabwehr-Radius: <strong class="text-sky-400">${ud.range}m</strong></div>
+                        <div>• Schnellfeuer-Kadenz: <strong class="text-emerald-400">${ud.firerate}ms (~9 Schuss/Sek.)</strong></div>
+                        <div>• Zielsuch-Sensor: <strong class="text-cyan-300">Elektro-Optisches Radar (EOS)</strong></div>
+                        <div>• Spezialisierung: <strong class="text-rose-400">Schnellfeuer gegen fliegende Mutanten!</strong></div>
+                    `;
+                    const upgCost = Math.round(ud.totalInvested * 0.80);
+                    const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
+
+                    document.getElementById('inspect-upgrade-text').innerText = `Upgrade (${formatMoney(upgCost)})`;
+                    document.getElementById('inspect-repair-text').innerText = repairCost > 0 ? `Reparieren (${formatMoney(repairCost)})` : 'Reparieren';
+
+                    const canUpgrade = this.money >= upgCost;
+                    upgradeBtn.disabled = !canUpgrade;
+                    upgradeBtn.className = `py-3 ${canUpgrade ? 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white cursor-pointer shadow-md shadow-amber-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
+                    const canRepair = repairCost > 0 && this.money >= repairCost;
+                    repairBtn.disabled = !canRepair;
+                    repairBtn.className = `py-3 ${canRepair ? 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white cursor-pointer shadow-md shadow-emerald-950/40' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1`;
+
+                    upgradeBtn.classList.remove('hidden');
+                    repairBtn.classList.remove('hidden');
+                } else if (ud.isArtillery) {
+                    if (hangarBox) hangarBox.classList.add('hidden');
+                    if (stdActions) stdActions.classList.remove('hidden');
+
+                    subtitle.innerText = `Lvl ${ud.level} Schwere Raketen-Artillerie`;
+                    stats.innerHTML = `
+                        <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
+                        <div>• Schaden: <strong class="text-amber-400">${Math.round(ud.damage)}</strong></div>
+                        <div>• Reichweite: <strong class="text-sky-400">${ud.range}m (Min: ${ud.minRange || 7}m)</strong></div>
+                        <div>• Nachladezeit: <strong class="text-emerald-400">${ud.firerate}ms</strong></div>
+                        <div>• Flugbahn: <strong class="text-amber-300">Steiler Ballistischer Bogen</strong></div>
+                        <div>• Flächenwirkung: <strong class="text-rose-400">${ud.splashRadius}m Radius + Pushback</strong></div>
                     `;
                     const upgCost = Math.round(ud.totalInvested * 0.80);
                     const repairCost = Math.round((1 - ud.hp / ud.maxHp) * ud.totalInvested * 0.5);
@@ -5524,6 +5842,93 @@
                     }
                 }
 
+                // Active Heavy Artillery Ballistic Mortar Rockets Update
+                if (this.ballisticRockets && this.ballisticRockets.length > 0) {
+                    for (let bi = this.ballisticRockets.length - 1; bi >= 0; bi--) {
+                        const r = this.ballisticRockets[bi];
+                        r.elapsed += dt;
+                        const p = Math.min(1.0, r.elapsed / r.duration);
+
+                        const curX = r.startX + (r.targetX - r.startX) * p;
+                        const curZ = r.startZ + (r.targetZ - r.startZ) * p;
+                        const curY = r.startY + (0 - r.startY) * p + 4 * r.apex * p * (1 - p);
+
+                        // Look along forward velocity tangent
+                        const nextP = Math.min(1.0, p + 0.02);
+                        const nextX = r.startX + (r.targetX - r.startX) * nextP;
+                        const nextZ = r.startZ + (r.targetZ - r.startZ) * nextP;
+                        const nextY = r.startY + (0 - r.startY) * nextP + 4 * r.apex * nextP * (1 - nextP);
+
+                        r.mesh.position.set(curX, curY, curZ);
+                        r.mesh.lookAt(nextX, nextY, nextZ);
+
+                        // Smoke and fire particle trail
+                        if (Math.random() < 0.6) {
+                            this.createBloodSparks(r.mesh.position, 0xf97316);
+                        }
+
+                        if (p >= 1.0) {
+                            // Heavy Artillery Ground Impact Detonation with Knockback!
+                            this.createExplosion(
+                                new THREE.Vector3(r.targetX, 0.2, r.targetZ),
+                                r.splashRadius,
+                                r.damage,
+                                r.splashRadius,
+                                true, // isHeavyBomb
+                                false, // damageFriendly
+                                r.knockback // knockbackForce
+                            );
+                            this.createBloodSparks(new THREE.Vector3(r.targetX, 0.5, r.targetZ), 0xffffff);
+                            r.mesh.visible = false;
+                            if (!this.artilleryPool) this.artilleryPool = [];
+                            this.artilleryPool.push(r.mesh);
+                            this.ballisticRockets.splice(bi, 1);
+                        }
+                    }
+                }
+
+                // Active Surface-to-Air (SAM) Anti-Air Interceptor Missiles Update
+                if (this.samMissiles && this.samMissiles.length > 0) {
+                    for (let si = this.samMissiles.length - 1; si >= 0; si--) {
+                        const m = this.samMissiles[si];
+                        const target = m.target;
+                        const targetPos = (target && target.userData && target.userData.hp > 0 && !target.userData.isDead) 
+                            ? target.position 
+                            : (m.lastTargetPos || new THREE.Vector3(m.mesh.position.x, 3.2, m.mesh.position.z));
+                        m.lastTargetPos = targetPos.clone();
+
+                        const curPos = m.mesh.position;
+                        const distToTarget = curPos.distanceTo(targetPos);
+
+                        if (distToTarget <= 1.4 || !target || target.userData.hp <= 0 || target.userData.isDead) {
+                            // Direct Airburst Anti-Air Detonation!
+                            this.createExplosion(curPos, 4.2, m.damage, 4.2, false, false, 0);
+                            this.createBloodSparks(curPos, 0x38bdf8);
+                            this.scene.remove(m.mesh);
+                            this.samMissiles.splice(si, 1);
+                        } else {
+                            const dir = targetPos.clone().sub(curPos).normalize();
+                            m.mesh.position.addScaledVector(dir, m.speed * dt);
+                            m.mesh.lookAt(targetPos);
+
+                            // Jet / Missile Exhaust Spark
+                            if (Math.random() < 0.75) {
+                                this.createBloodSparks(m.mesh.position, 0x38bdf8);
+                            }
+                        }
+                    }
+                }
+
+                // Rotating Radar Scanner Dishes on Anti-Air Turrets
+                if (this.turrets && this.turrets.length > 0) {
+                    for (let ti = 0; ti < this.turrets.length; ti++) {
+                        const t = this.turrets[ti];
+                        if (t && t.userData && t.userData.radarDish) {
+                            t.userData.radarDish.rotation.y += dt * 3.8;
+                        }
+                    }
+                }
+
                 // Active AC-130 Gunship State
                 if (this.isAc130Active) {
                     this.ac130MissionTimer = Math.max(0, this.ac130MissionTimer - dt);
@@ -5731,6 +6136,12 @@
                         subtitle: 'Kleine, blitzschnelle Bodentruppen',
                         icon: 'fa-bug text-amber-600',
                         body: 'Krabbler sind klein und flitzend schnell. Durch ihre bodennahe Haltung sind sie schwer zu treffen!'
+                    },
+                    bat: {
+                        title: '🦇 MUTANT-FLEDERMÄUSE DETEKTIERT!',
+                        subtitle: 'Fliegende Untote – Ignorieren Barrikaden!',
+                        icon: 'fa-crow text-purple-400 animate-pulse',
+                        body: 'Mutierte Riesen-Fledermäuse greifen aus der Luft an! <strong>Sie überfliegen Mauern & Sandsäcke</strong>. Bodengeschütze können sie nicht erfassen – nutze <strong>Flugabwehrraketensysteme (FlaRak SAM)</strong>, um den Luftraum zu sichern!'
                     },
                     exploder: {
                         title: '💣 KAMIKAZE-BOMBER DETEKTIERT!',
@@ -6385,11 +6796,20 @@
                         let chosenAngle = null;
                         let hitWallTarget = null;
 
-                        // AI Staggering: Far-away zombies (>15m) calculate pathfinding every 2nd frame
-                        const isDistant = distToPlayerSq > 225;
-                        const skipPathingThisFrame = isDistant && ((zi + this._frameCount) % 2 !== 0) && (z.userData.lastChosenAngle !== undefined);
+                        if (z.userData.isFlying) {
+                            // Flying zombies fly in a straight aerial vector, bypassing ground walls and sandbags!
+                            chosenAngle = directAngle;
+                            z.userData.lastChosenAngle = directAngle;
 
-                        if (skipPathingThisFrame) {
+                            const timeNow = performance.now() * 0.001;
+                            const flap = Math.sin(timeNow * 18 + (z.userData.flySeed || 0));
+                            if (z.userData.wingL) z.userData.wingL.rotation.z = flap * 0.55;
+                            if (z.userData.wingR) z.userData.wingR.rotation.z = -flap * 0.55;
+
+                            // Smooth aerial hovering altitude
+                            const targetY = 3.2 + Math.sin(timeNow * 3.5 + (z.userData.flySeed || 0)) * 0.55;
+                            z.position.y += (targetY - z.position.y) * 0.1;
+                        } else if (skipPathingThisFrame) {
                             chosenAngle = z.userData.lastChosenAngle;
                         } else if (this.walls.length === 0) {
                             chosenAngle = directAngle;

@@ -300,6 +300,10 @@ updateTacticalExtrasHUD();
                         statsLine = `<div class="text-[10px] text-emerald-400 font-mono mt-0.5"><i class="fa-solid fa-satellite-dish mr-1"></i>3x Drohnen | Global (Unbegrenzte Reichweite) | Reparatur ~225 HP/s</div>`;
                     } else if (t.isLightMast) {
                         statsLine = `<div class="text-[10px] text-amber-300 font-mono mt-0.5"><i class="fa-solid fa-lightbulb mr-1"></i>360° Rundum-LED-Flutlicht | Leuchtradius: ${t.range}m | Nacht-Beleuchtung</div>`;
+                    } else if (t.isArtillery) {
+                        statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5"><i class="fa-solid fa-rocket mr-1"></i>Dmg: ${t.damage} | Steilbogen: ${t.range}m | Kadenz: ${t.firerate}ms | Pushback</div>`;
+                    } else if (t.isAntiAir) {
+                        statsLine = `<div class="text-[10px] text-cyan-400 font-mono mt-0.5"><i class="fa-solid fa-crosshairs mr-1"></i>35mm Dmg: ${t.damage} | Schnellfeuer: ${t.firerate}ms (~9/s) | Luftraum: ${t.range}m</div>`;
                     } else {
                         statsLine = `<div class="text-[10px] text-amber-400 font-mono mt-0.5">Dmg: ${t.damage} | Reichweite: ${t.range}m | Kadenz: ${t.firerate}ms</div>`;
                     }
@@ -535,6 +539,15 @@ updateTacticalExtrasHUD();
                     if (ud.groundGlow) {
                         ud.groundGlow.scale.multiplyScalar(1.15);
                     }
+                } else if (ud.isArtillery) {
+                    ud.damage = Math.round(ud.damage * 1.65);
+                    ud.firerate = Math.max(1400, Math.round(ud.firerate * 0.90));
+                    ud.range += 4.5;
+                    ud.knockback = (ud.knockback || 14.0) + 1.5;
+                } else if (ud.isAntiAir) {
+                    ud.damage = Math.round(ud.damage * 1.55);
+                    ud.firerate = Math.max(45, Math.round(ud.firerate * 0.88));
+                    ud.range += 3.5;
                 } else {
                     ud.damage = Math.round(ud.damage * 1.85);
                     ud.firerate = Math.max(70, Math.round(ud.firerate * 0.84));
