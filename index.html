@@ -926,6 +926,23 @@
                     </div>
 
                     <div id="shop-tab-turrets" class="shop-tab-content hidden">
+                        <!-- Multi-Upgrade Action Banner -->
+                        <div class="bg-gradient-to-r from-amber-950/40 via-slate-950 to-amber-950/40 border border-amber-500/40 p-3 sm:p-3.5 rounded-2xl flex items-center justify-between shadow-lg mb-3.5">
+                            <div class="flex items-center space-x-2.5 sm:space-x-3">
+                                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-400 flex-shrink-0">
+                                    <i class="fa-solid fa-arrow-up-right-dots text-xs sm:text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-white text-xs sm:text-sm">Alle Türme & Mauern verwalten</div>
+                                    <div class="text-[10px] sm:text-xs text-slate-400">Massen-Upgrade und Sofort-Reparatur für alle Basis-Strukturen</div>
+                                </div>
+                            </div>
+                            <button onclick="openAllStructuresMultiUpgrade()" class="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-md shadow-amber-950/50 transition active:scale-95 flex-shrink-0 cursor-pointer">
+                                <i class="fa-solid fa-wrench text-xs"></i>
+                                <span>Multi-Upgrade</span>
+                            </button>
+                        </div>
+
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Automatische Geschütztürme platzieren</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="shop-turrets-container"></div>
                     </div>

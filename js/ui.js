@@ -665,6 +665,21 @@ updateTacticalExtrasHUD();
             }
         }
 
+        function openAllStructuresMultiUpgrade() {
+            if (!gameInstance) return;
+            const all = [...(gameInstance.turrets || []), ...(gameInstance.walls || [])];
+            if (all.length === 0) {
+                if (typeof showPurchaseToast === 'function') {
+                    showPurchaseToast('ℹ️ Noch keine Verteidigungstürme oder Mauern gebaut!');
+                }
+                return;
+            }
+            if (typeof isShopOpen !== 'undefined' && isShopOpen) {
+                toggleShop(false);
+            }
+            gameInstance.openMultiInspectModal(all);
+        }
+
         let isStockMarketOpen = false;
         let isScavengerInfoOpen = false;
 

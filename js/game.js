@@ -256,6 +256,9 @@
                         if (this.isPlacementMode) cancelPlacement();
                         else toggleShop();
                     }
+                    if (e.code === 'KeyU' || e.key === 'u' || e.key === 'U') {
+                        if (typeof openAllStructuresMultiUpgrade === 'function') openAllStructuresMultiUpgrade();
+                    }
                     if (e.code === 'Escape' || e.key === 'Escape') {
                         const scavModal = document.getElementById('scavenger-info-modal');
                         if (scavModal && !scavModal.classList.contains('hidden')) {
@@ -581,40 +584,6 @@
                         touchHandled = true;
                         this.gameplayTouchStart = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
 
-                        if (!this.isPaused && !this.isPlacementMode && !this.isAc130Active) {
-                            this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                            this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                            this.raycaster.setFromCamera(this.mousePos, this.camera);
-                            const groundHit = new THREE.Vector3();
-                            if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
-                                this.holdStartPos = {
-                                    screenX: touch.clientX,
-                                    screenY: touch.clientY,
-                                    groundX: groundHit.x,
-                                    groundZ: groundHit.z,
-                                    time: Date.now(),
-                                    id: touch.identifier
-                                };
-                            } else {
-                                this.holdStartPos = {
-                                    screenX: touch.clientX,
-                                    screenY: touch.clientY,
-                                    groundX: 0,
-                                    groundZ: 0,
-                                    time: Date.now(),
-                                    id: touch.identifier
-                                };
-                            }
-
-                            if (this.holdTimer) clearTimeout(this.holdTimer);
-                            this.holdTimer = setTimeout(() => {
-                                if (this.holdStartPos) {
-                                    this.isHoldSelecting = true;
-                                    this.updateMultiSelection(this.holdStartPos.groundX, this.holdStartPos.groundZ, 12.0);
-                                }
-                            }, 280);
-                        }
-
                         const halfWidth = window.innerWidth / 2;
                         const isJoystickSide = Storage.data.swapTouchControls ? (touch.clientX <= halfWidth) : (touch.clientX > halfWidth);
 
@@ -671,28 +640,6 @@
                                 if (this.ghostMesh) {
                                     this.updateGhostPosition(intersects.x, intersects.z);
                                 }
-                            }
-                        }
-                    }
-
-                    if (this.holdStartPos && !this.isPlacementMode && !this.isPaused) {
-                        for (let i = 0; i < e.changedTouches.length; i++) {
-                            const touch = e.changedTouches[i];
-                            if (touch.identifier === this.holdStartPos.id) {
-                                const dx = Math.abs(touch.clientX - this.holdStartPos.screenX);
-                                const dy = Math.abs(touch.clientY - this.holdStartPos.screenY);
-                                if (dx > 12 || dy > 12) {
-                                    this.isHoldSelecting = true;
-                                    if (this.holdTimer) { clearTimeout(this.holdTimer); this.holdTimer = null; }
-                                    this.mousePos.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                                    this.mousePos.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                                    this.raycaster.setFromCamera(this.mousePos, this.camera);
-                                    const groundHit = new THREE.Vector3();
-                                    if (this.raycaster.ray.intersectPlane(this.groundPlane, groundHit)) {
-                                        this.updateDragBoxSelection(this.holdStartPos.groundX, this.holdStartPos.groundZ, groundHit.x, groundHit.z);
-                                    }
-                                }
-                                break;
                             }
                         }
                     }
@@ -812,25 +759,6 @@
                             break;
                         }
                     } else if (!this.isPaused && !this.isGameOver) {
-                        if (this.holdTimer) {
-                            clearTimeout(this.holdTimer);
-                            this.holdTimer = null;
-                        }
-                        if (this.isHoldSelecting) {
-                            this.isHoldSelecting = false;
-                            this.hideHoldSelectionPulse();
-                            this.ignoreNextSelectionUntil = Date.now() + 500;
-                            if (this.selectedStructuresList.length > 1) {
-                                this.openMultiInspectModal(this.selectedStructuresList);
-                                return;
-                            } else if (this.selectedStructuresList.length === 1) {
-                                this.inspectStructure(this.selectedStructuresList[0]);
-                                this.clearSelectedStructures();
-                                return;
-                            } else {
-                                this.clearSelectedStructures();
-                            }
-                        }
 
                         for (let i = 0; i < e.changedTouches.length; i++) {
                             const touch = e.changedTouches[i];
