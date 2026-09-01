@@ -1269,9 +1269,23 @@
                     if (closestZombie) {
                         ud.lastFired = now;
 
+                        // Predictive lead aiming so bullets hit moving zombies reliably
+                        const targetDist = Math.hypot(closestZombie.position.x - tx, closestZombie.position.z - tz);
+                        const bulletSpd = ud.isExplosive ? 60 : 90;
+                        const flightTime = targetDist / bulletSpd;
+                        const zToBx = this.baseGroup.position.x - closestZombie.position.x;
+                        const zToBz = this.baseGroup.position.z - closestZombie.position.z;
+                        const zToBDist = Math.hypot(zToBx, zToBz) || 1;
+                        const zDirX = zToBx / zToBDist;
+                        const zDirZ = zToBz / zToBDist;
+                        const zSpeed = (closestZombie.userData.speed || 0.05) * 60;
+                        const leadFactor = 0.65;
+                        const aimTargetX = closestZombie.position.x + zDirX * zSpeed * flightTime * leadFactor;
+                        const aimTargetZ = closestZombie.position.z + zDirZ * zSpeed * flightTime * leadFactor;
+
                         const angle = Math.atan2(
-                            closestZombie.position.x - tx,
-                            closestZombie.position.z - tz
+                            aimTargetX - tx,
+                            aimTargetZ - tz
                         );
                         ud.head.rotation.y = angle;
 
@@ -1389,13 +1403,14 @@
 
                             if (!bullet.userData.dir) bullet.userData.dir = new THREE.Vector3();
                             bullet.userData.dir.set(Math.sin(angle), 0, Math.cos(angle));
-                            bullet.userData.speed = ud.isExplosive ? 35 : 55;
+                            bullet.userData.speed = bulletSpd;
                             bullet.userData.damage = ud.damage;
                             bullet.userData.isExplosive = ud.isExplosive;
                             bullet.userData.splashRadius = ud.splashRadius || 0;
                             bullet.userData.isTurretBullet = true;
+                            bullet.userData.isAntiAirBullet = false;
                             bullet.userData.isEnemy = false;
-                            bullet.userData.life = 1.5;
+                            bullet.userData.life = 1.8;
 
                             this.bullets.push(bullet);
 
@@ -3672,6 +3687,7 @@
                     bullet.userData.life = 1.8;
                     bullet.userData.isEnemy = false;
                     bullet.userData.isTurretBullet = false;
+                    bullet.userData.isAntiAirBullet = false;
 
                     this.bullets.push(bullet);
                 }
@@ -3858,6 +3874,8 @@
                             damage: droneDmg,
                             isExplosive: false,
                             isTurretBullet: true,
+                            isAntiAirBullet: false,
+                            isEnemy: false,
                             life: 1.6
                         };
 
