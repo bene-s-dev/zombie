@@ -665,9 +665,9 @@ updateTacticalExtrasHUD();
             }
         }
 
-        function upgradeTurretGroup(typeKey, level) {
+        function upgradeTurretGroup(typeKey, level, targetCount) {
             if (gameInstance && typeof gameInstance.upgradeTurretGroup === 'function') {
-                gameInstance.upgradeTurretGroup(typeKey, level);
+                gameInstance.upgradeTurretGroup(typeKey, level, targetCount);
             }
         }
 
@@ -680,6 +680,24 @@ updateTacticalExtrasHUD();
         function setMultiInspectFilter(filterId) {
             if (gameInstance && typeof gameInstance.setMultiInspectFilter === 'function') {
                 gameInstance.setMultiInspectFilter(filterId);
+            }
+        }
+
+        function onMultiInspectSliderChange(groupKey, val, typeKey, level, costPerUnit) {
+            if (gameInstance && typeof gameInstance.onMultiInspectSliderChange === 'function') {
+                gameInstance.onMultiInspectSliderChange(groupKey, parseInt(val, 10), typeKey, level, costPerUnit);
+            }
+        }
+
+        function setMultiInspectSliderMax(groupKey, maxVal, typeKey, level, costPerUnit) {
+            if (gameInstance && typeof gameInstance.onMultiInspectSliderChange === 'function') {
+                gameInstance.onMultiInspectSliderChange(groupKey, maxVal, typeKey, level, costPerUnit);
+            }
+        }
+
+        function setMultiInspectSliderVal(groupKey, val, typeKey, level, costPerUnit) {
+            if (gameInstance && typeof gameInstance.onMultiInspectSliderChange === 'function') {
+                gameInstance.onMultiInspectSliderChange(groupKey, val, typeKey, level, costPerUnit);
             }
         }
 

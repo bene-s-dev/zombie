@@ -2879,57 +2879,92 @@
                     if (groupList.length === 0) {
                         breakdown.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs">Keine Türme in dieser Kategorie gefunden.</div>`;
                     } else {
+                        if (!this.multiInspectSliders) this.multiInspectSliders = {};
+
                         groupList.forEach(g => {
                             const count = g.structures.length;
-                            const canUpg = !g.isHangar && g.totalGroupUpgCost > 0;
-                            const canAffordUpg = canUpg && this.money >= g.totalGroupUpgCost;
+                            const groupKey = `${g.typeKey}_lvl_${g.level}`;
+                            const canUpg = !g.isHangar && g.upgradeCostPerUnit > 0;
+                            const maxAffordable = (g.upgradeCostPerUnit > 0)
+                                ? Math.min(count, Math.max(0, Math.floor(this.money / g.upgradeCostPerUnit)))
+                                : count;
+
+                            let selectedCount = this.multiInspectSliders[groupKey];
+                            if (selectedCount === undefined || selectedCount > count || selectedCount < 1) {
+                                selectedCount = (maxAffordable > 0) ? maxAffordable : count;
+                                this.multiInspectSliders[groupKey] = selectedCount;
+                            }
+
+                            const currentUpgCost = selectedCount * g.upgradeCostPerUnit;
+                            const canAffordUpg = canUpg && selectedCount > 0 && this.money >= currentUpgCost;
                             const canAffordRep = g.totalGroupRepCost > 0 && this.money >= g.totalGroupRepCost;
 
                             const card = document.createElement('div');
-                            card.className = "bg-slate-950 border border-slate-800/90 rounded-2xl p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:border-slate-700 transition";
+                            card.className = "bg-slate-950 border border-slate-800/90 rounded-2xl p-3 flex flex-col gap-2.5 hover:border-slate-700 transition";
 
                             let rightActions = '';
                             if (canUpg) {
                                 rightActions += `
-                                    <button type="button" onclick="upgradeTurretGroup('${g.typeKey}', ${g.level})" ${canAffordUpg ? '' : 'disabled'} class="flex-1 sm:flex-initial px-3 py-1.5 ${canAffordUpg ? 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white shadow-md shadow-amber-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1 min-h-[34px]">
+                                    <button type="button" id="upg-btn-${groupKey}" onclick="upgradeTurretGroup('${g.typeKey}', ${g.level}, ${selectedCount})" ${canAffordUpg ? '' : 'disabled'} class="flex-1 sm:flex-initial px-3.5 py-2 ${canAffordUpg ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:from-amber-700 active:to-orange-700 text-white shadow-md shadow-amber-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1 min-h-[36px]">
                                         <i class="fa-solid fa-arrow-up text-[10px]"></i>
-                                        <span>${count}x Lvl ${g.level + 1} (${formatMoney(g.totalGroupUpgCost)})</span>
+                                        <span id="upg-text-${groupKey}">${selectedCount}x Lvl ${g.level + 1} (${formatMoney(currentUpgCost)})</span>
                                     </button>
                                 `;
                             } else if (g.isHangar) {
-                                rightActions += `<span class="px-2.5 py-1 bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 rounded-xl text-[10px] font-mono font-bold">UNZERSTÖRBAR</span>`;
+                                rightActions += `<span class="px-3 py-1.5 bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 rounded-xl text-[10px] font-mono font-bold">UNZERSTÖRBAR</span>`;
                             } else {
-                                rightActions += `<span class="px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-[10px] font-mono">MAX LEVEL</span>`;
+                                rightActions += `<span class="px-3 py-1.5 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-[10px] font-mono">MAX LEVEL</span>`;
                             }
 
                             if (g.repCount > 0) {
                                 rightActions += `
-                                    <button type="button" onclick="repairTurretGroup('${g.typeKey}', ${g.level})" ${canAffordRep ? '' : 'disabled'} class="px-2.5 py-1.5 ${canAffordRep ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed'} rounded-xl text-xs font-bold transition flex items-center space-x-1 min-h-[34px]" title="${g.repCount} beschädigte Einheiten dieser Stufe reparieren">
+                                    <button type="button" onclick="repairTurretGroup('${g.typeKey}', ${g.level})" ${canAffordRep ? '' : 'disabled'} class="px-3 py-2 ${canAffordRep ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed'} rounded-xl text-xs font-bold transition flex items-center space-x-1 min-h-[36px]" title="${g.repCount} beschädigte Einheiten dieser Stufe reparieren">
                                         <i class="fa-solid fa-wrench text-[10px]"></i>
                                         <span>${formatMoney(g.totalGroupRepCost)}</span>
                                     </button>
                                 `;
                             }
 
+                            // Slider HTML if more than 1 turret
+                            let sliderHtml = '';
+                            if (canUpg && count > 1) {
+                                sliderHtml = `
+                                    <div class="bg-slate-900/90 border border-slate-800/80 p-2 rounded-xl flex items-center space-x-2 w-full mt-0.5">
+                                        <span class="text-[10px] text-slate-400 font-mono flex-shrink-0">Anzahl:</span>
+                                        <input type="range" id="slider-input-${groupKey}" min="1" max="${count}" value="${selectedCount}" 
+                                               oninput="onMultiInspectSliderChange('${groupKey}', this.value, '${g.typeKey}', ${g.level}, ${g.upgradeCostPerUnit})" 
+                                               class="flex-1 accent-amber-500 h-2 bg-slate-800 rounded-lg cursor-pointer">
+                                        <span id="slider-val-${groupKey}" class="font-mono text-amber-300 font-bold text-xs min-w-[36px] text-center">${selectedCount}/${count}x</span>
+                                        <button type="button" onclick="setMultiInspectSliderMax('${groupKey}', ${count}, '${g.typeKey}', ${g.level}, ${g.upgradeCostPerUnit})" class="text-[9px] font-bold px-2 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 rounded-lg border border-slate-700 cursor-pointer">MAX</button>
+                                        ${maxAffordable > 0 && maxAffordable < count ? `
+                                            <button type="button" onclick="setMultiInspectSliderVal('${groupKey}', ${maxAffordable}, '${g.typeKey}', ${g.level}, ${g.upgradeCostPerUnit})" class="text-[9px] font-bold px-2 py-1 bg-amber-950/70 hover:bg-amber-900 active:bg-amber-950 text-amber-400 rounded-lg border border-amber-500/50 cursor-pointer">LEISTBAR (${maxAffordable}x)</button>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }
+
                             card.innerHTML = `
-                                <div class="flex items-center space-x-2.5 sm:space-x-3">
-                                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center font-mono font-bold text-amber-400 text-xs flex-shrink-0">
-                                        L${g.level}
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                    <div class="flex items-center space-x-2.5 sm:space-x-3">
+                                        <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center font-mono font-bold text-amber-400 text-xs flex-shrink-0">
+                                            L${g.level}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center space-x-1.5">
+                                                <span class="font-bold text-white text-xs sm:text-sm truncate">${g.typeName}</span>
+                                                <span class="bg-slate-800 text-amber-300 font-mono text-[10px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">${count}x</span>
+                                            </div>
+                                            <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 flex flex-wrap gap-x-2">
+                                                <span>Einzel: <strong class="text-amber-300">${g.upgradeCostPerUnit > 0 ? formatMoney(g.upgradeCostPerUnit) : '—'}</strong></span>
+                                                ${g.repCount > 0 ? `<span class="text-rose-400 font-bold"><i class="fa-solid fa-wrench mr-0.5"></i>${g.repCount} beschädigt</span>` : `<span class="text-emerald-400"><i class="fa-solid fa-shield mr-0.5"></i>100% HP</span>`}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="min-w-0">
-                                        <div class="flex items-center space-x-1.5">
-                                            <span class="font-bold text-white text-xs sm:text-sm truncate">${g.typeName}</span>
-                                            <span class="bg-slate-800 text-amber-300 font-mono text-[10px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">${count}x</span>
-                                        </div>
-                                        <div class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 flex flex-wrap gap-x-2">
-                                            <span>Einzel: <strong class="text-amber-300">${g.upgradeCostPerUnit > 0 ? formatMoney(g.upgradeCostPerUnit) : '—'}</strong></span>
-                                            ${g.repCount > 0 ? `<span class="text-rose-400 font-bold"><i class="fa-solid fa-wrench mr-0.5"></i>${g.repCount} beschädigt</span>` : `<span class="text-emerald-400"><i class="fa-solid fa-shield mr-0.5"></i>100% HP</span>`}
-                                        </div>
+                                    <div class="flex items-center space-x-1.5 flex-shrink-0">
+                                        ${rightActions}
                                     </div>
                                 </div>
-                                <div class="flex items-center space-x-1.5 flex-shrink-0">
-                                    ${rightActions}
-                                </div>
+                                ${sliderHtml}
                             `;
                             breakdown.appendChild(card);
                         });
@@ -2953,15 +2988,43 @@
                 }
             }
 
-            upgradeTurretGroup(typeKey, level) {
+            onMultiInspectSliderChange(groupKey, val, typeKey, level, costPerUnit) {
+                const v = parseInt(val, 10) || 1;
+                if (!this.multiInspectSliders) this.multiInspectSliders = {};
+                this.multiInspectSliders[groupKey] = v;
+                const cost = v * costPerUnit;
+                const canAfford = this.money >= cost;
+
+                const btn = document.getElementById(`upg-btn-${groupKey}`);
+                const text = document.getElementById(`upg-text-${groupKey}`);
+                const sliderVal = document.getElementById(`slider-val-${groupKey}`);
+                const sliderInput = document.getElementById(`slider-input-${groupKey}`);
+
+                if (sliderVal) {
+                    const maxCount = sliderInput ? sliderInput.max : v;
+                    sliderVal.innerText = `${v}/${maxCount}x`;
+                }
+                if (sliderInput) sliderInput.value = v;
+                if (text) text.innerText = `${v}x Lvl ${level + 1} (${formatMoney(cost)})`;
+                if (btn) {
+                    btn.disabled = !canAfford;
+                    btn.className = `flex-1 sm:flex-initial px-3.5 py-2 ${canAfford ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:from-amber-700 active:to-orange-700 text-white shadow-md shadow-amber-950/40 cursor-pointer' : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'} rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1 min-h-[36px]`;
+                    btn.onclick = () => this.upgradeTurretGroup(typeKey, level, v);
+                }
+            }
+
+            upgradeTurretGroup(typeKey, level, targetCount = null) {
                 const list = (this.selectedStructuresList || []).filter(s => {
                     const ud = s.userData || {};
                     const matchType = (typeKey === 'all' || ud.specId === typeKey || ud.name === typeKey);
                     return matchType && (ud.level || 1) === level && ud.isTurret && !ud.isHangar && ud.totalInvested;
                 });
 
+                const maxToUpgrade = (typeof targetCount === 'number' && targetCount > 0) ? targetCount : list.length;
+                const toUpgradeList = list.slice(0, maxToUpgrade);
+
                 let count = 0;
-                for (const struct of list) {
+                for (const struct of toUpgradeList) {
                     const ud = struct.userData;
                     const cost = Math.round(ud.totalInvested * 0.80);
                     if (this.money >= cost) {
