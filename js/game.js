@@ -2971,20 +2971,82 @@
                     }
                 }
 
-                // 4. Update Bottom Master Buttons
-                const canFilterUpg = totalFilterUpgCost > 0 && this.money >= 1;
-                const canFilterRep = totalFilterRepCost > 0 && this.money >= 1;
+                // 4. Update Bottom Master Buttons with Smart-Affordability Calculation
+                const upgradeableList = filtered
+                    .filter(s => {
+                        const ud = s.userData || {};
+                        return ud.isTurret && !ud.isHangar && ud.totalInvested;
+                    })
+                    .sort((a, b) => ((a.userData?.level || 1) - (b.userData?.level || 1)));
 
-                if (upgBtn) {
-                    upgBtn.disabled = !canFilterUpg;
-                    if (upgText) {
-                        const filterLabel = this.multiInspectFilter === 'all' ? 'Alle' : typeNames[this.multiInspectFilter] || 'Alle';
-                        upgText.innerText = totalFilterUpgCost > 0 ? `${filterLabel} Upgraden (${formatMoney(totalFilterUpgCost)})` : 'Keine Upgrades';
+                let affordableUpgCount = 0;
+                let affordableUpgCost = 0;
+                let runningMoney = this.money;
+                let minSingleUpgCost = Infinity;
+
+                for (const struct of upgradeableList) {
+                    const cost = Math.round(struct.userData.totalInvested * 0.80);
+                    if (cost < minSingleUpgCost) minSingleUpgCost = cost;
+                    if (runningMoney >= cost) {
+                        runningMoney -= cost;
+                        affordableUpgCost += cost;
+                        affordableUpgCount++;
                     }
                 }
+
+                const damagedList = filtered
+                    .filter(s => {
+                        const ud = s.userData || {};
+                        return ud.hp < ud.maxHp && ud.totalInvested;
+                    });
+
+                let affordableRepCount = 0;
+                let affordableRepCost = 0;
+                let runningRepMoney = this.money;
+                let minSingleRepCost = Infinity;
+
+                for (const struct of damagedList) {
+                    const rCost = Math.round((1 - struct.userData.hp / struct.userData.maxHp) * struct.userData.totalInvested * 0.5);
+                    if (rCost > 0) {
+                        if (rCost < minSingleRepCost) minSingleRepCost = rCost;
+                        if (runningRepMoney >= rCost) {
+                            runningRepMoney -= rCost;
+                            affordableRepCost += rCost;
+                            affordableRepCount++;
+                        }
+                    }
+                }
+
+                if (upgBtn) {
+                    if (upgradeableList.length === 0) {
+                        upgBtn.disabled = true;
+                        if (upgText) upgText.innerText = 'Keine Upgrades';
+                    } else if (affordableUpgCount === upgradeableList.length) {
+                        upgBtn.disabled = false;
+                        if (upgText) upgText.innerText = `TowerIQ: Alle ${upgradeableList.length} Upgraden (${formatMoney(totalFilterUpgCost)})`;
+                    } else if (affordableUpgCount > 0) {
+                        upgBtn.disabled = false;
+                        if (upgText) upgText.innerText = `TowerIQ-Engine (${affordableUpgCount}x für ${formatMoney(affordableUpgCost)})`;
+                    } else {
+                        upgBtn.disabled = true;
+                        if (upgText) upgText.innerText = `TowerIQ: Zu teuer (ab ${formatMoney(minSingleUpgCost)})`;
+                    }
+                }
+
                 if (repBtn) {
-                    repBtn.disabled = !canFilterRep;
-                    if (repText) repText.innerText = totalFilterRepCost > 0 ? `Alle Reparieren (${formatMoney(totalFilterRepCost)})` : 'Voll Intakt';
+                    if (damagedList.length === 0) {
+                        repBtn.disabled = true;
+                        if (repText) repText.innerText = 'Voll Intakt';
+                    } else if (affordableRepCount === damagedList.length) {
+                        repBtn.disabled = false;
+                        if (repText) repText.innerText = `Alle Reparieren (${formatMoney(totalFilterRepCost)})`;
+                    } else if (affordableRepCount > 0) {
+                        repBtn.disabled = false;
+                        if (repText) repText.innerText = `${affordableRepCount}x Reparieren (${formatMoney(affordableRepCost)})`;
+                    } else {
+                        repBtn.disabled = true;
+                        if (repText) repText.innerText = `Zu wenig Geld (ab ${formatMoney(minSingleRepCost)})`;
+                    }
                 }
             }
 
