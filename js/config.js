@@ -44,18 +44,18 @@ const WEAPONS = {
 const TURRET_TYPES = {
     mg: { 
         id: 'mg', 
-        name: 'Autonome Waffenstation (RWS .50 BMG)', 
+        name: 'Waffenstation', 
         cost: 450, 
         range: 27, 
         damage: 26, 
         firerate: 260, 
         hp: 500, 
         maxHp: 500, 
-        desc: 'Ferngesteuerte Waffenstation (Remote Weapon Station). Kontinuierliches Sperrfeuer gegen heranrückende Infanterie!' 
+        desc: 'Autonome Waffenstation mit kontinuierlichem Sperrfeuer gegen heranrückende Infanterie.' 
     },
     rocket: { 
         id: 'rocket', 
-        name: 'Schwere Boden-Raketenstation (BGM Strike)', 
+        name: 'Granatwerfer', 
         cost: 1600, 
         range: 36, 
         damage: 260, 
@@ -64,11 +64,11 @@ const TURRET_TYPES = {
         splashRadius: 5.5, 
         hp: 650, 
         maxHp: 650, 
-        desc: 'Schweres Boden-Boden-Raketensystem. Massiver punktueller Explosionsschaden gegen Bodenziele & Mutanten!' 
+        desc: 'Schwerer Granatwerfer mit massivem Flächenschaden gegen Bodenziele und Mutanten.' 
     },
     anti_air: {
         id: 'anti_air',
-        name: 'Flugabwehrsystem MANTIS (35mm C-RAM)',
+        name: 'Flugabwehr',
         cost: 1200,
         range: 42,
         damage: 42,
@@ -76,11 +76,11 @@ const TURRET_TYPES = {
         isAntiAir: true,
         hp: 600,
         maxHp: 600,
-        desc: 'Vollautomatisches 35mm Schnellfeuer-Flugabwehrsystem (C-RAM MANTIS). Zersiebt fliegende Mutanten im rasanten Schnellfeuer mit AHEAD-Luftraum-Munition!'
+        desc: 'Schnellfeuer-Flugabwehrsystem. Zersiebt fliegende Mutanten exklusiv mit rasanter 35mm-Kadenz.' 
     },
     artillery: {
         id: 'artillery',
-        name: 'Schwere Raketenartillerie (MLRS MARS II)',
+        name: 'Raketenwerfer',
         cost: 2800,
         range: 48,
         minRange: 7,
@@ -92,11 +92,11 @@ const TURRET_TYPES = {
         knockback: 14.0,
         hp: 800,
         maxHp: 800,
-        desc: 'Mehrfachraketenwerfer-System (Multiple Launch Rocket System). Steilbogeneinschlag mit verheerendem Flächenschaden & Druckwelle!'
+        desc: 'Schwerer Raketenwerfer mit weitreichendem Steilbogeneinschlag, Flächenschaden & Druckwelle.' 
     },
     light_mast: {
         id: 'light_mast',
-        name: 'Mobiles Beleuchtungsmodul (LiMa THW)',
+        name: 'Lichtmast',
         cost: 120,
         range: 34,
         damage: 0,
@@ -104,11 +104,11 @@ const TURRET_TYPES = {
         hp: 450,
         maxHp: 450,
         isLightMast: true,
-        desc: 'Taktischer Lichtmast mit 360° Hochleistungs-LED-Flutlicht. Erleuchtet das Gefechtsfeld taghell und bremst nachts geblendete Zombies auf Normaltempo ab!'
+        desc: '360° Rundum-LED-Flutlicht. Erleuchtet das Gefechtsfeld taghell und bremst Zombies nachts auf Normaltempo ab.' 
     },
     drone_hangar: {
         id: 'drone_hangar',
-        name: 'Autonome Instandsetzungs-Drohnenbasis (UAV Logistics)',
+        name: 'Reparaturdrohnen',
         cost: 8000,
         range: Infinity,
         damage: 0,
@@ -117,7 +117,7 @@ const TURRET_TYPES = {
         maxHp: 99999,
         isIndestructible: true,
         isHangar: true,
-        desc: 'Taktische UAV-Drohnenbasis. Sendet permanent ein Geschwader autonomer Reparatur-Drohnen zur feldmäßigen Instandsetzung aller Verteidigungsanlagen aus!'
+        desc: 'Autonome Drohnenbasis. Entsendet Reparaturdrohnen zur automatischen Instandsetzung aller Verteidigungsanlagen.' 
     }
 };
 

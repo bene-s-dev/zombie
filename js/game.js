@@ -2753,7 +2753,7 @@
                     if (hangarBox) hangarBox.classList.add('hidden');
                     if (stdActions) stdActions.classList.remove('hidden');
 
-                    subtitle.innerText = `Lvl ${ud.level} Katastrophenschutz-Lichtmast`;
+                    subtitle.innerText = `Lvl ${ud.level} Lichtmast`;
                     stats.innerHTML = `
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• Beleuchtung: <strong class="text-amber-300">360° Rundum-LED-Flutlicht</strong></div>
@@ -2779,7 +2779,7 @@
                     if (hangarBox) hangarBox.classList.add('hidden');
                     if (stdActions) stdActions.classList.remove('hidden');
 
-                    subtitle.innerText = `Lvl ${ud.level} Flugabwehrsystem MANTIS (35mm C-RAM)`;
+                    subtitle.innerText = `Lvl ${ud.level} Flugabwehr`;
                     stats.innerHTML = `
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• 35mm Flak-Schaden: <strong class="text-amber-400">${Math.round(ud.damage)} pro Schuss</strong></div>
@@ -2808,7 +2808,7 @@
                     if (hangarBox) hangarBox.classList.add('hidden');
                     if (stdActions) stdActions.classList.remove('hidden');
 
-                    subtitle.innerText = `Lvl ${ud.level} Schwere Raketen-Artillerie`;
+                    subtitle.innerText = `Lvl ${ud.level} Raketenwerfer`;
                     stats.innerHTML = `
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• Schaden: <strong class="text-amber-400">${Math.round(ud.damage)}</strong></div>
@@ -2837,7 +2837,8 @@
                     if (hangarBox) hangarBox.classList.add('hidden');
                     if (stdActions) stdActions.classList.remove('hidden');
 
-                    subtitle.innerText = `Lvl ${ud.level} Geschützturm`;
+                    const defaultName = ud.isExplosive ? 'Granatwerfer' : 'Waffenstation';
+                    subtitle.innerText = `Lvl ${ud.level} ${ud.name || defaultName}`;
                     stats.innerHTML = `
                         <div>• Haltbarkeit (HP): <strong class="text-emerald-400">${Math.ceil(ud.hp)} / ${ud.maxHp}</strong></div>
                         <div>• Schaden: <strong class="text-amber-400">${Math.round(ud.damage)}</strong></div>
