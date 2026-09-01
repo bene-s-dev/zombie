@@ -1295,7 +1295,6 @@
                             } else if (typeof audio !== 'undefined' && audio.playShoot) {
                                 audio.playShoot(0.06);
                             }
-                            this.createBloodSparks(new THREE.Vector3(tx, 2.2, tz), 0xc084fc);
 
                             if (!this._mantisBulletGeo) {
                                 this._mantisBulletGeo = new THREE.BoxGeometry(0.14, 0.14, 1.2);
@@ -1338,7 +1337,6 @@
                         } else if (ud.isArtillery) {
                             // Heavy Artillery Ballistic Mortar Launch (Crimson Warhead & Fiery Glow)
                             if (typeof audio !== 'undefined' && audio.playRocket) audio.playRocket();
-                            this.createBloodSparks(new THREE.Vector3(tx, 2.5, tz), 0xef4444);
 
                             const startX = tx;
                             const startY = 2.4;
@@ -1382,8 +1380,6 @@
                             });
                         } else {
                             const bulletMat = ud.isExplosive ? this._turretBulletMatGranate : this._turretBulletMatMG;
-                            const sparkColor = ud.isExplosive ? 0xff6600 : 0x38bdf8;
-                            this.createBloodSparks(new THREE.Vector3(tx, 1.8, tz), sparkColor);
                             
                             let bullet = this.bulletPool.pop();
                             if (!bullet) {
