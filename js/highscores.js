@@ -188,29 +188,33 @@ function updateHighscoreUI() {
         
         list.forEach((entry, idx) => {
             let rankBadge = '';
-            if (idx === 0) rankBadge = '<span class="text-amber-400 font-bold">🥇 1.</span>';
-            else if (idx === 1) rankBadge = '<span class="text-slate-300 font-bold">🥈 2.</span>';
-            else if (idx === 2) rankBadge = '<span class="text-amber-600 font-bold">🥉 3.</span>';
-            else rankBadge = `<span class="text-slate-500 font-bold ml-1">${idx + 1}.</span>`;
+            if (idx === 0) rankBadge = '<span class="text-amber-400 font-bold drop-shadow">🥇 1.</span>';
+            else if (idx === 1) rankBadge = '<span class="text-slate-300 font-bold drop-shadow">🥈 2.</span>';
+            else if (idx === 2) rankBadge = '<span class="text-amber-600 font-bold drop-shadow">🥉 3.</span>';
+            else rankBadge = `<span class="text-slate-500 font-bold pl-1">${idx + 1}.</span>`;
             
             const em = Math.floor(entry.time / 60).toString().padStart(2, '0');
             const es = (entry.time % 60).toString().padStart(2, '0');
             
             const isMe = !!currentPlayer && entry.name === currentPlayer;
-            const rowClass = isMe
-                ? "border-b border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
-                : "border-b border-slate-900/60 hover:bg-slate-800/40 transition-colors";
+            let rowClass = "border-b border-slate-800/40 hover:bg-slate-800/50 transition-colors";
+            if (isMe) {
+                rowClass = "border-b border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 transition-colors";
+            } else if (idx === 0) {
+                rowClass = "border-b border-amber-500/20 bg-amber-950/20 hover:bg-amber-950/40 transition-colors";
+            }
             
-            const nameColor = isMe ? "text-amber-300 font-black" : "text-white font-bold";
+            const nameColor = isMe ? "text-amber-300 font-black" : (idx === 0 ? "text-amber-100 font-bold" : "text-white font-bold");
+            const formattedKills = Number(entry.kills || 0).toLocaleString('de-DE');
 
             const row = document.createElement('tr');
             row.className = rowClass;
             row.innerHTML = `
-                <td class="py-2 px-1 font-mono">${rankBadge}</td>
-                <td class="py-2 px-2 tracking-wide uppercase text-[10px] sm:text-xs ${nameColor}">${entry.name}${isMe ? ' <span class="text-[9px] text-amber-400 font-mono font-normal">(DU)</span>' : ''}</td>
-                <td class="py-2 px-2 font-mono text-amber-400">${em}:${es}</td>
-                <td class="py-2 px-2 font-mono text-center text-slate-300">${entry.wave}</td>
-                <td class="py-2 px-2 font-mono text-center text-emerald-400">${entry.kills}</td>
+                <td class="py-2.5 px-1.5 font-mono whitespace-nowrap">${rankBadge}</td>
+                <td class="py-2.5 px-2 tracking-wide uppercase text-[11px] sm:text-xs ${nameColor} truncate max-w-[110px] sm:max-w-none">${entry.name}${isMe ? ' <span class="text-[9px] text-amber-400 font-mono font-normal">(DU)</span>' : ''}</td>
+                <td class="py-2.5 px-2 font-mono text-amber-400 text-xs">${em}:${es}</td>
+                <td class="py-2.5 px-2 font-mono text-center font-bold text-slate-200 text-xs">${entry.wave}</td>
+                <td class="py-2.5 px-2 font-mono text-center text-emerald-400 text-xs">${formattedKills}</td>
             `;
             tbody.appendChild(row);
         });
@@ -223,8 +227,15 @@ function checkHighscoreQualification(wave, kills, sec) {
 }
 
 let lastSubmittedRunRecord = null;
+let activeSubmissionPromise = null;
 
 async function submitHighscore(customName, hideUI = true) {
+    if (activeSubmissionPromise) {
+        try {
+            await activeSubmissionPromise;
+        } catch (e) {}
+    }
+
     const entryEl = document.getElementById('highscore-entry');
     const nameInput = document.getElementById('hs-player-name');
     
@@ -262,13 +273,18 @@ async function submitHighscore(customName, hideUI = true) {
         const runKills = Number(stats.kills) || 0;
         const runDiff = stats.difficulty || Storage.data.difficulty || 'medium';
 
-        // Check if this run was already submitted earlier (e.g. initial auto-submit on Game Over)
-        const isUpdate = !!(lastSubmittedRunRecord &&
+        // Check if this run was already submitted earlier
+        const isAlreadySubmitted = !!(lastSubmittedRunRecord &&
             lastSubmittedRunRecord.time === runTime &&
             lastSubmittedRunRecord.wave === runWave &&
             lastSubmittedRunRecord.kills === runKills);
         
-        const prevSubmittedName = isUpdate ? lastSubmittedRunRecord.name : null;
+        // If already submitted and name didn't change, do nothing
+        if (isAlreadySubmitted && lastSubmittedRunRecord.name === name && lastSubmittedRunRecord.id) {
+            return;
+        }
+
+        const prevSubmittedName = isAlreadySubmitted ? lastSubmittedRunRecord.name : null;
 
         const newEntry = {
             name: name,
@@ -281,7 +297,7 @@ async function submitHighscore(customName, hideUI = true) {
         
         // Optimistic local update & instant UI render
         let localScores = Storage.data.highscores || [];
-        if (isUpdate && prevSubmittedName) {
+        if (isAlreadySubmitted && prevSubmittedName) {
             // Replace previous name in local scores for this exact run
             const existingIdx = localScores.findIndex(e =>
                 e.name === prevSubmittedName &&
@@ -311,70 +327,80 @@ async function submitHighscore(customName, hideUI = true) {
         if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping mr-1.5";
         if (statusText) statusText.innerText = "SENDEN...";
 
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 4000);
-            
-            if (isUpdate && lastSubmittedRunRecord && lastSubmittedRunRecord.id) {
-                // Update existing record in Supabase by ID
-                const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${lastSubmittedRunRecord.id}`, {
-                    method: 'PATCH',
-                    signal: controller.signal,
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify({ name: name })
-                });
-                clearTimeout(timeoutId);
+        const executeNetworkSync = async () => {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000);
+                
+                if (isAlreadySubmitted && lastSubmittedRunRecord && lastSubmittedRunRecord.id) {
+                    // Update existing record in Supabase by ID
+                    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${lastSubmittedRunRecord.id}`, {
+                        method: 'PATCH',
+                        signal: controller.signal,
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify({ name: name })
+                    });
+                    clearTimeout(timeoutId);
 
-                if (updateRes.ok) {
-                    lastSubmittedRunRecord.name = name;
-                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
-                    if (statusText) statusText.innerText = "ONLINE";
-                    fetchOnlineHighscores();
+                    if (updateRes.ok) {
+                        lastSubmittedRunRecord.name = name;
+                        if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
+                        if (statusText) statusText.innerText = "ONLINE";
+                        fetchOnlineHighscores();
+                    } else {
+                        throw new Error("HTTP " + updateRes.status);
+                    }
                 } else {
-                    throw new Error("HTTP " + updateRes.status);
-                }
-            } else {
-                // Insert new record in Supabase and capture assigned ID
-                const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
-                    method: 'POST',
-                    signal: controller.signal,
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=representation'
-                    },
-                    body: JSON.stringify(newEntry)
-                });
-                clearTimeout(timeoutId);
-
-                if (insertRes.ok) {
-                    const createdRows = await insertRes.json();
-                    const createdId = Array.isArray(createdRows) && createdRows.length > 0 ? createdRows[0].id : null;
+                    // Mark run as being submitted to prevent parallel POST inserts
                     lastSubmittedRunRecord = {
-                        id: createdId,
+                        id: null,
                         name: name,
                         time: runTime,
                         wave: runWave,
                         kills: runKills
                     };
-                    if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
-                    if (statusText) statusText.innerText = "ONLINE";
-                    fetchOnlineHighscores();
-                } else {
-                    throw new Error("HTTP " + insertRes.status);
+
+                    // Insert new record in Supabase and capture assigned ID
+                    const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+                        method: 'POST',
+                        signal: controller.signal,
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify(newEntry)
+                    });
+                    clearTimeout(timeoutId);
+
+                    if (insertRes.ok) {
+                        const createdRows = await insertRes.json();
+                        const createdId = Array.isArray(createdRows) && createdRows.length > 0 ? createdRows[0].id : null;
+                        lastSubmittedRunRecord.id = createdId;
+                        if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5";
+                        if (statusText) statusText.innerText = "ONLINE";
+                        fetchOnlineHighscores();
+                    } else {
+                        throw new Error("HTTP " + insertRes.status);
+                    }
                 }
+            } catch (e) {
+                console.warn("Online Supabase sync error:", e);
+                if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-slate-500 mr-1.5";
+                if (statusText) statusText.innerText = "LOKAL";
+            } finally {
+                activeSubmissionPromise = null;
             }
-        } catch (e) {
-            console.warn("Online Supabase sync error:", e);
-            if (statusDot) statusDot.className = "w-2 h-2 rounded-full bg-slate-500 mr-1.5";
-            if (statusText) statusText.innerText = "LOKAL";
-        }
+        };
+
+        activeSubmissionPromise = executeNetworkSync();
+        await activeSubmissionPromise;
     } else {
         if (hideUI && entryEl) entryEl.classList.add('hidden');
     }
